@@ -104,10 +104,12 @@ def main():
                     avg = 0
                     if targetinfo["recv"]:
                         avg = targetinfo["avg"] / targetinfo["recv"] * 1000
+                    outd = 0
+                    if targetinfo["recv"] + targetinfo["errs"]:
+                        outd = targetinfo["outd"] / (targetinfo["recv"] + targetinfo["errs"]) * 100
                     print "%-25s %5d %5d %5d %5d %6.2f%% %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], targetinfo["errs"], targetinfo["outd"],
                                                         (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100,
-                                                        targetinfo["errs"] / targetinfo["sent"] * 100,
-                                                        targetinfo["outd"] / (targetinfo["recv"] + targetinfo["errs"]) * 100,
+                                                        targetinfo["errs"] / targetinfo["sent"] * 100, outd,
                                                         avg, targetinfo["min"] * 1000, targetinfo["max"] * 1000, targetinfo["last"] * 1000)
                 print
                 print
