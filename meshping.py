@@ -14,6 +14,10 @@ from ping import send_one_ping, receive_one_ping
 from time import sleep, time
 
 def main():
+    if not sys.argv[1:]:
+        print "Usage: meshping <target ...>"
+        return
+
     icmp = socket.getprotobyname("icmp")
     try:
         icmpv4 = socket.socket(socket.AF_INET,  socket.SOCK_RAW, icmp)
@@ -32,7 +36,7 @@ def main():
 
     targets = {}
 
-    for target in ('192.168.1.1', '192.168.0.20', 'hive'):
+    for target in sys.argv[1:]:
         try:
             for info in socket.getaddrinfo(target, 0, socket.AF_INET, socket.SOCK_STREAM):
                 # try to avoid pid collisions
