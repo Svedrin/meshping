@@ -38,6 +38,11 @@ def main():
 
     for target in sys.argv[1:]:
         try:
+            if "/" in target:
+                target, itv = target.split("/")
+                itv = int(itv)
+            else:
+                itv = 1
             for info in socket.getaddrinfo(target, 0, socket.AF_INET, socket.SOCK_STREAM):
                 # try to avoid pid collisions
                 tgt_id = randint(0x8000 + 1, 0xFFFF)
@@ -52,9 +57,11 @@ def main():
                     "outd": 0,
                     "id":   tgt_id,
                     "last": 0,
-                    "avg": 0,
-                    "min": 0,
-                    "max": 0,
+                    "avg":  0,
+                    "min":  0,
+                    "max":  0,
+                    "itv":  itv,
+                    "due":  0
                 }
                 targets[tgt_id] = tgt
 
@@ -65,11 +72,14 @@ def main():
     try:
         seq = 0
         while True:
-            next_ping = time() + 1
+            now = time()
+            next_ping = now + 1
 
             for targetinfo in targets.values():
-                send_one_ping(icmpv4, targetinfo["addr"], targetinfo["id"], seq)
-                targetinfo["sent"] += 1
+                if now >= targetinfo["due"]:
+                    send_one_ping(icmpv4, targetinfo["addr"], targetinfo["id"], seq)
+                    targetinfo["sent"] += 1
+                    targetinfo["due"]   = now + targetinfo["itv"]
 
             while time() < next_ping:
                 response = receive_one_ping(icmpv4, 0.1)
