@@ -7,6 +7,7 @@ import json
 import socket
 
 from optparse import OptionParser
+from select   import select
 
 def main():
     parser = OptionParser(usage="Usage: %prog [options] -- no options = list without reset")
@@ -47,10 +48,15 @@ def main():
             "reset":  options.reset,
         }), ("127.0.0.1", 55432) )
 
-    reply, addr = ctrl.recvfrom(2**14)
+    rdy_read, _, _ = select([ctrl], [], [], 0.5)
+    if ctrl in rdy_read:
+        reply, addr = ctrl.recvfrom(2**14)
 
-    if not options.quiet:
-        print json.dumps(json.loads(reply), indent=4)
+        if not options.quiet:
+            print json.dumps(json.loads(reply), indent=4)
+
+    else:
+        print "timeout, is meshping running?"
 
 
 if __name__ == '__main__':
