@@ -40,6 +40,7 @@ def process_ctrl(ctrl, targets):
                     "avg":  0,
                     "min":  0,
                     "max":  0,
+                    "due":  0,
                 })
 
     elif data["cmd"] == "add":
