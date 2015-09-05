@@ -89,6 +89,7 @@ def main():
 
                 if response["success"]:
                     target["recv"] += 1
+                    target["last"]  = response["delay"]
                     target["avg"]  += response["delay"]
                     target["min"]   = min(target["min"], response["delay"])
                     target["max"]   = max(target["max"], response["delay"])
@@ -96,18 +97,18 @@ def main():
                 else:
                     target["errs"] += 1
 
-            print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd     Avg      Min      Max"
+            print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
 
             if seq > 1:
                 for targetinfo in targets.values():
                     avg = 0
                     if targetinfo["recv"]:
                         avg = targetinfo["avg"] / targetinfo["recv"] * 1000
-                    print "%-25s %5d %5d %5d %5d %6.2f%% %6.2f%% %6.2f%% %6.2f   %6.2f   %6.2f" % (targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], targetinfo["errs"], targetinfo["outd"],
+                    print "%-25s %5d %5d %5d %5d %6.2f%% %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], targetinfo["errs"], targetinfo["outd"],
                                                         (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100,
                                                         targetinfo["errs"] / targetinfo["sent"] * 100,
                                                         targetinfo["outd"] / (targetinfo["recv"] + targetinfo["errs"]) * 100,
-                                                        avg, targetinfo["min"] * 1000, targetinfo["max"] * 1000)
+                                                        avg, targetinfo["min"] * 1000, targetinfo["max"] * 1000, targetinfo["last"] * 1000)
                 print
                 print
 
