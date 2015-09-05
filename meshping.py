@@ -116,6 +116,9 @@ def main():
             if time() < next_ping:
                 sleep(next_ping - time())
 
+    except KeyboardInterrupt:
+        pass
+
     finally:
         icmpv4.close()
 
