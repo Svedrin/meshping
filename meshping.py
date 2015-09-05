@@ -13,10 +13,15 @@ from random import randint
 from ping import send_one_ping, receive_one_ping
 from time import sleep, time
 
+from ctrl import process_ctrl
+
 def main():
     if not sys.argv[1:]:
         print "Usage: meshping <target ...>"
         return
+
+    ctrl = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.SOL_UDP)
+    ctrl.bind(("127.0.0.1", 55432))
 
     icmp = socket.getprotobyname("icmp")
     try:
@@ -111,6 +116,11 @@ def main():
                 print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
 
                 for targetinfo in targets.values():
+                    loss = 0
+                    errs = 0
+                    if targetinfo["sent"]:
+                        loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
+                        errs = targetinfo["errs"] / targetinfo["sent"] * 100
                     avg = 0
                     if targetinfo["recv"]:
                         avg = targetinfo["avg"] / targetinfo["recv"] * 1000
@@ -118,11 +128,11 @@ def main():
                     if targetinfo["recv"] + targetinfo["errs"]:
                         outd = targetinfo["outd"] / (targetinfo["recv"] + targetinfo["errs"]) * 100
                     print "%-25s %5d %5d %5d %5d %6.2f%% %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], targetinfo["errs"], targetinfo["outd"],
-                                                        (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100,
-                                                        targetinfo["errs"] / targetinfo["sent"] * 100, outd,
-                                                        avg, targetinfo["min"] * 1000, targetinfo["max"] * 1000, targetinfo["last"] * 1000)
+                                                        loss, errs, outd, avg, targetinfo["min"] * 1000, targetinfo["max"] * 1000, targetinfo["last"] * 1000)
                 print
                 print
+
+            process_ctrl(ctrl, targets)
 
             seq += 1
             if time() < next_ping:
