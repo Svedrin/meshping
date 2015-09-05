@@ -87,6 +87,8 @@ def main():
                     targetinfo["due"]   = now + targetinfo["itv"]
 
             while time() < next_ping:
+                process_ctrl(ctrl, targets)
+
                 response = receive_one_ping(icmpv4, 0.1)
 
                 if response["timeout"]:
@@ -131,8 +133,6 @@ def main():
                                                         loss, errs, outd, avg, targetinfo["min"] * 1000, targetinfo["max"] * 1000, targetinfo["last"] * 1000)
                 print
                 print
-
-            process_ctrl(ctrl, targets)
 
             seq += 1
             if time() < next_ping:
