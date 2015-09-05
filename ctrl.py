@@ -9,7 +9,6 @@ import select
 import json
 
 from random import randint
-from ping import send_one_ping, receive_one_ping
 from time import sleep, time
 
 def process_ctrl(ctrl, targets):
