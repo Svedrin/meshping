@@ -24,6 +24,46 @@ cd meshping
 sudo python meshping.py google.de/60 192.168.178.1 somewhere-else.net
 ```
 
+Then you'll get a statistico like this one every second:
+
+```
+Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last
+8.8.8.8                     109   109     0     0   0.00%   0.00%   0.00%   14.79      0.00    159.05     10.95
+37.120.162.165              626   626     0     0   0.00%   0.00%   0.00%   17.47      0.00    179.04     15.76
+192.168.0.196               626   626     0     0   0.00%   0.00%   0.00%    3.40      0.00     15.84      3.35
+192.168.0.1                 626   626     0     0   0.00%   0.00%   0.00%    3.08      0.00     15.55      5.44
+10.5.0.1                    626   626     0     0   0.00%   0.00%   0.00%    3.39      0.00     15.61      5.38
+192.168.0.108               626   626     0     0   0.00%   0.00%   0.00%    3.12      0.00     15.51      4.87
+192.168.100.1                11    11     0     0   0.00%   0.00%   0.00%    3.80      0.00      7.45      2.73
+192.168.0.101               626   626     0     0   0.00%   0.00%   0.00%    8.16      0.00     26.44      5.06
+```
+
+The easiest way to query the control socket is using socat:
+
+```
+echo '{"cmd": "list", "reset": false}' | socat - udp:127.0.0.1:55432  | json_pp
+```
+
+However, you can of course write your own tools that send control commands. Setting `"reset": true` will cause the statistics to be reset to 0.
+
+Adding a host is a breeze too:
+
+```
+echo '{"cmd": "add", "target": "google.com", "itv": 5}' | socat - udp:127.0.0.1:55432  | json_pp
+```
+
+And you can even remove it again:
+
+```
+echo '{"cmd": "remove", "name": "google.com"}' | socat - udp:127.0.0.1:55432  | json_pp
+```
+
+Note that when adding a target, you can pass in DNS names as well. meshping will then resolve these names and add all IP addresses it gets. The `remove` command will remove all those entries again if passed a `name` parameter. To remove only a single IP address, use:
+
+```
+echo '{"cmd": "remove", "addr": "8.8.8.8"}' | socat - udp:127.0.0.1:55432  | json_pp
+```
+
 ### Who do I talk to? ###
 
 * If you'd like to get in touch, send me an [email](mailto:i.am@svedr.in) or talk to me (Svedrin) on the Freenode IRC network.
