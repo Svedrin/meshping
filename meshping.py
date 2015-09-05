@@ -16,10 +16,6 @@ from time import sleep, time
 from ctrl import process_ctrl
 
 def main():
-    if not sys.argv[1:]:
-        print "Usage: meshping <target ...>"
-        return
-
     ctrl = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.SOL_UDP)
     ctrl.bind(("127.0.0.1", 55432))
 
