@@ -26,7 +26,10 @@ def process_ctrl(ctrl, targets):
         ctrl.sendto('{"status": "you suck"}', addr)
         return
 
-    if data["cmd"] == "list":
+    if data["cmd"] == "noop":
+        ctrl.sendto('{"status": "mkay"}', addr)
+
+    elif data["cmd"] == "list":
         ctrl.sendto(json.dumps(targets), addr)
         if data.get("reset", False):
             for tgt in targets.values():
