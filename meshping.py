@@ -9,6 +9,7 @@ import sys
 import socket
 import json
 
+from random import randint
 from ping import send_one_ping, receive_one_ping
 from time import sleep, time
 
@@ -30,11 +31,14 @@ def main():
     os.setuid(1000)
 
     targets = {}
-    idx = 1
 
     for target in ('192.168.1.1', '192.168.0.20', 'hive'):
         try:
             for info in socket.getaddrinfo(target, 0, socket.AF_INET, socket.SOCK_STREAM):
+                # try to avoid pid collisions
+                tgt_id = randint(0x8000 + 1, 0xFFFF)
+                while tgt_id in targets:
+                    tgt_id = randint(0x8000 + 1, 0xFFFF)
                 tgt = {
                     "addr": info[4][0],
                     "name": target,
@@ -42,13 +46,13 @@ def main():
                     "recv": 0,
                     "errs": 0,
                     "outd": 0,
-                    "id": (os.getpid() + idx) & 0xFFFF,
+                    "id":   tgt_id,
+                    "last": 0,
                     "avg": 0,
                     "min": 0,
                     "max": 0,
                 }
-                targets[tgt["id"]] = tgt
-                idx += 1
+                targets[tgt_id] = tgt
 
         except socket.gaierror, e:
             print "failed. (socket error: '%s')" % e[1]
