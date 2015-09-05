@@ -93,9 +93,9 @@ def main():
                 else:
                     target["errs"] += 1
 
-            print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
+            if seq:
+                print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
 
-            if seq > 1:
                 for targetinfo in targets.values():
                     avg = 0
                     if targetinfo["recv"]:
