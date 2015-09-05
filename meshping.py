@@ -35,7 +35,7 @@ def main():
     #os.setuid(os.getuid())
     os.setuid(1000)
 
-    targets = {}
+    targets = {"__startup__": time()}
 
     for target in sys.argv[1:]:
         try:
