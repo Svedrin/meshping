@@ -9,7 +9,7 @@ This tool is meant to be set up on various strategic points in a network, pingin
 * Control socket to easily query statistics / add hosts / remove hosts
 * Different ping intervals
 * Reports pings sent, replies received, errors received (i.e., "Host unreachable" messages), avg/min/max ping time
-* Hosts can be added/removed live without restarting the daemon
+* Hosts can be added/removed live without restarting the daemon (btw: [isc-dhcpd can do that for you](http://blog.svedr.in/posts/fun-with-dhcpd-hooks.html))
 * Sometime in the future, those strategic points will be able to form a cluster using [Corosync](http://corosync.github.io/corosync/) to ensure config consistency
 * Tightly integrated with [FluxMon](http://fluxmon.de) for monitoring and graphing 'n stuff
 
