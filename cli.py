@@ -48,7 +48,9 @@ def main():
         }), ("127.0.0.1", 55432) )
 
     reply, addr = ctrl.recvfrom(2**14)
-    print json.dumps(json.loads(reply), indent=4)
+
+    if not options.quiet:
+        print json.dumps(json.loads(reply), indent=4)
 
 
 if __name__ == '__main__':
