@@ -21,11 +21,11 @@ def process_ctrl(ctrl, targets):
     try:
         data = json.loads(pkt)
     except ValueError:
-        ctrl.sendto("you suck", addr)
+        ctrl.sendto('{"status": "you suck"}', addr)
         return
 
     if "cmd" not in data:
-        ctrl.sendto("you suck", addr)
+        ctrl.sendto('{"status": "you suck"}', addr)
         return
 
     if data["cmd"] == "list":
