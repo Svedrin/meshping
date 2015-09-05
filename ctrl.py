@@ -41,3 +41,50 @@ def process_ctrl(ctrl, targets):
                     "min":  0,
                     "max":  0,
                 })
+
+    elif data["cmd"] == "add":
+        if "target" not in data:
+            ctrl.sendto('{"status": "you suck"}', addr)
+            return
+
+        target = data["target"]
+        for info in socket.getaddrinfo(target, 0, socket.AF_INET, socket.SOCK_STREAM):
+            # try to avoid pid collisions
+            tgt_id = randint(0x8000 + 1, 0xFFFF)
+            while tgt_id in targets:
+                tgt_id = randint(0x8000 + 1, 0xFFFF)
+            tgt = {
+                "addr": info[4][0],
+                "name": target,
+                "sent": 0,
+                "recv": 0,
+                "errs": 0,
+                "outd": 0,
+                "id":   tgt_id,
+                "last": 0,
+                "avg":  0,
+                "min":  0,
+                "max":  0,
+                "itv":  data.get("itv", 1),
+                "due":  0
+            }
+            targets[tgt_id] = tgt
+        ctrl.sendto('{"status": "mkay"}', addr)
+
+    elif data["cmd"] == "remove":
+        if "name" not in data and "addr" not in data:
+            ctrl.sendto('{"status": "you suck"}', addr)
+            return
+
+        if "name" in data:
+            for key, tgt in targets.items():
+                if tgt["name"] == data["name"]:
+                    del targets[key]
+
+        if "addr" in data:
+            for key, tgt in targets.items():
+                if tgt["addr"] == data["addr"]:
+                    del targets[key]
+
+        ctrl.sendto('{"status": "mkay"}', addr)
+
