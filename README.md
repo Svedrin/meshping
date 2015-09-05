@@ -49,7 +49,8 @@ However, you can of course write your own tools that send control commands. Sett
 Adding a host is a breeze too:
 
 ```
-echo '{"cmd": "add", "target": "google.com", "itv": 5}' | socat - udp:127.0.0.1:55432  | json_pp
+echo '{"cmd": "add", "name": "google.com", "itv":  5}' | socat - udp:127.0.0.1:55432  | json_pp
+echo '{"cmd": "add", "addr": "8.8.8.8",    "itv": 30}' | socat - udp:127.0.0.1:55432  | json_pp
 ```
 
 And you can even remove it again:

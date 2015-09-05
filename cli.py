@@ -12,35 +12,39 @@ from select   import select
 def main():
     parser = OptionParser(usage="Usage: %prog [options] -- no options = list without reset")
 
-    parser.add_option("-q", "--quiet",    help="No output", default=False, action="store_true")
-    parser.add_option("-n", "--name",     help="remove target by name", default="")
-    parser.add_option("-d", "--delete",   help="remove target by address", default="")
-    parser.add_option("-a", "--add",      help="add target", default="")
-    parser.add_option("-i", "--interval", help="ping interval for new targets", type=int, default=1)
+    parser.add_option("-q", "--quiet",    help="No output",        default=False, action="store_true")
     parser.add_option("-r", "--reset",    help="Reset statistics", default=False, action="store_true")
+    parser.add_option("-d", "--delete",   help="remove target",    default=False, action="store_true")
+    parser.add_option("-a", "--add",      help="add target",       default=False, action="store_true")
+    parser.add_option("-t", "--name",     help="target name",      default="")
+    parser.add_option("-T", "--address",  help="target address",   default="")
+    parser.add_option("-i", "--interval", help="ping interval",    type=int, default=1)
 
     options, posargs = parser.parse_args()
 
     ctrl = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.SOL_UDP)
 
     if options.add:
-        ctrl.sendto( json.dumps({
+        opts = {
             "cmd":    "add",
-            "target": options.add,
             "itv":    options.interval,
-        }), ("127.0.0.1", 55432) )
+        }
+        if options.name:
+            opts["name"] = options.name
+        if options.address:
+            opts["addr"] = options.address
+        ctrl.sendto(json.dumps(opts), ("127.0.0.1", 55432) )
 
     elif options.delete:
-        ctrl.sendto( json.dumps({
+        opts = {
             "cmd":    "remove",
-            "addr":   options.delete,
-        }), ("127.0.0.1", 55432) )
-
-    elif options.name:
-        ctrl.sendto( json.dumps({
-            "cmd":    "remove",
-            "name":   options.name,
-        }), ("127.0.0.1", 55432) )
+            "itv":    options.interval,
+        }
+        if options.name:
+            opts["name"] = options.name
+        if options.address:
+            opts["addr"] = options.address
+        ctrl.sendto(json.dumps(opts), ("127.0.0.1", 55432) )
 
     else:
         ctrl.sendto( json.dumps({

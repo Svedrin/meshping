@@ -43,19 +43,20 @@ def process_ctrl(ctrl, targets):
                 })
 
     elif data["cmd"] == "add":
-        if "target" not in data:
+        if "name" not in data and "addr" not in data:
             ctrl.sendto('{"status": "you suck"}', addr)
             return
 
-        target = data["target"]
-        for info in socket.getaddrinfo(target, 0, socket.AF_INET, socket.SOCK_STREAM):
+        target_name = data.get("name", data.get("addr", ""))
+        target_addr = data.get("addr", data.get("name", ""))
+        for info in socket.getaddrinfo(target_addr, 0, socket.AF_INET, socket.SOCK_STREAM):
             # try to avoid pid collisions
             tgt_id = randint(0x8000 + 1, 0xFFFF)
             while tgt_id in targets:
                 tgt_id = randint(0x8000 + 1, 0xFFFF)
             tgt = {
                 "addr": info[4][0],
-                "name": target,
+                "name": target_name,
                 "sent": 0,
                 "recv": 0,
                 "errs": 0,
