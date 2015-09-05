@@ -61,22 +61,18 @@ def main():
     try:
         seq = 0
         while True:
-            outstanding_replies = 0
             next_ping = time() + 1
 
             for targetinfo in targets.values():
                 send_one_ping(icmpv4, targetinfo["addr"], targetinfo["id"], seq)
                 targetinfo["sent"] += 1
-                outstanding_replies += 1
 
-            while outstanding_replies and time() < next_ping:
+            while time() < next_ping:
                 response = receive_one_ping(icmpv4, 0.1)
 
                 if response["timeout"]:
                     # meh, retry
                     continue
-
-                outstanding_replies -= 1
 
                 if "id" not in response or response["id"] not in targets:
                     # ignore, retry
