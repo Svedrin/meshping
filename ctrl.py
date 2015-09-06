@@ -11,7 +11,7 @@ from random import randint
 from time import sleep, time
 
 def process_ctrl(ctrl, targets):
-    rdy_read, _, _ = select.select([ctrl], [], [], 0.1)
+    rdy_read, _, _ = select.select([ctrl], [], [], 0)
     if ctrl not in rdy_read:
         return # nothing to do
 
