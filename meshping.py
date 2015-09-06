@@ -58,7 +58,7 @@ def main():
                     "outd": 0,
                     "id":   tgt_id,
                     "last": 0,
-                    "avg":  0,
+                    "sum":  0,
                     "min":  0,
                     "max":  0,
                     "itv":  itv,
@@ -103,7 +103,7 @@ def main():
                 if response["success"]:
                     target["recv"] += 1
                     target["last"]  = response["delay"]
-                    target["avg"]  += response["delay"]
+                    target["sum"]  += response["delay"]
                     target["min"]   = min(target["min"], response["delay"])
                     target["max"]   = max(target["max"], response["delay"])
 
@@ -121,7 +121,7 @@ def main():
                         errs = targetinfo["errs"] / targetinfo["sent"] * 100
                     avg = 0
                     if targetinfo["recv"]:
-                        avg = targetinfo["avg"] / targetinfo["recv"] * 1000
+                        avg = targetinfo["sum"] / targetinfo["recv"] * 1000
                     outd = 0
                     if targetinfo["recv"] + targetinfo["errs"]:
                         outd = targetinfo["outd"] / (targetinfo["recv"] + targetinfo["errs"]) * 100

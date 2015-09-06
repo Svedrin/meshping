@@ -73,7 +73,7 @@ def main():
                     errs = targetinfo["errs"] / targetinfo["sent"] * 100
                 avg = 0
                 if targetinfo["recv"]:
-                    avg = targetinfo["avg"] / targetinfo["recv"] * 1000
+                    avg = targetinfo["sum"] / targetinfo["recv"] * 1000
                 outd = 0
                 if targetinfo["recv"] + targetinfo["errs"]:
                     outd = targetinfo["outd"] / (targetinfo["recv"] + targetinfo["errs"]) * 100
