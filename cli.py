@@ -60,7 +60,7 @@ def main():
             print json.dumps(json.loads(reply), indent=4)
 
         if not options.add and not options.delete:
-            print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
+            print >> sys.stderr, "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
 
             targets = json.loads(reply)
             for targetinfo in targets.values():
@@ -75,10 +75,10 @@ def main():
                 outd = 0
                 if targetinfo["recv"] + targetinfo["errs"]:
                     outd = targetinfo["outd"] / (targetinfo["recv"] + targetinfo["errs"]) * 100
-                print "%-25s %5d %5d %5d %5d %6.2f%% %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], targetinfo["errs"], targetinfo["outd"],
+                print >> sys.stderr, "%-25s %5d %5d %5d %5d %6.2f%% %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], targetinfo["errs"], targetinfo["outd"],
                                                     loss, errs, outd, avg, targetinfo["min"] * 1000, targetinfo["max"] * 1000, targetinfo["last"] * 1000)
-            print
-            print
+            print >> sys.stderr, ""
+            print >> sys.stderr, ""
 
     else:
         print "timeout, is meshping running?"
