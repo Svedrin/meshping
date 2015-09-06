@@ -21,6 +21,7 @@ def main():
     parser.add_option("-t", "--name",     help="target name",      default="")
     parser.add_option("-T", "--address",  help="target address",   default="")
     parser.add_option("-i", "--interval", help="ping interval",    type=int, default=1)
+    parser.add_option("-A", "--addscript",help="generate host add script for the currently configured hosts", default=False, action="store_true")
 
     options, posargs = parser.parse_args()
 
@@ -62,9 +63,15 @@ def main():
             print json.dumps(json.loads(reply), indent=4)
 
         if not options.add and not options.delete:
+            targets = json.loads(reply)
+
+            if options.addscript:
+                for targetinfo in targets.values():
+                    print >> sys.stderr, "%s -a -i %d -t %s -T %s" % (sys.argv[0], targetinfo["itv"], targetinfo["name"], targetinfo["addr"])
+                return
+
             print >> sys.stderr, "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
 
-            targets = json.loads(reply)
             for targetinfo in targets.values():
                 loss = 0
                 errs = 0
@@ -79,8 +86,6 @@ def main():
                     outd = targetinfo["outd"] / (targetinfo["recv"] + targetinfo["errs"]) * 100
                 print >> sys.stderr, "%-25s %5d %5d %5d %5d %6.2f%% %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], targetinfo["errs"], targetinfo["outd"],
                                                     loss, errs, outd, avg, targetinfo["min"] * 1000, targetinfo["max"] * 1000, targetinfo["last"] * 1000)
-            print >> sys.stderr, ""
-            print >> sys.stderr, ""
 
     else:
         print "timeout, is meshping running?"
