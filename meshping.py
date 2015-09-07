@@ -131,6 +131,8 @@ def main():
                 print
 
             seq += 1
+            if seq >= 2**16:
+                seq = 0
             if time() < next_ping:
                 sleep(next_ping - time())
 
