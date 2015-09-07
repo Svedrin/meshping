@@ -102,6 +102,9 @@ def main():
 
                 if response["success"]:
                     target["recv"] += 1
+                    if target["recv"] > target["sent"]:
+                        # can happen if sent is reset after a ping has been sent out, but before its answer arrives
+                        target["sent"] = target["recv"]
                     target["last"]  = response["delay"]
                     target["sum"]  += response["delay"]
                     target["min"]   = min(target["min"], response["delay"])
@@ -109,6 +112,9 @@ def main():
 
                 else:
                     target["errs"] += 1
+                    if target["errs"] > target["sent"]:
+                        # can happen if sent is reset after a ping has been sent out, but before its answer arrives
+                        target["sent"] = target["errs"]
 
             if seq:
                 print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
