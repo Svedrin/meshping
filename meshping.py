@@ -40,6 +40,7 @@ def main():
     os.setuid(1000)
 
     targets = {}
+    sent_at = {}
 
     for target in sys.argv[1:]:
         try:
@@ -83,13 +84,14 @@ def main():
             for targetinfo in targets.values():
                 if now >= targetinfo["due"]:
                     send_one_ping(icmpv4, targetinfo["addr"], targetinfo["id"], seq)
+                    sent_at[targetinfo["id"]] = time()
                     targetinfo["sent"] += 1
                     targetinfo["due"]   = now + targetinfo["itv"]
 
             while time() < next_ping:
                 process_ctrl(ctrl, targets)
 
-                response = receive_one_ping(icmpv4, 0.1)
+                response = receive_one_ping(icmpv4, 0.1, sent_at)
 
                 if response["timeout"]:
                     # meh, retry

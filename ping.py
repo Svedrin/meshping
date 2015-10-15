@@ -32,9 +32,16 @@
     Revision history
     ~~~~~~~~~~~~~~~~
 
+    October 15, 2015:
+    changes by Michael Ziegler:
+    - checksum() is slow on a fast system and takes f*cking AGES on a
+      raspberry. still we need the checksum, so add a lookup to a sent_at
+      dictionary that may or may not be filled by the caller with a
+      timestamp that records when send_one_ping returned.
+
     September 5, 2015:
     changes by Michael Ziegler:
-    - changed no no longer wait for a specific reply, but just return
+    - changed to no longer wait for a specific reply, but just return
       *any* reply received and let the matching be handled by the caller
     - changed to return a status object that indicates errors
     - added support for proper sequence numbers
@@ -122,7 +129,7 @@ def checksum(source_string):
     return answer
 
 
-def receive_one_ping(my_socket, timeout):
+def receive_one_ping(my_socket, timeout, sent_at={}):
     """
     receive the ping from the socket.
     """
@@ -152,7 +159,11 @@ def receive_one_ping(my_socket, timeout):
             bytesInDouble = struct.calcsize("d")
             if len(recPacket) < 28 + bytesInDouble:
                 return {"success": False, "timeout": False, "id": packetID, "seq": sequence, "type": type, "code": code, "from": addr[0]}
-            timeSent = struct.unpack("d", recPacket[28:28 + bytesInDouble])[0]
+            # see if sent_at contains a timestamp for us -- if not, take the one from the packet
+            if packetID in sent_at:
+                timeSent = sent_at[packetID]
+            else:
+                timeSent = struct.unpack("d", recPacket[28:28 + bytesInDouble])[0]
             return {"success": True, "timeout": False, "id": packetID, "seq": sequence, "delay": timeReceived - timeSent, "from": addr[0]}
 
         else:
