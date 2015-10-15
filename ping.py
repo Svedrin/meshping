@@ -151,6 +151,8 @@ def receive_one_ping(my_socket, timeout):
             # We recv'ed a reply
             bytesInDouble = struct.calcsize("d")
             timeSent = struct.unpack("d", recPacket[28:28 + bytesInDouble])[0]
+            if len(recPacket) < 28 + bytesInDouble:
+                return {"success": False, "timeout": False, "id": packetID, "seq": sequence, "type": type, "code": code, "from": addr[0]}
             return {"success": True, "timeout": False, "id": packetID, "seq": sequence, "delay": timeReceived - timeSent, "from": addr[0]}
 
         else:
@@ -160,9 +162,10 @@ def receive_one_ping(my_socket, timeout):
                 # request is included within the data section of this packet, so
                 # we try to retrieve its ID to see what failed.
                 icmpHeader = recPacket[28 + 20:28 + 28]
-                _, _, checksum, packetID, sequence = struct.unpack(
-                    "bbHHH", icmpHeader
-                )
+                if len(icmpHeader) == 8:
+                    _, _, checksum, packetID, sequence = struct.unpack(
+                        "bbHHH", icmpHeader
+                    )
             return {"success": False, "timeout": False, "id": packetID, "seq": sequence, "type": type, "code": code, "from": addr[0]}
 
         timeLeft = timeLeft - howLongInSelect
