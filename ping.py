@@ -150,9 +150,9 @@ def receive_one_ping(my_socket, timeout):
         elif type == 0:
             # We recv'ed a reply
             bytesInDouble = struct.calcsize("d")
-            timeSent = struct.unpack("d", recPacket[28:28 + bytesInDouble])[0]
             if len(recPacket) < 28 + bytesInDouble:
                 return {"success": False, "timeout": False, "id": packetID, "seq": sequence, "type": type, "code": code, "from": addr[0]}
+            timeSent = struct.unpack("d", recPacket[28:28 + bytesInDouble])[0]
             return {"success": True, "timeout": False, "id": packetID, "seq": sequence, "delay": timeReceived - timeSent, "from": addr[0]}
 
         else:
