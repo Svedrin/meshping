@@ -36,8 +36,7 @@ def main():
             raise socket.error(msg)
         raise # raise the original error
 
-    #os.setuid(os.getuid())
-    os.setuid(1000)
+    os.setuid(65534)
 
     targets = {}
     sent_at = {}
