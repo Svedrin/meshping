@@ -1,0 +1,11 @@
+[Unit]
+Description=meshping
+After=network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python -- /opt/meshping/meshping.py
+PIDFile=/run/meshping.pid
+
+[Install]
+WantedBy=multi-user.target
