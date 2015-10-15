@@ -6,10 +6,10 @@ from __future__ import division
 
 import sys
 import json
+import struct
 import socket
 
 from optparse import OptionParser
-from operator import itemgetter
 from select   import select
 
 def main():
@@ -73,7 +73,10 @@ def main():
 
             print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
 
-            for targetinfo in sorted(targets.values(), key=itemgetter('addr')) :
+            def ip_as_int(tgt):
+                return struct.unpack("!I", socket.inet_aton( tgt["addr"] ))[0]
+
+            for targetinfo in sorted(targets.values(), key=ip_as_int):
                 loss = 0
                 errs = 0
                 if targetinfo["sent"]:
