@@ -116,26 +116,6 @@ def main():
                         # can happen if sent is reset after a ping has been sent out, but before its answer arrives
                         target["sent"] = target["errs"]
 
-            if seq:
-                print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
-
-                for targetinfo in targets.values():
-                    loss = 0
-                    errs = 0
-                    if targetinfo["sent"]:
-                        loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
-                        errs = targetinfo["errs"] / targetinfo["sent"] * 100
-                    avg = 0
-                    if targetinfo["recv"]:
-                        avg = targetinfo["sum"] / targetinfo["recv"] * 1000
-                    outd = 0
-                    if targetinfo["recv"] + targetinfo["errs"]:
-                        outd = targetinfo["outd"] / (targetinfo["recv"] + targetinfo["errs"]) * 100
-                    print "%-25s %5d %5d %5d %5d %6.2f%% %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], targetinfo["errs"], targetinfo["outd"],
-                                                        loss, errs, outd, avg, targetinfo["min"] * 1000, targetinfo["max"] * 1000, targetinfo["last"] * 1000)
-                print
-                print
-
             seq += 1
             if seq >= 2**16:
                 seq = 0
