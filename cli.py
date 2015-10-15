@@ -20,7 +20,7 @@ def main():
     parser.add_option("-a", "--add",      help="add target",       default=False, action="store_true")
     parser.add_option("-t", "--name",     help="target name",      default="")
     parser.add_option("-T", "--address",  help="target address",   default="")
-    parser.add_option("-i", "--interval", help="ping interval",    type=int, default=1)
+    parser.add_option("-i", "--interval", help="ping interval",    type=int, default=30)
     parser.add_option("-A", "--addscript",help="generate host add script for the currently configured hosts", default=False, action="store_true")
 
     options, posargs = parser.parse_args()
