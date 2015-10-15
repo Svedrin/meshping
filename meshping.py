@@ -112,8 +112,12 @@ def main():
                         target["sent"] = target["recv"]
                     target["last"]  = response["delay"]
                     target["sum"]  += response["delay"]
-                    target["min"]   = min(target["min"], response["delay"])
                     target["max"]   = max(target["max"], response["delay"])
+
+                    if target["min"] == 0:
+                        target["min"] = response["delay"]
+                    else:
+                        target["min"] = min(target["min"], response["delay"])
 
                 else:
                     target["errs"] += 1
