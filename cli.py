@@ -14,7 +14,7 @@ from select   import select
 def main():
     parser = OptionParser(usage="Usage: %prog [options] -- no options = list without reset")
 
-    parser.add_option("-q", "--quiet",    help="No output",        default=False, action="store_true")
+    parser.add_option("-j", "--json",     help="Output the reply", default=False, action="store_true")
     parser.add_option("-r", "--reset",    help="Reset statistics", default=False, action="store_true")
     parser.add_option("-d", "--delete",   help="remove target",    default=False, action="store_true")
     parser.add_option("-a", "--add",      help="add target",       default=False, action="store_true")
@@ -59,7 +59,7 @@ def main():
     if ctrl in rdy_read:
         reply, addr = ctrl.recvfrom(2**14)
 
-        if not options.quiet:
+        if options.json:
             print json.dumps(json.loads(reply), indent=4)
 
         if not options.add and not options.delete:
@@ -67,10 +67,10 @@ def main():
 
             if options.addscript:
                 for targetinfo in targets.values():
-                    print >> sys.stderr, "%s -a -i %d -t %s -T %s" % (sys.argv[0], targetinfo["itv"], targetinfo["name"], targetinfo["addr"])
+                    print "%s -a -i %d -t %s -T %s" % (sys.argv[0], targetinfo["itv"], targetinfo["name"], targetinfo["addr"])
                 return
 
-            print >> sys.stderr, "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
+            print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
 
             for targetinfo in targets.values():
                 loss = 0
@@ -84,7 +84,7 @@ def main():
                 outd = 0
                 if targetinfo["recv"] + targetinfo["errs"]:
                     outd = targetinfo["outd"] / (targetinfo["recv"] + targetinfo["errs"]) * 100
-                print >> sys.stderr, "%-25s %5d %5d %5d %5d %6.2f%% %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], targetinfo["errs"], targetinfo["outd"],
+                print "%-25s %5d %5d %5d %5d %6.2f%% %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], targetinfo["errs"], targetinfo["outd"],
                                                     loss, errs, outd, avg, targetinfo["min"] * 1000, targetinfo["max"] * 1000, targetinfo["last"] * 1000)
 
     else:
