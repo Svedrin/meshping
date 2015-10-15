@@ -9,6 +9,7 @@ import json
 import socket
 
 from optparse import OptionParser
+from operator import itemgetter
 from select   import select
 
 def main():
@@ -72,7 +73,7 @@ def main():
 
             print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
 
-            for targetinfo in targets.values():
+            for targetinfo in sorted(targets.values(), key=itemgetter('addr')) :
                 loss = 0
                 errs = 0
                 if targetinfo["sent"]:
