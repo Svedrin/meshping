@@ -7,7 +7,11 @@ from __future__ import division
 import os
 import sys
 import socket
-import json
+
+try:
+    import cjson as json
+except ImportError:
+    import json
 
 from random import randint
 from ping import send_one_ping, receive_one_ping
