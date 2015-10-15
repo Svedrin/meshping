@@ -59,10 +59,10 @@ def main():
     if ctrl in rdy_read:
         reply, addr = ctrl.recvfrom(2**14)
 
-        if options.json:
+        if options.json or options.add or options.delete:
             print json.dumps(json.loads(reply), indent=4)
 
-        if not options.add and not options.delete:
+        else:
             targets = json.loads(reply)
 
             if options.addscript:
