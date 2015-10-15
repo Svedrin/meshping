@@ -52,7 +52,14 @@ def process_ctrl(ctrl, targets):
 
         target_name = data.get("name", data.get("addr", ""))
         target_addr = data.get("addr", data.get("name", ""))
-        for info in socket.getaddrinfo(target_addr, 0, socket.AF_INET, socket.SOCK_STREAM):
+
+        try:
+            addrs = socket.getaddrinfo(target_addr, 0, socket.AF_INET, socket.SOCK_STREAM)
+        except socket.gaierror, err:
+            ctrl.sendto('{"status": "error", "errmessage": "' + err.args[1] + '"}', addr)
+            return
+
+        for info in addrs:
             # dubs. check'em.
             for key, tgt in targets.items():
                 if tgt["addr"] == info[4][0]:
