@@ -19,15 +19,15 @@ def process_ctrl(ctrl, targets):
     try:
         data = json.loads(pkt)
     except ValueError:
-        ctrl.sendto('{"status": "you suck"}', addr)
+        ctrl.sendto('{"status": "invalid json"}', addr)
         return
 
     if "cmd" not in data:
-        ctrl.sendto('{"status": "you suck"}', addr)
+        ctrl.sendto('{"status": "need cmd variable"}', addr)
         return
 
     if data["cmd"] == "noop":
-        ctrl.sendto('{"status": "mkay"}', addr)
+        ctrl.sendto('{"status": "ok"}', addr)
 
     elif data["cmd"] == "list":
         ctrl.sendto(json.dumps(targets), addr)
@@ -47,7 +47,7 @@ def process_ctrl(ctrl, targets):
 
     elif data["cmd"] == "add":
         if "name" not in data and "addr" not in data:
-            ctrl.sendto('{"status": "you suck"}', addr)
+            ctrl.sendto('{"status": "need name or addr variable"}', addr)
             return
 
         target_name = data.get("name", data.get("addr", ""))
@@ -85,11 +85,11 @@ def process_ctrl(ctrl, targets):
                     "due":  0
                 }
                 targets[tgt_id] = tgt
-        ctrl.sendto('{"status": "mkay"}', addr)
+        ctrl.sendto('{"status": "ok"}', addr)
 
     elif data["cmd"] == "remove":
         if "name" not in data and "addr" not in data:
-            ctrl.sendto('{"status": "you suck"}', addr)
+            ctrl.sendto('{"status": "need name or addr variable"}', addr)
             return
 
         if "name" in data:
@@ -102,5 +102,5 @@ def process_ctrl(ctrl, targets):
                 if tgt["addr"] == data["addr"]:
                     del targets[key]
 
-        ctrl.sendto('{"status": "mkay"}', addr)
+        ctrl.sendto('{"status": "ok"}', addr)
 
