@@ -68,7 +68,7 @@ def main():
 
             if options.addscript:
                 for targetinfo in targets.values():
-                    print "%s -a -i %d -t %s -T %s" % (sys.argv[0], targetinfo["itv"], targetinfo["name"], targetinfo["addr"])
+                    print "%s -a -t %s -T %s" % (sys.argv[0], targetinfo["name"], targetinfo["addr"])
                 return
 
             print "Target                     Sent  Recv   Succ    Loss      Avg       Min       Max      Last"
