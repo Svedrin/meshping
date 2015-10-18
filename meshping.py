@@ -23,12 +23,13 @@ from Queue import Queue, Empty
 from ctrl import process_ctrl
 
 class MeshPing(object):
-    def __init__(self, interval=30):
+    def __init__(self, interval=30, timeout=1):
         self.addq = Queue()
         self.remq = Queue()
         self.rstq = Queue()
         self.targets = {}
         self.interval = interval
+        self.timeout  = timeout
 
         self.pingdaemon = Thread(target=self.ping_daemon_runner)
         self.pingdaemon.daemon = True
@@ -65,6 +66,7 @@ class MeshPing(object):
 
     def ping_daemon_runner(self):
         pingobj = PingObj()
+        pingobj.set_timeout(self.timeout)
 
         next_ping = time() + 0.1
 
@@ -142,11 +144,14 @@ def main():
 
     parser = OptionParser("Usage: %prog [options] <target ...>")
     parser.add_option(
-        "-i", "--interval", help="Interval in which pings are sent", type=int, default=30
+        "-i", "--interval", help="Interval in which pings are sent [30s]", type=int, default=30
+    )
+    parser.add_option(
+        "-t", "--timeout", help="Ping timeout [5s]", type=int, default=5
     )
     options, posargs = parser.parse_args()
 
-    mp = MeshPing(options.interval)
+    mp = MeshPing(options.interval, options.timeout)
 
     for target in posargs:
         mp.add_host(target, target)
