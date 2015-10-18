@@ -42,11 +42,11 @@ class MeshPing(object):
     def add_host(self, name, addr):
         for info in socket.getaddrinfo(addr, 0, 0, socket.SOCK_STREAM):
             if info[4][0] not in self.targets:
-                self.addq.put((name, info[4][0]))
+                self.addq.put((name, info[4][0], info[0]))
 
     def remove_host(self, name, addr):
         for info in socket.getaddrinfo(addr, 0, 0, socket.SOCK_STREAM):
-            self.remq.put((name, info[4][0]))
+            self.remq.put((name, info[4][0], info[0]))
 
     def reset_stats(self):
         self.rstq.put(True)
@@ -73,11 +73,12 @@ class MeshPing(object):
                 # Process Host Add/Remove queues
                 try:
                     while True:
-                        name, addr = self.addq.get(timeout=0.1)
+                        name, addr, afam = self.addq.get(timeout=0.1)
                         pingobj.add_host(addr)
                         self.targets[addr] = {
                             "name": name,
-                            "addr": addr
+                            "addr": addr,
+                            "af":   afam
                         }
                         self.reset_stats_for_target(addr)
                 except Empty:
@@ -85,7 +86,7 @@ class MeshPing(object):
 
                 try:
                     while True:
-                        name, addr = self.remq.get(timeout=0.1)
+                        name, addr, afam = self.remq.get(timeout=0.1)
                         pingobj.remove_host(addr)
                         if addr in self.targets:
                             del self.targets[addr]
@@ -108,7 +109,6 @@ class MeshPing(object):
             for hostinfo in pingobj.get_hosts():
                 target = self.targets[hostinfo["addr"]]
 
-                target["af"] = hostinfo["addrfam"]
                 target["sent"] += 1
 
                 if hostinfo["latency"] != -1:
