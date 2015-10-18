@@ -71,7 +71,7 @@ def main():
                     print "%s -a -t %s -T %s" % (sys.argv[0], targetinfo["name"], targetinfo["addr"])
                 return
 
-            print "Target                     Sent  Recv   Succ    Loss      Avg       Min       Max      Last"
+            print "Target                     Sent  Recv   Succ    Loss      Min       Avg       Max      Last"
 
             def ip_as_int(tgt):
                 return struct.unpack("!I", socket.inet_aton( tgt["addr"] ))[0]
@@ -87,7 +87,7 @@ def main():
                 outd = 0
                 print "%-25s %5d %5d %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (
                     targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], 100 - loss, loss,
-                    avg, targetinfo["min"], targetinfo["max"], targetinfo["last"])
+                    targetinfo["min"], avg, targetinfo["max"], targetinfo["last"])
 
     else:
         print "timeout, is meshping running?"
