@@ -21,7 +21,7 @@ cdef extern from "oping.h":
 
     int ping_setopt (pingobj_t *obj, int option, void *value)
 
-    int ping_send (pingobj_t *obj)
+    int ping_send (pingobj_t *obj) nogil
 
     int ping_host_add (pingobj_t *obj, const char *host)
     int ping_host_remove (pingobj_t *obj, const char *host)
@@ -82,7 +82,9 @@ cdef class PingObj:
             ping_destroy(self._c_pingobj)
 
     def send(self):
-        ret = ping_send(self._c_pingobj)
+        cdef int ret
+        with nogil:
+            ret = ping_send(self._c_pingobj)
         if ret < 0:
             raise PingError(ping_get_error(self._c_pingobj))
         return ret
