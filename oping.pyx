@@ -87,13 +87,13 @@ cdef class PingObj:
             raise PingError(ping_get_error(self._c_pingobj))
         return ret
 
-    def host_add(self, char *host):
+    def add_host(self, char *host):
         if len(host) > 50:
             raise ValueError("name is too long (max 50 chars)")
         if ping_host_add(self._c_pingobj, host) < 0:
             raise PingError(ping_get_error(self._c_pingobj))
 
-    def host_remove(self, char *host):
+    def remove_host(self, char *host):
         if ping_host_remove(self._c_pingobj, host) < 0:
             raise PingError(ping_get_error(self._c_pingobj))
 
