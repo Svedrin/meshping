@@ -74,9 +74,15 @@ def main():
             print "Target                     Sent  Recv   Succ    Loss      Min       Avg       Max      Last"
 
             def ip_as_int(tgt):
-                return struct.unpack("!I", socket.inet_aton( tgt["addr"] ))[0]
+                if tgt["af"] == socket.AF_INET:
+                    return struct.unpack("!I", socket.inet_aton( tgt["addr"] ))[0]
+                elif tgt["af"] == socket.AF_INET6:
+                    ret = 0
+                    for intpart in struct.unpack("!IIII", socket.inet_pton(socket.AF_INET6, tgt["addr"] )):
+                        ret = ret<<32 | intpart
+                    return ret
 
-            for targetinfo in targets.values(): #sorted(targets.values(), key=ip_as_int):
+            for targetinfo in sorted(targets.values(), key=ip_as_int):
                 loss = 0
                 errs = 0
                 if targetinfo["sent"]:
