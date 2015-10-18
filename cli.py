@@ -56,7 +56,7 @@ def main():
             "reset":  options.reset,
         }), ("127.0.0.1", 55432) )
 
-    rdy_read, _, _ = select([ctrl], [], [], 0.5)
+    rdy_read, _, _ = select([ctrl], [], [], 5)
     if ctrl in rdy_read:
         reply, addr = ctrl.recvfrom(2**14)
 
@@ -71,25 +71,23 @@ def main():
                     print "%s -a -i %d -t %s -T %s" % (sys.argv[0], targetinfo["itv"], targetinfo["name"], targetinfo["addr"])
                 return
 
-            print "Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last"
+            print "Target                     Sent  Recv   Succ    Loss      Avg       Min       Max      Last"
 
             def ip_as_int(tgt):
                 return struct.unpack("!I", socket.inet_aton( tgt["addr"] ))[0]
 
-            for targetinfo in sorted(targets.values(), key=ip_as_int):
+            for targetinfo in targets.values(): #sorted(targets.values(), key=ip_as_int):
                 loss = 0
                 errs = 0
                 if targetinfo["sent"]:
                     loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
-                    errs = targetinfo["errs"] / targetinfo["sent"] * 100
                 avg = 0
                 if targetinfo["recv"]:
-                    avg = targetinfo["sum"] / targetinfo["recv"] * 1000
+                    avg = targetinfo["sum"] / targetinfo["recv"]
                 outd = 0
-                if targetinfo["recv"] + targetinfo["errs"]:
-                    outd = targetinfo["outd"] / (targetinfo["recv"] + targetinfo["errs"]) * 100
-                print "%-25s %5d %5d %5d %5d %6.2f%% %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], targetinfo["errs"], targetinfo["outd"],
-                                                    loss, errs, outd, avg, targetinfo["min"] * 1000, targetinfo["max"] * 1000, targetinfo["last"] * 1000)
+                print "%-25s %5d %5d %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (
+                    targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], 100 - loss, loss,
+                    avg, targetinfo["min"], targetinfo["max"], targetinfo["last"])
 
     else:
         print "timeout, is meshping running?"

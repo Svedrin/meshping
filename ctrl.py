@@ -10,7 +10,7 @@ import json
 from random import randint
 from time import sleep, time
 
-def process_ctrl(ctrl, targets):
+def process_ctrl(ctrl, targets, pingobj):
     rdy_read, _, _ = select.select([ctrl], [], [], 0)
     if ctrl not in rdy_read:
         return # nothing to do
@@ -36,13 +36,11 @@ def process_ctrl(ctrl, targets):
                 tgt.update({
                     "sent": 0,
                     "recv": 0,
-                    "errs": 0,
-                    "outd": 0,
+                    "lost": 0,
                     "last": 0,
                     "sum":  0,
                     "min":  0,
                     "max":  0,
-                    "due":  0,
                 })
 
     elif data["cmd"] == "add":
@@ -54,37 +52,14 @@ def process_ctrl(ctrl, targets):
         target_addr = data.get("addr", data.get("name", ""))
 
         try:
-            addrs = socket.getaddrinfo(target_addr, 0, socket.AF_INET, socket.SOCK_STREAM)
+            addrs = socket.getaddrinfo(target_addr, 0, 0, socket.SOCK_STREAM)
         except socket.gaierror, err:
             ctrl.sendto('{"status": "error", "errmessage": "' + err.args[1] + '"}', addr)
             return
 
         for info in addrs:
-            # dubs. check'em.
-            for key, tgt in targets.items():
-                if tgt["addr"] == info[4][0]:
-                    break
-            else:
-                # try to avoid pid collisions
-                tgt_id = randint(0x8000 + 1, 0xFFFF)
-                while tgt_id in targets:
-                    tgt_id = randint(0x8000 + 1, 0xFFFF)
-                tgt = {
-                    "addr": info[4][0],
-                    "name": target_name,
-                    "sent": 0,
-                    "recv": 0,
-                    "errs": 0,
-                    "outd": 0,
-                    "id":   tgt_id,
-                    "last": 0,
-                    "sum":  0,
-                    "min":  0,
-                    "max":  0,
-                    "itv":  data.get("itv", 1),
-                    "due":  0
-                }
-                targets[tgt_id] = tgt
+            pingobj.add_host(info[4][0])
+
         ctrl.sendto('{"status": "ok"}', addr)
 
     elif data["cmd"] == "remove":
@@ -92,15 +67,19 @@ def process_ctrl(ctrl, targets):
             ctrl.sendto('{"status": "need name or addr variable"}', addr)
             return
 
-        if "name" in data:
-            for key, tgt in targets.items():
-                if tgt["name"] == data["name"]:
-                    del targets[key]
+        target_name = data.get("name", data.get("addr", ""))
+        target_addr = data.get("addr", data.get("name", ""))
 
-        if "addr" in data:
-            for key, tgt in targets.items():
-                if tgt["addr"] == data["addr"]:
-                    del targets[key]
+        try:
+            addrs = socket.getaddrinfo(target_addr, 0, 0, socket.SOCK_STREAM)
+        except socket.gaierror, err:
+            ctrl.sendto('{"status": "error", "errmessage": "' + err.args[1] + '"}', addr)
+            return
+
+        for info in addrs:
+            pingobj.remove_host(info[4][0])
+            if info[4][0] in targets:
+                del targets[info[4][0]]
 
         ctrl.sendto('{"status": "ok"}', addr)
 
