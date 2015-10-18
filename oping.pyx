@@ -104,6 +104,7 @@ cdef class PingObj:
 
         cdef char     hostname[51]
         cdef char     hostaddr[40]
+        cdef int      family
         cdef double   latency
         cdef uint32_t dropped
         cdef uint32_t seqnr
@@ -124,6 +125,9 @@ cdef class PingObj:
             buflen = sizeof(hostaddr) - 1
             ping_iterator_get_info(iter, PING_INFO_ADDRESS,  &hostaddr, &buflen)
             hostaddr[buflen] = 0
+
+            buflen = sizeof(family)
+            ping_iterator_get_info(iter, PING_INFO_FAMILY,   &family,  &buflen)
 
             buflen = sizeof(latency)
             ping_iterator_get_info(iter, PING_INFO_LATENCY,  &latency,  &buflen)
@@ -146,6 +150,7 @@ cdef class PingObj:
             hosts.append({
                 "name":    hostname,
                 "addr":    hostaddr,
+                "addrfam": family,
                 "latency": latency,
                 "dropped": dropped,
                 "seqnr":   seqnr,

@@ -108,6 +108,7 @@ class MeshPing(object):
             for hostinfo in pingobj.get_hosts():
                 target = self.targets[hostinfo["addr"]]
 
+                target["af"] = hostinfo["addrfam"]
                 target["sent"] += 1
 
                 if hostinfo["latency"] != -1:
