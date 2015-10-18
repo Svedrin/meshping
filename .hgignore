@@ -3,3 +3,7 @@ syntax:glob
 python-ping/
 
 *.pyc
+
+oping.c
+oping.so
+build/
