@@ -5,6 +5,7 @@
 from __future__ import division
 
 import os
+import os.path
 import sys
 import socket
 
@@ -23,16 +24,19 @@ from Queue import Queue, Empty
 from ctrl import process_ctrl
 
 class MeshPing(object):
-    def __init__(self, interval=30, timeout=1):
+    def __init__(self, interval=30, timeout=1, logdir=None):
         self.addq = Queue()
         self.remq = Queue()
         self.rstq = Queue()
         self.targets = {}
         self.interval = interval
         self.timeout  = timeout
+        self.logdir   = logdir
 
         self.pingdaemon = Thread(target=self.ping_daemon_runner)
         self.pingdaemon.daemon = True
+
+        self.logfd = {}
 
     def start(self):
         self.pingdaemon.start()
@@ -127,6 +131,12 @@ class MeshPing(object):
                     else:
                         target["min"] = min(target["min"], target["last"])
 
+                    if self.logdir:
+                        if hostinfo["addr"] not in self.logfd:
+                            self.logfd[hostinfo["addr"]] = open(os.path.join(self.logdir, hostinfo["addr"] + ".txt"), mode="a", buffering=False)
+
+                        print >> self.logfd[hostinfo["addr"]], target["last"]
+
                 else:
                     target["lost"] += 1
                     if target["lost"] > target["sent"]:
@@ -147,11 +157,17 @@ def main():
         "-i", "--interval", help="Interval in which pings are sent [30s]", type=int, default=30
     )
     parser.add_option(
-        "-t", "--timeout", help="Ping timeout [5s]", type=int, default=5
+        "-t", "--timeout",  help="Ping timeout [5s]", type=int, default=5
+    )
+    parser.add_option(
+        "-l", "--logdir",   help="Log measurements to <addr>.txt files in this directory."
     )
     options, posargs = parser.parse_args()
 
-    mp = MeshPing(options.interval, options.timeout)
+    if options.logdir and not os.path.exists(os.path.abspath(options.logdir)):
+        os.makedirs(os.path.abspath(options.logdir))
+
+    mp = MeshPing(options.interval, options.timeout, os.path.abspath(options.logdir))
 
     for target in posargs:
         mp.add_host(target, target)
