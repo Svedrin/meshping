@@ -164,10 +164,12 @@ def main():
     )
     options, posargs = parser.parse_args()
 
-    if options.logdir and not os.path.exists(os.path.abspath(options.logdir)):
-        os.makedirs(os.path.abspath(options.logdir))
+    if options.logdir:
+        options.logdir = os.path.abspath(options.logdir)
+        if not os.path.exists(options.logdir):
+            os.makedirs(options.logdir)
 
-    mp = MeshPing(options.interval, options.timeout, os.path.abspath(options.logdir))
+    mp = MeshPing(options.interval, options.timeout, options.logdir)
 
     for target in posargs:
         mp.add_host(target, target)
