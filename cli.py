@@ -82,6 +82,9 @@ def main():
                 print >> sys.stderr, histogram["status"]
                 return 1
 
+            # json sucks and converts dict keys to strings
+            histogram = dict([(int(x), y) for (x, y) in histogram.items()])
+
             # Let's try a modality detection
             # http://www.brendangregg.com/FrequencyTrails/modes.html
             last    = None
@@ -89,7 +92,6 @@ def main():
             maxnum  = None
 
             for bktval, count in sorted(histogram.items(), key=itemgetter(0)):
-                bktval = int(bktval)
                 print "%7.2f - %7.2f -> %5d %s" % ( base ** (bktval / 10.), base ** ((bktval + 1) / 10.), count, (u"■".encode("utf-8")) * count )
                 if last is not None:
                     mvalue += abs(count - last)
