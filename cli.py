@@ -16,15 +16,15 @@ from select   import select
 def main():
     parser = OptionParser(usage="Usage: %prog [options] -- no options = list without reset")
 
-    parser.add_option("-j", "--json",     help="Output the reply", default=False, action="store_true")
-    parser.add_option("-r", "--reset",    help="Reset statistics", default=False, action="store_true")
-    parser.add_option("-d", "--delete",   help="remove target",    default=False, action="store_true")
-    parser.add_option("-a", "--add",      help="add target",       default=False, action="store_true")
-    parser.add_option("-H", "--histogram",help="show histogram",   default=False, action="store_true")
-    parser.add_option("-t", "--name",     help="target name",      default="")
-    parser.add_option("-T", "--address",  help="target address",   default="")
-    parser.add_option("-i", "--interval", help="ping interval",    type=int, default=30)
-    parser.add_option("-A", "--addscript",help="generate host add script for the currently configured hosts", default=False, action="store_true")
+    parser.add_option("-j", "--json",      help="Output the reply", default=False, action="store_true")
+    parser.add_option("-r", "--reset",     help="Reset statistics", default=False, action="store_true")
+    parser.add_option("-d", "--delete",    help="remove target",    default=False, action="store_true")
+    parser.add_option("-a", "--add",       help="add target",       default=False, action="store_true")
+    parser.add_option("-H", "--histogram", help="show histogram",   default=False, action="store_true")
+    parser.add_option("-t", "--name",      help="target name",      default="")
+    parser.add_option("-T", "--address",   help="target address",   default="")
+    parser.add_option("-i", "--interval",  help="ping interval",    type=int, default=30)
+    parser.add_option("-A", "--addscript", help="generate host add script for the currently configured hosts", default=False, action="store_true")
 
     options, posargs = parser.parse_args()
 
