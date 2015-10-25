@@ -29,6 +29,7 @@ class MeshPing(object):
         self.addq = Queue()
         self.remq = Queue()
         self.rstq = Queue()
+        self.rshq = Queue()
         self.targets = {}
         self.histograms = {}
         self.interval = interval
@@ -58,6 +59,9 @@ class MeshPing(object):
     def reset_stats(self):
         self.rstq.put(True)
 
+    def reset_histogram_for_target(self, addr):
+        self.rshq.put(addr)
+
     def reset_stats_for_target(self, addr):
         self.targets[addr].update({
             "sent": 0,
@@ -68,7 +72,6 @@ class MeshPing(object):
             "min":  0,
             "max":  0
         })
-        self.histograms[addr] = {}
 
 
     def ping_daemon_runner(self):
@@ -111,6 +114,14 @@ class MeshPing(object):
                 else:
                     for addr in self.targets:
                         self.reset_stats_for_target(addr)
+
+                try:
+                    addr = self.rshq.get(timeout=0.1)
+                except Empty:
+                    pass
+                else:
+                    if addr in self.histograms:
+                        self.histograms[addr] = {}
 
             now = time()
             next_ping = now + self.interval

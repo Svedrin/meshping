@@ -40,7 +40,7 @@ def process_ctrl(ctrl, mp):
             return
         ctrl.sendto(json.dumps(mp.histograms.get(data["addr"], {})), addr)
         if data.get("reset", False):
-            mp.reset_stats()
+            mp.reset_histogram_for_target(data["addr"])
 
     elif data["cmd"] == "add":
         if "name" not in data and "addr" not in data:
