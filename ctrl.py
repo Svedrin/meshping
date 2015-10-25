@@ -38,7 +38,7 @@ def process_ctrl(ctrl, mp):
         if "addr" not in data:
             ctrl.sendto('{"status": "need addr variable"}', addr)
             return
-        ctrl.sendto(json.dumps(mp.histograms[data["addr"]]), addr)
+        ctrl.sendto(json.dumps(mp.histograms.get(data["addr"], {})), addr)
         if data.get("reset", False):
             mp.reset_stats()
 
