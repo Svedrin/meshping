@@ -86,7 +86,7 @@ def main():
             # http://www.brendangregg.com/FrequencyTrails/modes.html
             last    = None
             mvalue  = 0
-            maxnum  = 0
+            maxnum  = None
 
             for bktval, count in sorted(histogram.items(), key=itemgetter(0)):
                 bktval = int(bktval)
@@ -96,9 +96,9 @@ def main():
                     maxnum  = max(maxnum, count)
                 last = count
 
-            mvalue /= maxnum
-
-            print "%d buckets, mvalue=%.2f (probably %s multimodal)" % (len(histogram), mvalue, "is" if mvalue > 2.4 else "not")
+            if maxnum is not None:
+                mvalue /= maxnum
+                print "%d buckets, mvalue=%.2f (probably %s multimodal)" % (len(histogram), mvalue, "is" if mvalue > 2.4 else "not")
 
         else:
             targets = json.loads(reply)
