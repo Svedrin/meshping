@@ -10,10 +10,7 @@ import sys
 import math
 import socket
 
-try:
-    import cjson as json
-except ImportError:
-    import json
+import json
 
 from threading import Thread
 from random import randint
