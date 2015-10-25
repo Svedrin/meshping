@@ -92,7 +92,10 @@ def main():
     draw = ImageDraw.Draw(im)
     draw.rectangle((graph_x, 0, graph_x + width - 1, height - 1), outline=0x333333)
 
-    font = ImageFont.truetype("DejaVuSansMono.ttf", 10)
+    try:
+        font = ImageFont.truetype("DejaVuSansMono.ttf", 10)
+    except IOError:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 10)
 
     # Y axis ticks and annotations
     for hidx in range(hmin, hmax, 5):
