@@ -76,6 +76,7 @@ class MeshPing(object):
         pingobj.set_timeout(self.timeout)
 
         next_ping = time() + 0.1
+        next_dump = time() + 600
 
         while True:
             while time() < next_ping:
@@ -144,16 +145,17 @@ class MeshPing(object):
                     else:
                         target["min"] = min(target["min"], target["last"])
 
-                    if self.logdir:
-                        if hostinfo["addr"] not in self.logfd:
-                            self.logfd[hostinfo["addr"]] = open(os.path.join(self.logdir, hostinfo["addr"] + ".txt"), mode="a", buffering=False)
-
-                        print >> self.logfd[hostinfo["addr"]], target["last"]
-
                     histogram  = self.histograms.setdefault(hostinfo["addr"], {})
                     histbucket = int(math.log(hostinfo["latency"], 2) * 10)
                     histogram.setdefault(histbucket, 0)
                     histogram[histbucket] += 1
+
+                    if self.logdir and time() >= next_dump:
+                        if hostinfo["addr"] not in self.logfd:
+                            self.logfd[hostinfo["addr"]] = open(os.path.join(self.logdir, hostinfo["addr"] + ".txt"), mode="a", buffering=False)
+
+                        print >> self.logfd[hostinfo["addr"]], "%10d %s" % (time(), json.dumps(histogram))
+                        self.histograms[hostinfo["addr"]] = {}
 
                 else:
                     target["lost"] += 1
@@ -161,6 +163,8 @@ class MeshPing(object):
                         # can happen if sent is reset after a ping has been sent out, but before its answer arrives
                         target["sent"] = target["lost"]
 
+            if time() >= next_dump:
+                next_dump += 600
 
 
 def main():
