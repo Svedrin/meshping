@@ -7,6 +7,7 @@ from __future__ import division
 import os
 import os.path
 import sys
+import math
 import socket
 
 try:
@@ -29,6 +30,7 @@ class MeshPing(object):
         self.remq = Queue()
         self.rstq = Queue()
         self.targets = {}
+        self.histograms = {}
         self.interval = interval
         self.timeout  = timeout
         self.logdir   = logdir
@@ -66,6 +68,7 @@ class MeshPing(object):
             "min":  0,
             "max":  0
         })
+        self.histograms[addr] = {}
 
 
     def ping_daemon_runner(self):
@@ -96,6 +99,8 @@ class MeshPing(object):
                         pingobj.remove_host(addr)
                         if addr in self.targets:
                             del self.targets[addr]
+                        if addr in self.histograms:
+                            del self.histograms[addr]
                 except Empty:
                     pass
 
@@ -136,6 +141,11 @@ class MeshPing(object):
                             self.logfd[hostinfo["addr"]] = open(os.path.join(self.logdir, hostinfo["addr"] + ".txt"), mode="a", buffering=False)
 
                         print >> self.logfd[hostinfo["addr"]], target["last"]
+
+                    histogram  = self.histograms.setdefault(hostinfo["addr"], {})
+                    histbucket = int(math.log(hostinfo["latency"], 2) * 10)
+                    histogram.setdefault(histbucket, 0)
+                    histogram[histbucket] += 1
 
                 else:
                     target["lost"] += 1
