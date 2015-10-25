@@ -91,7 +91,7 @@ def main():
             mvalue  = 0
             maxnum  = None
 
-            for bktval, count in sorted(histogram.items(), key=itemgetter(0)):
+            for bktval, count in sorted(histogram.items(), key=itemgetter(0), reverse=True):
                 print "%7.2f - %7.2f -> %5d %s" % ( base ** (bktval / 10.), base ** ((bktval + 1) / 10.), count, (u"■".encode("utf-8")) * count )
                 if last is not None:
                     mvalue += abs(count - last)
