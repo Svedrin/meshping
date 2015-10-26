@@ -132,7 +132,10 @@ def main():
     tmpdraw.text((0, 0), "Meshping by Michael Ziegler", 0x999999, font=font)
     im.paste( tmpim.rotate(270), (width + graph_x + 9, 0) )
 
-    im.save(sys.argv[2])
+    if sys.argv[2] != "-":
+        im.save(sys.argv[2])
+    else:
+        im.save(sys.stdout, format="png")
 
     return 0
 
