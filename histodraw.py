@@ -17,7 +17,7 @@ base = 2
 
 def main():
     if len(sys.argv) != 3:
-        print "Usage: %s <logfile.txt> <output.png>" % sys.argv[0]
+        print >> sys.stderr, "Usage: %s <logfile.txt> <output.png>" % sys.argv[0]
         return 2
 
     histograms = []
@@ -49,11 +49,11 @@ def main():
                     hmin = min(hmin, bktval)
                 hmax = max(hmax, bktval)
 
-    print "hmin =", hmin
-    print "hmax =", hmax
+    print >> sys.stderr, "hmin =", hmin
+    print >> sys.stderr, "hmax =", hmax
 
     rows = hmax - hmin
-    print "rows =", rows
+    print >> sys.stderr, "rows =", rows
     cols = len(histograms)
 
     # How big do you want the squares to be?
