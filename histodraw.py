@@ -24,10 +24,14 @@ def main():
     hmin = None
     hmax = None
 
+    now = time()
+
     # Parse the logfile
     for line in open(sys.argv[1], "r"):
         tstamp, data = line.strip().split(' ', 1)
         tstamp = int(tstamp)
+        if now - tstamp > 3 * 24 * 60 * 60:
+            continue
         data   = dict([(int(x), y) for (x, y) in json.loads(data).items()])
 
         biggestbkt = 0
