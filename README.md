@@ -18,9 +18,11 @@ This tool is meant to be set up on various strategic points in a network, pingin
 Easy, you just run:
 
 ```
-apt-get install mercurial
+apt-get install mercurial cython liboping-dev
 hg clone http://bitbucket.org/Svedrin/meshping
 cd meshping
+python setup.py build
+ln -s build/lib.linux-x86_64-2.7/oping.so
 sudo python meshping.py google.de/60 192.168.178.1 somewhere-else.net
 ```
 
