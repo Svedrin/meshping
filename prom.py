@@ -14,7 +14,6 @@ def run_prom(mp):
         respdata = []
 
         for addr, target in mp.targets.items():
-            target = dict(target, avg=(target["sum"] / target["recv"]))
 
             respdata.append('\n'.join([
                 '# HELP meshping_sent Sent pings',
@@ -28,19 +27,25 @@ def run_prom(mp):
                 '# HELP meshping_lost Lost pings (actual counter, not just sent - recv)',
                 '# TYPE meshping_lost counter',
                 'meshping_lost{target="%(addr)s"} %(lost)d',
+            ]) % target)
 
-                '# HELP meshping_max max ping',
-                '# TYPE meshping_max gauge',
-                'meshping_max{target="%(addr)s"} %(max).2f',
+            if target["recv"]:
+                target = dict(target, avg=(target["sum"] / target["recv"]))
+                respdata.append('\n'.join([
+                    '# HELP meshping_max max ping',
+                    '# TYPE meshping_max gauge',
+                    'meshping_max{target="%(addr)s"} %(max).2f',
 
-                '# HELP meshping_min min ping',
-                '# TYPE meshping_min gauge',
-                'meshping_min{target="%(addr)s"} %(min).2f',
+                    '# HELP meshping_min min ping',
+                    '# TYPE meshping_min gauge',
+                    'meshping_min{target="%(addr)s"} %(min).2f',
 
-                '# HELP meshping_avg avg ping',
-                '# TYPE meshping_avg gauge',
-                'meshping_avg{target="%(addr)s"} %(avg).2f',
+                    '# HELP meshping_avg avg ping',
+                    '# TYPE meshping_avg gauge',
+                    'meshping_avg{target="%(addr)s"} %(avg).2f',
+                ]) % target)
 
+            respdata.append('\n'.join([
                 '# HELP meshping_pings Pings bucketed by response time',
                 '# TYPE meshping_pings histogram',
                 'meshping_pings_sum{target="%(addr)s"} %(sum)f',
@@ -60,6 +65,7 @@ def run_prom(mp):
                 ))
 
         return Response('\n'.join(respdata) + '\n', mimetype="text/plain")
+
 
 
     app.secret_key = str(uuid4())
