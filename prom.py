@@ -11,43 +11,44 @@ def run_prom(mp):
 
     @app.route("/metrics")
     def metrics():
-        respdata = []
+        respdata = ['\n'.join([
+            '# HELP meshping_sent Sent pings',
+            '# TYPE meshping_sent counter',
+            '# HELP meshping_recv Received pongs',
+            '# TYPE meshping_recv counter',
+            '# HELP meshping_lost Lost pings (actual counter, not just sent - recv)',
+            '# TYPE meshping_lost counter',
+            '# HELP meshping_max max ping',
+            '# TYPE meshping_max gauge',
+            '# HELP meshping_min min ping',
+            '# TYPE meshping_min gauge',
+            '# HELP meshping_avg avg ping',
+            '# TYPE meshping_avg gauge',
+            '# HELP meshping_pings Pings bucketed by response time',
+            '# TYPE meshping_pings histogram',
+        ])]
 
         for addr, target in mp.targets.items():
 
             respdata.append('\n'.join([
-                '# HELP meshping_sent Sent pings',
-                '# TYPE meshping_sent counter',
                 'meshping_sent{target="%(addr)s"} %(sent)d',
 
-                '# HELP meshping_recv Received pongs',
-                '# TYPE meshping_recv counter',
                 'meshping_recv{target="%(addr)s"} %(recv)d',
 
-                '# HELP meshping_lost Lost pings (actual counter, not just sent - recv)',
-                '# TYPE meshping_lost counter',
                 'meshping_lost{target="%(addr)s"} %(lost)d',
             ]) % target)
 
             if target["recv"]:
                 target = dict(target, avg=(target["sum"] / target["recv"]))
                 respdata.append('\n'.join([
-                    '# HELP meshping_max max ping',
-                    '# TYPE meshping_max gauge',
                     'meshping_max{target="%(addr)s"} %(max).2f',
 
-                    '# HELP meshping_min min ping',
-                    '# TYPE meshping_min gauge',
                     'meshping_min{target="%(addr)s"} %(min).2f',
 
-                    '# HELP meshping_avg avg ping',
-                    '# TYPE meshping_avg gauge',
                     'meshping_avg{target="%(addr)s"} %(avg).2f',
                 ]) % target)
 
             respdata.append('\n'.join([
-                '# HELP meshping_pings Pings bucketed by response time',
-                '# TYPE meshping_pings histogram',
                 'meshping_pings_sum{target="%(addr)s"} %(sum)f',
                 'meshping_pings_count{target="%(addr)s"} %(recv)d',
             ]) % target)
