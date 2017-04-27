@@ -196,9 +196,18 @@ def main():
     for target in posargs:
         mp.add_host(target, target)
 
-    try:
-        mp.start()
+    mp.start()
 
+    try:
+        from prom import run_prom
+    except ImportError:
+        print >> sys.stderr, "Flask not installed, Prometheus interface is not available"
+    else:
+        promrunner = Thread(target=run_prom, args=(mp,))
+        promrunner.daemon = True
+        promrunner.start()
+
+    try:
         while mp.is_alive():
             process_ctrl(ctrl, mp)
 

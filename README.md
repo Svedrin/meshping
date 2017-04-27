@@ -12,6 +12,7 @@ This tool is meant to be set up on various strategic points in a network, pingin
 * Hosts can be added/removed live without restarting the daemon (btw: [isc-dhcpd can do that for you](http://blog.svedr.in/posts/fun-with-dhcpd-hooks.html))
 * Sometime in the future, those strategic points will be able to form a cluster using [Corosync](http://corosync.github.io/corosync/) to ensure config consistency
 * Tightly integrated with [FluxMon](http://fluxmon.de) for monitoring and graphing 'n stuff
+* Provides a Prometheus interface at port 9922
 
 ### How do I get set up? ###
 
