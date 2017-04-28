@@ -22,8 +22,6 @@ def run_prom(mp):
             '# TYPE meshping_max gauge',
             '# HELP meshping_min min ping',
             '# TYPE meshping_min gauge',
-            '# HELP meshping_avg avg ping',
-            '# TYPE meshping_avg gauge',
             '# HELP meshping_pings Pings bucketed by response time',
             '# TYPE meshping_pings histogram',
         ])]
@@ -44,8 +42,6 @@ def run_prom(mp):
                     'meshping_max{target="%(addr)s"} %(max).2f',
 
                     'meshping_min{target="%(addr)s"} %(min).2f',
-
-                    'meshping_avg{target="%(addr)s"} %(avg).2f',
                 ]) % target)
 
             respdata.append('\n'.join([
