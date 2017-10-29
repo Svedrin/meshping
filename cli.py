@@ -71,8 +71,11 @@ def main():
     if ctrl in rdy_read:
         reply, addr = ctrl.recvfrom(2**14)
 
-        if options.json or options.add or options.delete:
+        if options.json:
             print json.dumps(json.loads(reply), indent=4)
+
+        elif options.add or options.delete:
+            pass # no output wanted
 
         elif options.histogram:
             histogram = json.loads(reply)
