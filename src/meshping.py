@@ -51,6 +51,12 @@ class MeshPing(object):
         for info in socket.getaddrinfo(addr, 0, 0, socket.SOCK_STREAM):
             self.remq.put((name, info[4][0], info[0]))
 
+    def redis_load(self, addr, field):
+        rds_value = self.redis.get("meshping:%s:%s:%s" % (socket.gethostname(), addr, field))
+        if rds_value is None:
+            return None
+        return json.loads(rds_value)
+
     def ping_daemon_runner(self):
         pingobj = PingObj()
         pingobj.set_timeout(self.timeout)
@@ -65,7 +71,8 @@ class MeshPing(object):
                         name, addr, afam = self.addq.get(timeout=0.1)
                         pingobj.add_host(addr)
                         self.redis.sadd("meshping:targets", "%s@%s" % (name, addr))
-                        self.targets[addr] = {
+
+                        self.targets[addr] = self.redis_load(addr, "target") or {
                             "name": name,
                             "addr": addr,
                             "af":   afam,
@@ -77,6 +84,11 @@ class MeshPing(object):
                             "min":  0,
                             "max":  0
                         }
+                        histogram = self.redis_load(addr, "histogram") or {}
+                        # json sucks and converts dict keys to strings
+                        histogram = dict([(int(x), y) for (x, y) in histogram.items()])
+                        self.histograms[addr] = histogram
+
                 except Empty:
                     pass
 
@@ -123,8 +135,9 @@ class MeshPing(object):
                 else:
                     target["lost"] += 1
 
-                rdspipe.setex("meshping:%s:%s:target"    % (socket.gethostname(), target["addr"]), 86400, json.dumps(target))
-                rdspipe.setex("meshping:%s:%s:histogram" % (socket.gethostname(), target["addr"]), 86400, json.dumps(histogram))
+                rds_prefix = "meshping:%s:%s" % (socket.gethostname(), target["addr"])
+                rdspipe.setex("%s:target"    % rds_prefix, 86400, json.dumps(target))
+                rdspipe.setex("%s:histogram" % rds_prefix, 86400, json.dumps(histogram))
 
             rdspipe.execute()
 
