@@ -38,6 +38,7 @@ def run_prom(mp):
             targets.append(
                 """%(name)-25s %(addr)-25s %(sent)5d %(recv)5d %(succ)6.2f%% %(loss)6.2f%% %(min)7.2f   %(avg)7.2f   %(max)7.2f   %(last)7.2f    <a href="/histogram/%(addr)-25s">H</a>""" % dict(
                     targetinfo,
+                    name=targetinfo["name"][:24],
                     succ=100 - loss,
                     loss=loss,
                     avg=avg
