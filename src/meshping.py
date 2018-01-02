@@ -136,8 +136,8 @@ class MeshPing(object):
                     target["lost"] += 1
 
                 rds_prefix = "meshping:%s:%s" % (socket.gethostname(), target["addr"])
-                rdspipe.setex("%s:target"    % rds_prefix, 86400, json.dumps(target))
-                rdspipe.setex("%s:histogram" % rds_prefix, 86400, json.dumps(histogram))
+                rdspipe.setex("%s:target"    % rds_prefix, 7 * 86400, json.dumps(target))
+                rdspipe.setex("%s:histogram" % rds_prefix, 7 * 86400, json.dumps(histogram))
 
             rdspipe.execute()
 
