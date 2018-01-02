@@ -31,7 +31,6 @@ class MeshPing(object):
         self.histograms = {}
         self.interval = interval
         self.timeout  = timeout
-        self.logdir   = logdir
 
         self.pingdaemon = Thread(target=self.ping_daemon_runner)
         self.pingdaemon.daemon = True
