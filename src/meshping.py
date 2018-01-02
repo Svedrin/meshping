@@ -18,15 +18,14 @@ from oping import PingObj
 from time import sleep, time
 from optparse import OptionParser
 from Queue import Queue, Empty
+from redis import StrictRedis
 
 from ctrl import process_ctrl
 
 class MeshPing(object):
-    def __init__(self, interval=30, timeout=1):
+    def __init__(self, interval=30, timeout=1, redis_host="127.0.0.1"):
         self.addq = Queue()
         self.remq = Queue()
-        self.rstq = Queue()
-        self.rshq = Queue()
         self.targets = {}
         self.histograms = {}
         self.interval = interval
@@ -35,7 +34,7 @@ class MeshPing(object):
         self.pingdaemon = Thread(target=self.ping_daemon_runner)
         self.pingdaemon.daemon = True
 
-        self.logfd = {}
+        self.redis = StrictRedis(host=redis_host)
 
     def start(self):
         self.pingdaemon.start()
@@ -52,23 +51,11 @@ class MeshPing(object):
         for info in socket.getaddrinfo(addr, 0, 0, socket.SOCK_STREAM):
             self.remq.put((name, info[4][0], info[0]))
 
-    def reset_stats(self):
-        self.rstq.put(True)
-
-    def reset_histogram_for_target(self, addr):
-        self.rshq.put(addr)
-
-    def reset_stats_for_target(self, addr):
-        self.targets[addr].update({
-            "sent": 0,
-            "lost": 0,
-            "recv": 0,
-            "last": 0,
-            "sum":  0,
-            "min":  0,
-            "max":  0
-        })
-
+    def redis_load(self, addr, field):
+        rds_value = self.redis.get("meshping:%s:%s:%s" % (socket.gethostname(), addr, field))
+        if rds_value is None:
+            return None
+        return json.loads(rds_value)
 
     def ping_daemon_runner(self):
         pingobj = PingObj()
@@ -83,12 +70,25 @@ class MeshPing(object):
                     while True:
                         name, addr, afam = self.addq.get(timeout=0.1)
                         pingobj.add_host(addr)
-                        self.targets[addr] = {
+                        self.redis.sadd("meshping:targets", "%s@%s" % (name, addr))
+
+                        self.targets[addr] = self.redis_load(addr, "target") or {
                             "name": name,
                             "addr": addr,
-                            "af":   afam
+                            "af":   afam,
+                            "sent": 0,
+                            "lost": 0,
+                            "recv": 0,
+                            "last": 0,
+                            "sum":  0,
+                            "min":  0,
+                            "max":  0
                         }
-                        self.reset_stats_for_target(addr)
+                        histogram = self.redis_load(addr, "histogram") or {}
+                        # json sucks and converts dict keys to strings
+                        histogram = dict([(int(x), y) for (x, y) in histogram.items()])
+                        self.histograms[addr] = histogram
+
                 except Empty:
                     pass
 
@@ -96,6 +96,7 @@ class MeshPing(object):
                     while True:
                         name, addr, afam = self.remq.get(timeout=0.1)
                         pingobj.remove_host(addr)
+                        self.redis.srem("meshping:targets", "%s@%s" % (name, addr))
                         if addr in self.targets:
                             del self.targets[addr]
                         if addr in self.histograms:
@@ -103,37 +104,21 @@ class MeshPing(object):
                 except Empty:
                     pass
 
-                try:
-                    self.rstq.get(timeout=0.1)
-                except Empty:
-                    pass
-                else:
-                    for addr in self.targets:
-                        self.reset_stats_for_target(addr)
-
-                try:
-                    addr = self.rshq.get(timeout=0.1)
-                except Empty:
-                    pass
-                else:
-                    if addr in self.histograms:
-                        self.histograms[addr] = {}
-
             now = time()
             next_ping = now + self.interval
 
             pingobj.send()
 
+            rdspipe = self.redis.pipeline()
+
             for hostinfo in pingobj.get_hosts():
                 target = self.targets[hostinfo["addr"]]
+                histogram  = self.histograms.setdefault(hostinfo["addr"], {})
 
                 target["sent"] += 1
 
                 if hostinfo["latency"] != -1:
                     target["recv"] += 1
-                    if target["recv"] > target["sent"]:
-                        # can happen if sent is reset after a ping has been sent out, but before its answer arrives
-                        target["sent"] = target["recv"]
                     target["last"]  = hostinfo["latency"]
                     target["sum"]  += target["last"]
                     target["max"]   = max(target["max"], target["last"])
@@ -143,16 +128,18 @@ class MeshPing(object):
                     else:
                         target["min"] = min(target["min"], target["last"])
 
-                    histogram  = self.histograms.setdefault(hostinfo["addr"], {})
                     histbucket = int(math.log(hostinfo["latency"], 2) * 10)
                     histogram.setdefault(histbucket, 0)
                     histogram[histbucket] += 1
 
                 else:
                     target["lost"] += 1
-                    if target["lost"] > target["sent"]:
-                        # can happen if sent is reset after a ping has been sent out, but before its answer arrives
-                        target["sent"] = target["lost"]
+
+                rds_prefix = "meshping:%s:%s" % (socket.gethostname(), target["addr"])
+                rdspipe.setex("%s:target"    % rds_prefix, 86400, json.dumps(target))
+                rdspipe.setex("%s:histogram" % rds_prefix, 86400, json.dumps(histogram))
+
+            rdspipe.execute()
 
 
 def main():
@@ -169,9 +156,15 @@ def main():
     parser.add_option(
         "-t", "--timeout",  help="Ping timeout [5s]", type=int, default=5
     )
+    parser.add_option(
+        "-r", "--redishost",  help="Redis Host [127.0.0.1]", default="127.0.0.1"
+    )
     options, posargs = parser.parse_args()
 
-    mp = MeshPing(options.interval, options.timeout)
+    mp = MeshPing(options.interval, options.timeout, options.redishost)
+
+    for target in mp.redis.smembers("meshping:targets"):
+        mp.add_host( *target.split("@") )
 
     for target in posargs:
         mp.add_host(target, target)
