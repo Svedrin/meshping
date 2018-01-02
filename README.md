@@ -83,11 +83,10 @@ but unfortunately that doesn't work [just yet](https://github.com/grafana/grafan
 Unfortunately, this is a bit involved:
 
 ```
-apt-get install mercurial cython liboping-dev
+apt-get install mercurial cython liboping-dev python-flask
 hg clone http://bitbucket.org/Svedrin/meshping
 cd meshping
-python setup.py build
-ln -s build/lib.linux-x86_64-2.7/oping.so
+./build.sh
 ln -s $PWD/cli.py /usr/local/bin/mpcli
 cp meshping.service /etc/systemd/system
 systemctl daemon-reload
