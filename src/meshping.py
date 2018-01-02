@@ -18,11 +18,12 @@ from oping import PingObj
 from time import sleep, time
 from optparse import OptionParser
 from Queue import Queue, Empty
+from redis import StrictRedis
 
 from ctrl import process_ctrl
 
 class MeshPing(object):
-    def __init__(self, interval=30, timeout=1):
+    def __init__(self, interval=30, timeout=1, redis_host="127.0.0.1"):
         self.addq = Queue()
         self.remq = Queue()
         self.rstq = Queue()
@@ -34,6 +35,8 @@ class MeshPing(object):
 
         self.pingdaemon = Thread(target=self.ping_daemon_runner)
         self.pingdaemon.daemon = True
+
+        self.redis = StrictRedis(host=redis_host)
 
     def start(self):
         self.pingdaemon.start()
@@ -122,8 +125,11 @@ class MeshPing(object):
 
             pingobj.send()
 
+            rdspipe = self.redis.pipeline()
+
             for hostinfo in pingobj.get_hosts():
                 target = self.targets[hostinfo["addr"]]
+                histogram  = self.histograms.setdefault(hostinfo["addr"], {})
 
                 target["sent"] += 1
 
@@ -141,7 +147,6 @@ class MeshPing(object):
                     else:
                         target["min"] = min(target["min"], target["last"])
 
-                    histogram  = self.histograms.setdefault(hostinfo["addr"], {})
                     histbucket = int(math.log(hostinfo["latency"], 2) * 10)
                     histogram.setdefault(histbucket, 0)
                     histogram[histbucket] += 1
@@ -151,6 +156,11 @@ class MeshPing(object):
                     if target["lost"] > target["sent"]:
                         # can happen if sent is reset after a ping has been sent out, but before its answer arrives
                         target["sent"] = target["lost"]
+
+                rdspipe.setex("meshping:%s:%s:target"    % (socket.gethostname(), target["addr"]), 86400, json.dumps(target))
+                rdspipe.setex("meshping:%s:%s:histogram" % (socket.gethostname(), target["addr"]), 86400, json.dumps(histogram))
+
+            rdspipe.execute()
 
 
 def main():
@@ -167,9 +177,12 @@ def main():
     parser.add_option(
         "-t", "--timeout",  help="Ping timeout [5s]", type=int, default=5
     )
+    parser.add_option(
+        "-r", "--redishost",  help="Redis Host [127.0.0.1]", default="127.0.0.1"
+    )
     options, posargs = parser.parse_args()
 
-    mp = MeshPing(options.interval, options.timeout)
+    mp = MeshPing(options.interval, options.timeout, options.redishost)
 
     for target in posargs:
         mp.add_host(target, target)
