@@ -84,6 +84,7 @@ class MeshPing(object):
                     while True:
                         name, addr, afam = self.addq.get(timeout=0.1)
                         pingobj.add_host(addr)
+                        self.redis.sadd("meshping:targets", "%s@%s" % (name, addr))
                         self.targets[addr] = {
                             "name": name,
                             "addr": addr,
@@ -97,6 +98,7 @@ class MeshPing(object):
                     while True:
                         name, addr, afam = self.remq.get(timeout=0.1)
                         pingobj.remove_host(addr)
+                        self.redis.srem("meshping:targets", "%s@%s" % (name, addr))
                         if addr in self.targets:
                             del self.targets[addr]
                         if addr in self.histograms:
