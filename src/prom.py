@@ -74,7 +74,7 @@ def run_prom(mp):
             bukkits.append("%d buckets, mvalue=%.2f (probably %s multimodal)" % (len(histogram), mvalue, "is" if mvalue > 2.4 else "not"))
 
         return Response(''.join([
-            """<h1>Meshping</h1>""",
+            """<h1>Meshping: %s</h1>""" % addr.encode("utf-8"),
             """<pre style="white-space: pre-wrap">%s</pre>""" % '\n'.join(bukkits),
         ]))
 
