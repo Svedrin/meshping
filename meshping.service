@@ -5,7 +5,6 @@ After=network.target remote-fs.target nss-lookup.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/python -- /opt/meshping/src/meshping.py
-ExecStartPost=/bin/bash /opt/meshping/targets.sh
 
 [Install]
 WantedBy=multi-user.target
