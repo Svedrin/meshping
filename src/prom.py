@@ -33,9 +33,11 @@ def run_prom(mp):
                 avg = targetinfo["sum"] / targetinfo["recv"]
             outd = 0
             targets.append(
-                "%-25s %-25s %5d %5d %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (
-                    targetinfo["name"], targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], 100 - loss, loss,
-                    targetinfo["min"], avg, targetinfo["max"], targetinfo["last"]
+                """%(name)-25s %(addr)-25s %(sent)5d %(recv)5d %(succ)6.2f%% %(loss)6.2f%% %(min)7.2f   %(avg)7.2f   %(max)7.2f   %(last)7.2f""" % dict(
+                    targetinfo,
+                    succ=100 - loss,
+                    loss=loss,
+                    avg=avg
                 )
             )
 
