@@ -44,10 +44,13 @@ def run_prom(mp):
                 )
             )
 
-        return Response(''.join([
+        return Response('\n'.join([
             """<h1>Meshping</h1>""",
             """<a href="/metrics">metrics</a>""",
-            """<pre style="white-space: pre-wrap">%s</pre>""" % '\n'.join(targets),
+            """<pre style="white-space: pre-wrap">""",
+                '\n'.join(targets),
+            """</pre>""",
+            ''
         ]))
 
     @app.route("/histogram/<addr>")
@@ -71,11 +74,15 @@ def run_prom(mp):
 
         if maxnum is not None:
             mvalue /= maxnum
+            bukkits.append("")
             bukkits.append("%d buckets, mvalue=%.2f (probably %s multimodal)" % (len(histogram), mvalue, "is" if mvalue > 2.4 else "not"))
 
-        return Response(''.join([
+        return Response('\n'.join([
             """<h1>Meshping: %s</h1>""" % addr.encode("utf-8"),
-            """<pre style="white-space: pre-wrap">%s</pre>""" % '\n'.join(bukkits),
+            """<pre style="white-space: pre-wrap">""",
+                '\n'.join(bukkits),
+            """</pre>""",
+            ''
         ]))
 
 
