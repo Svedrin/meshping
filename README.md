@@ -83,7 +83,7 @@ but unfortunately that doesn't work [just yet](https://github.com/grafana/grafan
 Unfortunately, this is a bit involved:
 
 ```
-apt-get install mercurial cython liboping-dev python-flask
+apt-get install mercurial cython liboping-dev python-flask python-redis redis-server
 hg clone http://bitbucket.org/Svedrin/meshping
 cd meshping
 ./build.sh
