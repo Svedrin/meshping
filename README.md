@@ -1,22 +1,86 @@
 # meshping #
 
-This is a little tool to allow pinging a collection of remote hosts within a network simultaneously.
+Ping daemon that pings a number of targets at once, collecting their response times in histograms. Meant to be deployed at strategic points in your network in order to detect weak links.
 
-This tool is meant to be set up on various strategic points in a network, pinging different locations in order to find weak links. It has a control socket which supports querying its statistics in JSON format as well as adding and removing hosts without needing to restart the ping daemon. New hosts will simply be pinged as if they always had been.
+## Features
 
-### Features ###
+* Scrapeable by [Prometheus](prometheus.io).
+* Targets can be added and removed on-the-fly, without restarting or reloading anything.
+* CLI tool to interact with the daemon.
 
-* Control socket to easily query statistics / add hosts / remove hosts
-* Different ping intervals
-* Reports pings sent, replies received, errors received (i.e., "Host unreachable" messages), avg/min/max ping time
-* Hosts can be added/removed live without restarting the daemon (btw: [isc-dhcpd can do that for you](http://blog.svedr.in/posts/fun-with-dhcpd-hooks.html))
-* Sometime in the future, those strategic points will be able to form a cluster using [Corosync](http://corosync.github.io/corosync/) to ensure config consistency
-* Tightly integrated with [FluxMon](http://fluxmon.de) for monitoring and graphing 'n stuff
-* Provides a Prometheus interface at port 9922
+## Screenshots
+
+If you query meshping's data directly, this is what the statistics look like:
+
+```
+root@hive:~# mpcli
+Target                     Sent  Recv   Succ    Loss      Min       Avg       Max      Last
+10.5.0.10                  7422  7353  99.07%   0.93%    0.10      0.82     13.87      1.30
+10.5.0.98                  7422     0   0.00% 100.00%    0.00      0.00      0.00      0.00
+10.5.0.122                 4203  4187  99.62%   0.38%    0.05      0.68      9.61      0.79
+10.5.1.2                   7422  7390  99.57%   0.43%  608.21    917.71   3848.67   1035.10
+8.8.8.8                    7422  7421  99.99%   0.01%   10.29     12.91    267.11     11.00
+192.168.0.10               7422  7384  99.49%   0.51%    0.37      1.32     82.93      0.68
+192.168.0.101              7422  7411  99.85%   0.15%    1.26     15.38    131.88     16.86
+192.168.0.103              7422  1252  16.87%  83.13%    1.22    160.26   1720.66      1.69
+192.168.0.108              7422  7329  98.75%   1.25%    0.14      0.20      0.87      0.23
+192.168.0.109              7422   586   7.90%  92.10%    0.60      2.26     87.61      2.54
+```
+
+If you query the `/metrics` endpoint, you get a histogram that carries far more detail:
+
+```
+meshping_sent{target="10.5.1.2"} 7362
+meshping_recv{target="10.5.1.2"} 7330
+meshping_lost{target="10.5.1.2"} 32
+meshping_max{target="10.5.1.2"} 3848.67
+meshping_min{target="10.5.1.2"} 608.21
+meshping_pings_sum{target="10.5.1.2"} 6704337.831000
+meshping_pings_count{target="10.5.1.2"} 7330
+meshping_pings_bucket{target="10.5.1.2",le="630.34"} 72
+meshping_pings_bucket{target="10.5.1.2",le="675.58"} 1014
+meshping_pings_bucket{target="10.5.1.2",le="724.07"} 2117
+meshping_pings_bucket{target="10.5.1.2",le="776.04"} 2979
+meshping_pings_bucket{target="10.5.1.2",le="831.74"} 3706
+meshping_pings_bucket{target="10.5.1.2",le="891.43"} 4550
+meshping_pings_bucket{target="10.5.1.2",le="955.42"} 5286
+meshping_pings_bucket{target="10.5.1.2",le="1023.99"} 5908
+meshping_pings_bucket{target="10.5.1.2",le="1097.49"} 6340
+meshping_pings_bucket{target="10.5.1.2",le="1176.26"} 6565
+meshping_pings_bucket{target="10.5.1.2",le="1260.68"} 6685
+meshping_pings_bucket{target="10.5.1.2",le="1351.17"} 6762
+meshping_pings_bucket{target="10.5.1.2",le="1448.14"} 6830
+meshping_pings_bucket{target="10.5.1.2",le="1552.08"} 6903
+meshping_pings_bucket{target="10.5.1.2",le="1663.48"} 6976
+meshping_pings_bucket{target="10.5.1.2",le="1782.88"} 7050
+meshping_pings_bucket{target="10.5.1.2",le="1910.84"} 7125
+meshping_pings_bucket{target="10.5.1.2",le="2047.99"} 7176
+meshping_pings_bucket{target="10.5.1.2",le="2194.98"} 7217
+meshping_pings_bucket{target="10.5.1.2",le="2352.52"} 7255
+meshping_pings_bucket{target="10.5.1.2",le="2521.37"} 7281
+meshping_pings_bucket{target="10.5.1.2",le="2702.34"} 7301
+meshping_pings_bucket{target="10.5.1.2",le="2896.30"} 7311
+meshping_pings_bucket{target="10.5.1.2",le="3104.18"} 7320
+meshping_pings_bucket{target="10.5.1.2",le="3326.98"} 7323
+meshping_pings_bucket{target="10.5.1.2",le="3565.77"} 7327
+meshping_pings_bucket{target="10.5.1.2",le="3821.69"} 7329
+meshping_pings_bucket{target="10.5.1.2",le="4095.99"} 7330
+```
+
+Then you can run queries on the data from Prometheus, e.g.
+
+ * loss rate in %: `rate(meshping_lost{target="$target"}[2m]) / rate(meshping_sent[2m]) * 100`
+ * quantiles: `histogram_quantile(0.95, rate(meshping_pings_bucket{target="$target"}[2m]))`
+ * averages: `rate(meshping_pings_sum{target="10.5.1.2"}[2m]) / rate(meshping_pings_count[2m])`
+
+Ultimate goal is to have Grafana render a [heatmap](http://docs.grafana.org/features/panels/heatmap/) with a
+[histogram over time](http://docs.grafana.org/img/docs/v43/heatmap_histogram_over_time.png) that shows the pings,
+but unfortunately that doesn't work [just yet](https://github.com/grafana/grafana/issues/10009).
+
 
 ### How do I get set up? ###
 
-Easy, you just run:
+Unfortunately, this is a bit involved:
 
 ```
 apt-get install mercurial cython liboping-dev
@@ -24,49 +88,18 @@ hg clone http://bitbucket.org/Svedrin/meshping
 cd meshping
 python setup.py build
 ln -s build/lib.linux-x86_64-2.7/oping.so
-sudo python meshping.py google.de/60 192.168.178.1 somewhere-else.net
+ln -s $PWD/cli.py /usr/local/bin/mpcli
+cp meshping.service /etc/systemd/system
+systemctl daemon-reload
+service meshping start
 ```
 
-Then you'll get a statistico like this one every second:
+Now the daemon should be running. Add targets using the cli:
 
 ```
-Target                     Sent  Recv  Errs  Outd   Loss     Err    Outd      Avg       Min       Max      Last
-8.8.8.8                     109   109     0     0   0.00%   0.00%   0.00%   14.79      0.00    159.05     10.95
-37.120.162.165              626   626     0     0   0.00%   0.00%   0.00%   17.47      0.00    179.04     15.76
-192.168.0.196               626   626     0     0   0.00%   0.00%   0.00%    3.40      0.00     15.84      3.35
-192.168.0.1                 626   626     0     0   0.00%   0.00%   0.00%    3.08      0.00     15.55      5.44
-10.5.0.1                    626   626     0     0   0.00%   0.00%   0.00%    3.39      0.00     15.61      5.38
-192.168.0.108               626   626     0     0   0.00%   0.00%   0.00%    3.12      0.00     15.51      4.87
-192.168.100.1                11    11     0     0   0.00%   0.00%   0.00%    3.80      0.00      7.45      2.73
-192.168.0.101               626   626     0     0   0.00%   0.00%   0.00%    8.16      0.00     26.44      5.06
+mpcli -a -t dc.local.lan. -T 10.5.0.10
 ```
 
-The easiest way to query the control socket is using socat:
-
-```
-echo '{"cmd": "list", "reset": false}' | socat - udp:127.0.0.1:55432  | json_pp
-```
-
-However, you can of course write your own tools that send control commands. Setting `"reset": true` will cause the statistics to be reset to 0.
-
-Adding a host is a breeze too:
-
-```
-echo '{"cmd": "add", "name": "google.com", "itv":  5}' | socat - udp:127.0.0.1:55432  | json_pp
-echo '{"cmd": "add", "addr": "8.8.8.8",    "itv": 30}' | socat - udp:127.0.0.1:55432  | json_pp
-```
-
-And you can even remove it again:
-
-```
-echo '{"cmd": "remove", "name": "google.com"}' | socat - udp:127.0.0.1:55432  | json_pp
-```
-
-Note that when adding a target, you can pass in DNS names as well. meshping will then resolve these names and add all IP addresses it gets. The `remove` command will remove all those entries again if passed a `name` parameter. To remove only a single IP address, use:
-
-```
-echo '{"cmd": "remove", "addr": "8.8.8.8"}' | socat - udp:127.0.0.1:55432  | json_pp
-```
 
 ### Who do I talk to? ###
 
