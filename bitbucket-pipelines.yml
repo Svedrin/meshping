@@ -3,5 +3,5 @@ pipelines:
   default:
     - step:
         script:
-        - apt-get update && apt-get install mercurial cython liboping-dev
+        - apt-get update && apt-get -y install mercurial cython liboping-dev
         - ./build.sh
