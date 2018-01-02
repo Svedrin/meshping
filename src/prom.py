@@ -30,7 +30,7 @@ def run_prom(mp):
             loss = 0
             errs = 0
             if targetinfo["sent"]:
-                loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
+                loss = (targetinfo["sent"] - targetinfo["recv"]) / float(targetinfo["sent"]) * 100
             avg = 0
             if targetinfo["recv"]:
                 avg = targetinfo["sum"] / targetinfo["recv"]
