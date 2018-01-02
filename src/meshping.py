@@ -35,8 +35,6 @@ class MeshPing(object):
         self.pingdaemon = Thread(target=self.ping_daemon_runner)
         self.pingdaemon.daemon = True
 
-        self.logfd = {}
-
     def start(self):
         self.pingdaemon.start()
 
