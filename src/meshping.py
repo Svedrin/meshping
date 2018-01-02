@@ -163,6 +163,9 @@ def main():
 
     mp = MeshPing(options.interval, options.timeout, options.redishost)
 
+    for target in mp.redis.smembers("meshping:targets"):
+        mp.add_host( *target.split("@") )
+
     for target in posargs:
         mp.add_host(target, target)
 
