@@ -7,7 +7,43 @@ def run_prom(mp):
 
     @app.route("/")
     def hai():
-        return Response("""<h1>Meshping</h1><a href="/metrics">metrics</a>""")
+
+        targets = [
+            "Target                    Address                    Sent  Recv   Succ    Loss      Min       Avg       Max      Last"
+        ]
+
+        def ip_as_int(tgt):
+            import socket
+            import struct
+            if tgt["af"] == socket.AF_INET:
+                return struct.unpack("!I", socket.inet_aton( tgt["addr"] ))[0]
+            elif tgt["af"] == socket.AF_INET6:
+                ret = 0
+                for intpart in struct.unpack("!IIII", socket.inet_pton(socket.AF_INET6, tgt["addr"] )):
+                    ret = ret<<32 | intpart
+                return ret
+
+        for targetinfo in sorted(mp.targets.values(), key=ip_as_int):
+            loss = 0
+            errs = 0
+            if targetinfo["sent"]:
+                loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
+            avg = 0
+            if targetinfo["recv"]:
+                avg = targetinfo["sum"] / targetinfo["recv"]
+            outd = 0
+            targets.append(
+                "%-25s %-25s %5d %5d %6.2f%% %6.2f%% %7.2f   %7.2f   %7.2f   %7.2f" % (
+                    targetinfo["name"], targetinfo["addr"], targetinfo["sent"], targetinfo["recv"], 100 - loss, loss,
+                    targetinfo["min"], avg, targetinfo["max"], targetinfo["last"]
+                )
+            )
+
+        return Response(''.join([
+            """<h1>Meshping</h1>""",
+            """<a href="/metrics">metrics</a>""",
+            """<pre style="white-space: pre-wrap">%s</pre>""" % '\n'.join(targets),
+        ]))
 
     @app.route("/metrics")
     def metrics():
