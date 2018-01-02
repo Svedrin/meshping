@@ -22,7 +22,7 @@ from Queue import Queue, Empty
 from ctrl import process_ctrl
 
 class MeshPing(object):
-    def __init__(self, interval=30, timeout=1, logdir=None):
+    def __init__(self, interval=30, timeout=1):
         self.addq = Queue()
         self.remq = Queue()
         self.rstq = Queue()
@@ -76,7 +76,6 @@ class MeshPing(object):
         pingobj.set_timeout(self.timeout)
 
         next_ping = time() + 0.1
-        next_dump = time() + 600
 
         while True:
             while time() < next_ping:
@@ -150,21 +149,11 @@ class MeshPing(object):
                     histogram.setdefault(histbucket, 0)
                     histogram[histbucket] += 1
 
-                    if self.logdir and time() >= next_dump:
-                        if hostinfo["addr"] not in self.logfd:
-                            self.logfd[hostinfo["addr"]] = open(os.path.join(self.logdir, hostinfo["addr"] + ".txt"), mode="a", buffering=False)
-
-                        print >> self.logfd[hostinfo["addr"]], "%10d %s" % (time(), json.dumps(histogram))
-                        self.histograms[hostinfo["addr"]] = {}
-
                 else:
                     target["lost"] += 1
                     if target["lost"] > target["sent"]:
                         # can happen if sent is reset after a ping has been sent out, but before its answer arrives
                         target["sent"] = target["lost"]
-
-            if time() >= next_dump:
-                next_dump += 600
 
 
 def main():
@@ -181,17 +170,9 @@ def main():
     parser.add_option(
         "-t", "--timeout",  help="Ping timeout [5s]", type=int, default=5
     )
-    parser.add_option(
-        "-l", "--logdir",   help="Log measurements to <addr>.txt files in this directory."
-    )
     options, posargs = parser.parse_args()
 
-    if options.logdir:
-        options.logdir = os.path.abspath(options.logdir)
-        if not os.path.exists(options.logdir):
-            os.makedirs(options.logdir)
-
-    mp = MeshPing(options.interval, options.timeout, options.logdir)
+    mp = MeshPing(options.interval, options.timeout)
 
     for target in posargs:
         mp.add_host(target, target)
