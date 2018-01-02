@@ -14,10 +14,9 @@ from operator import itemgetter
 from select   import select
 
 def main():
-    parser = OptionParser(usage="Usage: %prog [options] -- no options = list without reset")
+    parser = OptionParser(usage="Usage: %prog [options] -- no options = list")
 
     parser.add_option("-j", "--json",      help="Output the reply", default=False, action="store_true")
-    parser.add_option("-r", "--reset",     help="Reset statistics", default=False, action="store_true")
     parser.add_option("-d", "--delete",    help="remove target",    default=False, action="store_true")
     parser.add_option("-a", "--add",       help="add target",       default=False, action="store_true")
     parser.add_option("-H", "--histogram", help="show histogram",   default=False, action="store_true")
@@ -55,7 +54,6 @@ def main():
     elif options.histogram:
         opts = {
             "cmd":    "histogram",
-            "reset":  options.reset,
         }
         if options.address:
             opts["addr"] = options.address
@@ -64,7 +62,6 @@ def main():
     else:
         ctrl.sendto( json.dumps({
             "cmd":    "list",
-            "reset":  options.reset,
         }), ("127.0.0.1", 55432) )
 
     rdy_read, _, _ = select([ctrl], [], [], 5)

@@ -26,8 +26,6 @@ class MeshPing(object):
     def __init__(self, interval=30, timeout=1, redis_host="127.0.0.1"):
         self.addq = Queue()
         self.remq = Queue()
-        self.rstq = Queue()
-        self.rshq = Queue()
         self.targets = {}
         self.histograms = {}
         self.interval = interval
@@ -53,24 +51,6 @@ class MeshPing(object):
         for info in socket.getaddrinfo(addr, 0, 0, socket.SOCK_STREAM):
             self.remq.put((name, info[4][0], info[0]))
 
-    def reset_stats(self):
-        self.rstq.put(True)
-
-    def reset_histogram_for_target(self, addr):
-        self.rshq.put(addr)
-
-    def reset_stats_for_target(self, addr):
-        self.targets[addr].update({
-            "sent": 0,
-            "lost": 0,
-            "recv": 0,
-            "last": 0,
-            "sum":  0,
-            "min":  0,
-            "max":  0
-        })
-
-
     def ping_daemon_runner(self):
         pingobj = PingObj()
         pingobj.set_timeout(self.timeout)
@@ -88,9 +68,15 @@ class MeshPing(object):
                         self.targets[addr] = {
                             "name": name,
                             "addr": addr,
-                            "af":   afam
+                            "af":   afam,
+                            "sent": 0,
+                            "lost": 0,
+                            "recv": 0,
+                            "last": 0,
+                            "sum":  0,
+                            "min":  0,
+                            "max":  0
                         }
-                        self.reset_stats_for_target(addr)
                 except Empty:
                     pass
 
@@ -105,22 +91,6 @@ class MeshPing(object):
                             del self.histograms[addr]
                 except Empty:
                     pass
-
-                try:
-                    self.rstq.get(timeout=0.1)
-                except Empty:
-                    pass
-                else:
-                    for addr in self.targets:
-                        self.reset_stats_for_target(addr)
-
-                try:
-                    addr = self.rshq.get(timeout=0.1)
-                except Empty:
-                    pass
-                else:
-                    if addr in self.histograms:
-                        self.histograms[addr] = {}
 
             now = time()
             next_ping = now + self.interval
@@ -137,9 +107,6 @@ class MeshPing(object):
 
                 if hostinfo["latency"] != -1:
                     target["recv"] += 1
-                    if target["recv"] > target["sent"]:
-                        # can happen if sent is reset after a ping has been sent out, but before its answer arrives
-                        target["sent"] = target["recv"]
                     target["last"]  = hostinfo["latency"]
                     target["sum"]  += target["last"]
                     target["max"]   = max(target["max"], target["last"])
@@ -155,9 +122,6 @@ class MeshPing(object):
 
                 else:
                     target["lost"] += 1
-                    if target["lost"] > target["sent"]:
-                        # can happen if sent is reset after a ping has been sent out, but before its answer arrives
-                        target["sent"] = target["lost"]
 
                 rdspipe.setex("meshping:%s:%s:target"    % (socket.gethostname(), target["addr"]), 86400, json.dumps(target))
                 rdspipe.setex("meshping:%s:%s:histogram" % (socket.gethostname(), target["addr"]), 86400, json.dumps(histogram))

@@ -29,18 +29,11 @@ def process_ctrl(ctrl, mp):
     if data["cmd"] == "noop":
         ctrl.sendto('{"status": "ok"}', addr)
 
-    elif data["cmd"] == "list":
-        ctrl.sendto(json.dumps(mp.targets), addr)
-        if data.get("reset", False):
-            mp.reset_stats()
-
     elif data["cmd"] == "histogram":
         if "addr" not in data:
             ctrl.sendto('{"status": "need addr variable"}', addr)
             return
         ctrl.sendto(json.dumps(mp.histograms.get(data["addr"], {})), addr)
-        if data.get("reset", False):
-            mp.reset_histogram_for_target(data["addr"])
 
     elif data["cmd"] == "add":
         if "name" not in data and "addr" not in data:
