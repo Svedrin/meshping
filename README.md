@@ -10,10 +10,9 @@ Ping daemon that pings a number of targets at once, collecting their response ti
 
 ## Screenshots
 
-If you query meshping's data directly, this is what the statistics look like:
+If you open the root URL at `http://localhost:9922`, you'll get statistics like this:
 
 ```
-root@hive:~# mpcli
 Target                     Sent  Recv   Succ    Loss      Min       Avg       Max      Last
 10.5.0.10                  7422  7353  99.07%   0.93%    0.10      0.82     13.87      1.30
 10.5.0.98                  7422     0   0.00% 100.00%    0.00      0.00      0.00      0.00
@@ -93,11 +92,17 @@ systemctl daemon-reload
 service meshping start
 ```
 
-Now the daemon should be running. Add targets using the cli:
+Now the daemon should be running. Adding targets unfortunately sucks currently because I accidentally broke the cli.
+
+In the meantime you can add targets using redis-cli:
 
 ```
-mpcli -a -t dc.local.lan. -T 10.5.0.10
+# redis-cli
+127.0.0.1:6379> sadd meshping:targets google@8.8.8.8
+(integer) 1
 ```
+
+and then restart meshping. (Yes, I did promise you wouldn't have to. Sorry about that.)
 
 
 ### Who do I talk to? ###
