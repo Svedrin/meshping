@@ -66,7 +66,27 @@ meshping_pings_bucket{target="10.5.1.2",le="3821.69"} 7329
 meshping_pings_bucket{target="10.5.1.2",le="4095.99"} 7330
 ```
 
-Then you can run queries on the data from Prometheus, e.g.
+And there's even a `/histogram` endpoint that has a human-friendly version of that:
+
+```
+Meshping: 10.5.1.2
+
+1782.89 - 1910.85 ->     1 ■
+1260.69 - 1351.18 ->     1 ■
+1176.27 - 1260.69 ->     1 ■
+1097.50 - 1176.27 ->     5 ■■■■■
+1024.00 - 1097.50 ->     5 ■■■■■
+ 955.43 - 1024.00 ->    12 ■■■■■■■■■■■■
+ 891.44 -  955.43 ->     6 ■■■■■■
+ 831.75 -  891.44 ->     7 ■■■■■■■
+ 776.05 -  831.75 ->     1 ■
+
+9 buckets, mvalue=2.00 (probably not multimodal)
+```
+
+### Querying from Prometheus
+
+You can run queries on the data from Prometheus, e.g.
 
  * loss rate in %: `rate(meshping_lost{target="$target"}[2m]) / rate(meshping_sent[2m]) * 100`
  * quantiles: `histogram_quantile(0.95, rate(meshping_pings_bucket{target="$target"}[2m]))`
