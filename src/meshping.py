@@ -68,6 +68,7 @@ class MeshPing(object):
                     unseen_targets.remove(target)
 
             for target in unseen_targets:
+                current_targets.remove(target)
                 name, addr = target.split("@", 1)
                 pingobj.remove_host(addr)
                 self.targets.pop(addr, None)
