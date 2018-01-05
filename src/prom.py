@@ -37,7 +37,7 @@ def run_prom(mp):
                 avg = targetinfo["sum"] / targetinfo["recv"]
             outd = 0
             targets.append(
-                """%(name)-25s %(addr)-25s %(sent)5d %(recv)5d %(succ)6.2f%% %(loss)6.2f%% %(min)7.2f   %(avg)7.2f   %(max)7.2f   %(last)7.2f    <a href="/histogram/%(addr)-25s">H</a>""" % dict(
+                """%(name)-25s %(addr)-25s %(sent)5d %(recv)5d %(succ)6.2f%% %(loss)6.2f%% %(min)7.2f   %(avg)7.2f   %(max)7.2f   %(last)7.2f""" % dict(
                     targetinfo,
                     name=targetinfo["name"][:24],
                     succ=100 - loss,
@@ -54,39 +54,6 @@ def run_prom(mp):
             """</pre>""",
             ''
         ]))
-
-    @app.route("/histogram/<addr>")
-    def histogram(addr):
-        base = 2
-        bukkits = []
-        histogram = mp.histograms.get(addr, {})
-
-        # Let's try a modality detection
-        # http://www.brendangregg.com/FrequencyTrails/modes.html
-        last    = None
-        mvalue  = 0
-        maxnum  = None
-
-        for bktval, count in sorted(histogram.items(), key=itemgetter(0), reverse=True):
-            bukkits.append("%7.2f - %7.2f -> %5d %s" % ( base ** (bktval / 10.), base ** ((bktval + 1) / 10.), count, (u"■".encode("utf-8")) * count ))
-            if last is not None:
-                mvalue += abs(count - last)
-                maxnum  = max(maxnum, count)
-            last = count
-
-        if maxnum is not None:
-            mvalue /= maxnum
-            bukkits.append("")
-            bukkits.append("%d buckets, mvalue=%.2f (probably %s multimodal)" % (len(histogram), mvalue, "is" if mvalue > 2.4 else "not"))
-
-        return Response('\n'.join([
-            """<h1>Meshping: %s</h1>""" % addr.encode("utf-8"),
-            """<pre style="white-space: pre-wrap">""",
-                '\n'.join(bukkits),
-            """</pre>""",
-            ''
-        ]))
-
 
     @app.route("/metrics")
     def metrics():
