@@ -19,9 +19,9 @@ def run_prom(mp):
         def ip_as_int(tgt):
             import socket
             import struct
-            if tgt["af"] == socket.AF_INET:
+            if ":" not in tgt["addr"]:
                 return struct.unpack("!I", socket.inet_aton( tgt["addr"] ))[0]
-            elif tgt["af"] == socket.AF_INET6:
+            else:
                 ret = 0
                 for intpart in struct.unpack("!IIII", socket.inet_pton(socket.AF_INET6, tgt["addr"] )):
                     ret = ret<<32 | intpart

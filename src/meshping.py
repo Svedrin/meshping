@@ -20,36 +20,15 @@ from optparse import OptionParser
 from Queue import Queue, Empty
 from redis import StrictRedis
 
-from ctrl import process_ctrl
+from prom import run_prom
 
 class MeshPing(object):
-    def __init__(self, interval=30, timeout=1, redis_host="127.0.0.1"):
-        self.addq = Queue()
-        self.remq = Queue()
+    def __init__(self, redis, interval=30, timeout=1):
         self.targets = {}
         self.histograms = {}
         self.interval = interval
         self.timeout  = timeout
-
-        self.pingdaemon = Thread(target=self.ping_daemon_runner)
-        self.pingdaemon.daemon = True
-
-        self.redis = StrictRedis(host=redis_host)
-
-    def start(self):
-        self.pingdaemon.start()
-
-    def is_alive(self):
-        return self.pingdaemon.is_alive()
-
-    def add_host(self, name, addr):
-        for info in socket.getaddrinfo(addr, 0, 0, socket.SOCK_STREAM):
-            if info[4][0] not in self.targets:
-                self.addq.put((name, info[4][0], info[0]))
-
-    def remove_host(self, name, addr):
-        for info in socket.getaddrinfo(addr, 0, 0, socket.SOCK_STREAM):
-            self.remq.put((name, info[4][0], info[0]))
+        self.redis = redis
 
     def redis_load(self, addr, field):
         rds_value = self.redis.get("meshping:%s:%s:%s" % (socket.gethostname(), addr, field))
@@ -57,55 +36,42 @@ class MeshPing(object):
             return None
         return json.loads(rds_value)
 
-    def ping_daemon_runner(self):
+    def run(self):
         pingobj = PingObj()
         pingobj.set_timeout(self.timeout)
 
         next_ping = time() + 0.1
 
+        current_targets = set()
+
         while True:
-            while time() < next_ping:
-                # Process Host Add/Remove queues
-                try:
-                    while True:
-                        name, addr, afam = self.addq.get(timeout=0.1)
-                        pingobj.add_host(addr)
-                        self.redis.sadd("meshping:targets", "%s@%s" % (name, addr))
-
-                        self.targets[addr] = self.redis_load(addr, "target") or {
-                            "name": name,
-                            "addr": addr,
-                            "af":   afam,
-                            "sent": 0,
-                            "lost": 0,
-                            "recv": 0,
-                            "last": 0,
-                            "sum":  0,
-                            "min":  0,
-                            "max":  0
-                        }
-                        histogram = self.redis_load(addr, "histogram") or {}
-                        # json sucks and converts dict keys to strings
-                        histogram = dict([(int(x), y) for (x, y) in histogram.items()])
-                        self.histograms[addr] = histogram
-
-                except Empty:
-                    pass
-
-                try:
-                    while True:
-                        name, addr, afam = self.remq.get(timeout=0.1)
-                        pingobj.remove_host(addr)
-                        self.redis.srem("meshping:targets", "%s@%s" % (name, addr))
-                        if addr in self.targets:
-                            del self.targets[addr]
-                        if addr in self.histograms:
-                            del self.histograms[addr]
-                except Empty:
-                    pass
-
             now = time()
             next_ping = now + self.interval
+
+            unseen_targets = current_targets.copy()
+            for target in self.redis.smembers("meshping:targets"):
+                if target not in current_targets:
+                    current_targets.add(target)
+                    name, addr = target.split("@", 1)
+                    pingobj.add_host(addr)
+
+                    self.targets[addr] = self.redis_load(addr, "target") or {
+                        "name": name, "addr": addr,
+                        "sent": 0, "lost": 0, "recv": 0, "last": 0, "sum":  0, "min":  0, "max":  0
+                    }
+                    histogram = self.redis_load(addr, "histogram") or {}
+                    # json sucks and converts dict keys to strings
+                    histogram = dict([(int(x), y) for (x, y) in histogram.items()])
+                    self.histograms[addr] = histogram
+
+                else:
+                    unseen_targets.remove(target)
+
+            for target in unseen_targets:
+                name, addr = target.split("@", 1)
+                pingobj.remove_host(addr)
+                self.targets.pop(addr, None)
+                self.histograms.pop(addr, None)
 
             pingobj.send()
 
@@ -141,6 +107,7 @@ class MeshPing(object):
 
             rdspipe.execute()
 
+            sleep(next_ping - time())
 
 def main():
     if os.getuid() != 0:
@@ -161,35 +128,24 @@ def main():
     )
     options, posargs = parser.parse_args()
 
-    mp = MeshPing(options.interval, options.timeout, options.redishost)
-
-    for target in mp.redis.smembers("meshping:targets"):
-        mp.add_host( *target.split("@") )
+    redis = StrictRedis(host=options.redishost)
+    mp = MeshPing(redis, options.interval, options.timeout)
 
     for target in posargs:
-        mp.add_host(target, target)
+        if "@" not in target:
+            for info in socket.getaddrinfo(target, 0, 0, socket.SOCK_STREAM):
+                redis.sadd("meshping:targets", "%s@%s" % (target, info[4][0]))
+        else:
+            redis.sadd("meshping:targets", target)
 
-    mp.start()
-
-    try:
-        from prom import run_prom
-    except ImportError:
-        print >> sys.stderr, "Flask not installed, Prometheus interface is not available"
-    else:
-        promrunner = Thread(target=run_prom, args=(mp,))
-        promrunner.daemon = True
-        promrunner.start()
+    promrunner = Thread(target=run_prom, args=(mp,))
+    promrunner.daemon = True
+    promrunner.start()
 
     try:
-        while mp.is_alive():
-            process_ctrl(ctrl, mp)
-
+        mp.run()
     except KeyboardInterrupt:
         pass
-
-    finally:
-        del mp
-        ctrl.close()
 
 if __name__ == '__main__':
     main()
