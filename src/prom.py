@@ -2,8 +2,7 @@
 
 from __future__ import division
 
-from uuid import uuid4
-from operator import itemgetter
+from uuid  import uuid4
 from flask import Flask, Response
 
 def run_prom(mp):
@@ -29,13 +28,11 @@ def run_prom(mp):
 
         for targetinfo in sorted(mp.targets.values(), key=ip_as_int):
             loss = 0
-            errs = 0
             if targetinfo["sent"]:
                 loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
             avg = 0
             if targetinfo["recv"]:
                 avg = targetinfo["sum"] / targetinfo["recv"]
-            outd = 0
             targets.append(
                 """%(name)-25s %(addr)-25s %(sent)5d %(recv)5d %(succ)6.2f%% %(loss)6.2f%% %(min)7.2f   %(avg)7.2f   %(max)7.2f   %(last)7.2f""" % dict(
                     targetinfo,

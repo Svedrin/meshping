@@ -7,7 +7,7 @@ from __future__ import division
 import sys
 import socket
 
-from redis import StrictRedis
+from redis    import StrictRedis
 from optparse import OptionParser
 
 def main():

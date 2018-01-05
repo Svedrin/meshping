@@ -5,20 +5,17 @@
 from __future__ import division
 
 import os
-import os.path
-import sys
 import math
 import socket
+import os.path
 
 import json
 
+from oping     import PingObj
+from optparse  import OptionParser
+from redis     import StrictRedis
 from threading import Thread
-from random import randint
-from oping import PingObj
-from time import sleep, time
-from optparse import OptionParser
-from Queue import Queue, Empty
-from redis import StrictRedis
+from time      import sleep, time
 
 from prom import run_prom
 
