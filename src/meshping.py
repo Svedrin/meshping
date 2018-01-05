@@ -19,11 +19,17 @@ from time      import sleep, time
 
 from prom import run_prom
 
+INTERVAL = 30
+
+FAC_15m = math.exp(-INTERVAL / (     15 * 60.))
+FAC_6h  = math.exp(-INTERVAL / ( 6 * 60 * 60.))
+FAC_24h = math.exp(-INTERVAL / (24 * 60 * 60.))
+
+
 class MeshPing(object):
-    def __init__(self, redis, interval=30, timeout=1):
+    def __init__(self, redis, timeout=1):
         self.targets = {}
         self.histograms = {}
-        self.interval = interval
         self.timeout  = timeout
         self.redis = redis
 
@@ -43,7 +49,7 @@ class MeshPing(object):
 
         while True:
             now = time()
-            next_ping = now + self.interval
+            next_ping = now + 30
 
             unseen_targets = current_targets.copy()
             for target in self.redis.smembers("meshping:targets"):
@@ -92,6 +98,21 @@ class MeshPing(object):
                     else:
                         target["min"] = min(target["min"], target["last"])
 
+                    if "avg15m" not in target:
+                        target["avg15m"] = target["last"]
+                    else:
+                        target["avg15m"] = (target["avg15m"] * FAC_15m) + (target["last"] * (1 - FAC_15m))
+
+                    if "avg6h" not in target:
+                        target["avg6h"] = target["last"]
+                    else:
+                        target["avg6h"] = (target["avg6h"] * FAC_6h) + (target["last"] * (1 - FAC_6h))
+
+                    if "avg24h" not in target:
+                        target["avg24h"] = target["last"]
+                    else:
+                        target["avg24h"] = (target["avg24h"] * FAC_24h) + (target["last"] * (1 - FAC_24h))
+
                     histbucket = int(math.log(hostinfo["latency"], 2) * 10)
                     histogram.setdefault(histbucket, 0)
                     histogram[histbucket] += 1
@@ -116,9 +137,6 @@ def main():
 
     parser = OptionParser("Usage: %prog [options] <target ...>")
     parser.add_option(
-        "-i", "--interval", help="Interval in which pings are sent [30s]", type=int, default=30
-    )
-    parser.add_option(
         "-t", "--timeout",  help="Ping timeout [5s]", type=int, default=5
     )
     parser.add_option(
@@ -127,7 +145,7 @@ def main():
     options, posargs = parser.parse_args()
 
     redis = StrictRedis(host=options.redishost)
-    mp = MeshPing(redis, options.interval, options.timeout)
+    mp = MeshPing(redis, options.timeout)
 
     for target in posargs:
         if "@" not in target:

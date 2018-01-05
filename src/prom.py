@@ -12,7 +12,7 @@ def run_prom(mp):
     def hai():
 
         targets = [
-            "Target                    Address                    Sent  Recv   Succ    Loss      Min       Avg       Max      Last"
+            "Target                    Address                    Sent  Recv   Succ    Loss      Min    Avg15m     Avg6h    Avg24h       Max      Last"
         ]
 
         def ip_as_int(tgt):
@@ -30,16 +30,15 @@ def run_prom(mp):
             loss = 0
             if targetinfo["sent"]:
                 loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
-            avg = 0
-            if targetinfo["recv"]:
-                avg = targetinfo["sum"] / targetinfo["recv"]
             targets.append(
-                """%(name)-25s %(addr)-25s %(sent)5d %(recv)5d %(succ)6.2f%% %(loss)6.2f%% %(min)7.2f   %(avg)7.2f   %(max)7.2f   %(last)7.2f""" % dict(
+                """%(name)-25s %(addr)-25s %(sent)5d %(recv)5d %(succ)6.2f%% %(loss)6.2f%% %(min)7.2f   %(avg15m)7.2f   %(avg6h)7.2f   %(avg24h)7.2f   %(max)7.2f   %(last)7.2f""" % dict(
                     targetinfo,
                     name=targetinfo["name"][:24],
                     succ=100 - loss,
                     loss=loss,
-                    avg=avg
+                    avg15m=targetinfo.get("avg15m", 0),
+                    avg6h =targetinfo.get("avg6h",  0),
+                    avg24h=targetinfo.get("avg24h", 0),
                 )
             )
 
@@ -105,8 +104,6 @@ def run_prom(mp):
                 ))
 
         return Response('\n'.join(respdata) + '\n', mimetype="text/plain")
-
-
 
     app.secret_key = str(uuid4())
     app.debug = False
