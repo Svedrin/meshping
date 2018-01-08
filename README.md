@@ -7,23 +7,21 @@ Ping daemon that pings a number of targets at once, collecting their response ti
 * Scrapeable by [Prometheus](prometheus.io).
 * Targets can be added and removed on-the-fly, without restarting or reloading anything.
 * CLI tool to interact with the daemon.
+* IPv6 supported.
 
 ## Screenshots
 
 If you open the root URL at `http://localhost:9922`, you'll get statistics like this:
 
 ```
-Target                     Sent  Recv   Succ    Loss      Min       Avg       Max      Last
-10.5.0.10                  7422  7353  99.07%   0.93%    0.10      0.82     13.87      1.30
-10.5.0.98                  7422     0   0.00% 100.00%    0.00      0.00      0.00      0.00
-10.5.0.122                 4203  4187  99.62%   0.38%    0.05      0.68      9.61      0.79
-10.5.1.2                   7422  7390  99.57%   0.43%  608.21    917.71   3848.67   1035.10
-8.8.8.8                    7422  7421  99.99%   0.01%   10.29     12.91    267.11     11.00
-192.168.0.10               7422  7384  99.49%   0.51%    0.37      1.32     82.93      0.68
-192.168.0.101              7422  7411  99.85%   0.15%    1.26     15.38    131.88     16.86
-192.168.0.103              7422  1252  16.87%  83.13%    1.22    160.26   1720.66      1.69
-192.168.0.108              7422  7329  98.75%   1.25%    0.14      0.20      0.87      0.23
-192.168.0.109              7422   586   7.90%  92.10%    0.60      2.26     87.61      2.54
+Target                    Address                    Sent  Recv   Succ    Loss      Min    Avg15m     Avg6h    Avg24h       Max      Last
+dc.local.lan.             10.5.0.10                 22863 22669  99.15%   0.85%    0.06      0.97      0.95      0.89     13.87      1.33
+alexi001.local.lan.       10.5.0.122                19644 19587  99.71%   0.29%    0.05      1.02      0.90      0.85     12.38      1.35
+alexi002.local.lan.       10.5.0.123                19643 19523  99.39%   0.61%    0.06      1.21      1.18      1.14     14.97      2.38
+alexi003.local.lan.       10.5.0.124                19644 19470  99.11%   0.89%    0.06      0.86      0.96      0.93     13.19      2.17
+10.5.1.2                  10.5.1.2                  22863 22819  99.81%   0.19%  606.30    746.00    806.17    867.11   4245.05    713.65
+inverter.local.lan.       192.168.0.101             22863 22821  99.82%   0.18%    0.49     45.01     50.59     41.06    144.25     34.96
+snom370-260DFE.local.lan  192.168.0.117             22863 22812  99.78%   0.22%    0.83      1.51      1.57      1.48   1000.03      1.39
 ```
 
 If you query the `/metrics` endpoint, you get a histogram that carries far more detail:
