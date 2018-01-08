@@ -85,7 +85,7 @@ Unfortunately, this is a bit involved:
 
 ```
 apt-get install mercurial cython liboping-dev python-flask python-redis redis-server
-hg clone http://bitbucket.org/Svedrin/meshping /opt
+hg clone http://bitbucket.org/Svedrin/meshping /opt/meshping
 cd /opt/meshping
 ./build.sh
 ln -s $PWD/cli.py /usr/local/bin/mpcli
