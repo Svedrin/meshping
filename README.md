@@ -66,24 +66,6 @@ meshping_pings_bucket{target="10.5.1.2",le="3821.69"} 7329
 meshping_pings_bucket{target="10.5.1.2",le="4095.99"} 7330
 ```
 
-And there's even a `/histogram` endpoint that has a human-friendly version of that:
-
-```
-Meshping: 10.5.1.2
-
-1782.89 - 1910.85 ->     1 ■
-1260.69 - 1351.18 ->     1 ■
-1176.27 - 1260.69 ->     1 ■
-1097.50 - 1176.27 ->     5 ■■■■■
-1024.00 - 1097.50 ->     5 ■■■■■
- 955.43 - 1024.00 ->    12 ■■■■■■■■■■■■
- 891.44 -  955.43 ->     6 ■■■■■■
- 831.75 -  891.44 ->     7 ■■■■■■■
- 776.05 -  831.75 ->     1 ■
-
-9 buckets, mvalue=2.00 (probably not multimodal)
-```
-
 ### Querying from Prometheus
 
 You can run queries on the data from Prometheus, e.g.
@@ -112,17 +94,33 @@ systemctl daemon-reload
 service meshping start
 ```
 
-Now the daemon should be running. Adding targets unfortunately sucks currently because I accidentally broke the cli.
+Now the daemon should be running.
 
-In the meantime you can add targets using redis-cli:
+To add targets, run `mpcli -a <target name>[@<target IP address>]`. Examples:
 
 ```
-# redis-cli
-127.0.0.1:6379> sadd meshping:targets google@8.8.8.8
-(integer) 1
+mpcli -a google.com@8.8.8.8
+mpcli -a google.com@8.8.4.4
+mpcli -a google.com
+mpcli -a 8.8.8.8
+mpcli -a example.com
+mpcli -a 192.168.0.1
 ```
 
-and then restart meshping. (Yes, I did promise you wouldn't have to. Sorry about that.)
+Meshping will pick up updates to the target list before the next ping iteration.
+
+
+### Distributed Meshping
+
+Meshping supports running multiple meshping instances that ping the same targets, each reporting stats from their
+point of view. To use this, set up a master instance like outlined above, and configure its Redis server to be reachable
+from the slaves. Then, edit `meshping.service` on the slaves to point to the Master's redis instance, like so:
+
+```
+ExecStart=/usr/bin/python -- /opt/meshping/src/meshping.py -r hive.local.lan
+```
+
+Restart Meshping, and it'll pick up on the targets immediately.
 
 
 ### Who do I talk to? ###
