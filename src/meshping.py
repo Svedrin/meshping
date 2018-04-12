@@ -11,7 +11,7 @@ import os.path
 
 import json
 
-from oping     import PingObj
+from oping     import PingObj, PingError
 from optparse  import OptionParser
 from redis     import StrictRedis
 from threading import Thread
@@ -73,7 +73,11 @@ class MeshPing(object):
             for target in unseen_targets:
                 current_targets.remove(target)
                 name, addr = target.split("@", 1)
-                pingobj.remove_host(addr)
+                try:
+                    pingobj.remove_host(addr)
+                except PingError:
+                    # Host probably not there anyway
+                    pass
                 self.targets.pop(addr, None)
                 self.histograms.pop(addr, None)
 
