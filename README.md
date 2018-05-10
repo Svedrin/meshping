@@ -110,6 +110,12 @@ To do that, add a Heatmap panel to Grafana, and configure it with:
 * Unit: `ms`
 * Min step: `15m`
 
+For a one-histogram-per-day panel, use these settings:
+
+* Query: `delta(meshping_pings_bucket{target=\"$target\"}[1w])`
+* Min step: `1d`
+
+
 Meshping is meant to look at pings over a long time range (e.g. two days or a week), so be sure not to make those time frames too short.
 Otherwise you'll lose the heatmap effect because every data point will be its own histogram.
 
