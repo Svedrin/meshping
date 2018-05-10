@@ -26,7 +26,7 @@ ninety days, and compare it to one that aggregates one day's worth of data per h
 
 ![flaky hardware, weekly histogram](examples/heatmap3.png)
 
-This is a log more consistent.
+This is a lot more consistent.
 
 ### Summary
 
