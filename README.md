@@ -17,6 +17,9 @@ Grafana added Prometheus-compatible Heatmaps in version 5.1. Those let you rende
 
 ![ISP outage](examples/heatmap.png)
 
+Here you can nicely see that at `05/07 13:00` there was a minor outage (failover to a different router on the same line, basically), and at
+`05/08 13:00` something big happened (main line went down completely and we switched to the backup line).
+
 Or that this power converter hardware you bought recently is a bit weird:
 
 ![flaky hardware](examples/heatmap2.png)
