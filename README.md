@@ -168,5 +168,5 @@ Restart Meshping, and it'll pick up on the targets immediately.
 
 # Who do I talk to?
 
-* If you'd like to get in touch, send me an [email](mailto:i.am@svedr.in) or talk to me (Svedrin) on the Freenode IRC network.
+* If you'd like to get in touch, you can send me an [email](mailto:i.am@svedr.in).
 * I also regularly hang out at the Linux User Group or the [mag.lab](http://mag.lab.sh) in Fulda.
