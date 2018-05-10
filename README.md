@@ -29,7 +29,7 @@ ninety days, and compare it to one that aggregates one day's worth of data per h
 
 ![flaky hardware, weekly histogram](examples/heatmap3.png)
 
-This is a lot more consistent.
+This is a lot less noisy.
 
 ### Summary
 
@@ -108,11 +108,11 @@ To do that, add a Heatmap panel to Grafana, and configure it with:
 * Query: `delta(meshping_pings_bucket{target=\"$target\"}[1h])`
 * Legend format: `{{ le }}`
 * Unit: `ms`
-* Min step: `15m`
+* Min step: `1h`
 
 For a one-histogram-per-day panel, use these settings:
 
-* Query: `delta(meshping_pings_bucket{target=\"$target\"}[1w])`
+* Query: `delta(meshping_pings_bucket{target=\"$target\"}[1d])`
 * Min step: `1d`
 
 

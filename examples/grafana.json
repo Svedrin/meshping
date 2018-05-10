@@ -18,12 +18,6 @@
     },
     {
       "type": "panel",
-      "id": "graph",
-      "name": "Graph",
-      "version": "5.0.0"
-    },
-    {
-      "type": "panel",
       "id": "heatmap",
       "name": "Heatmap",
       "version": "5.0.0"
@@ -52,7 +46,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1525937527534,
+  "iteration": 1525939383466,
   "links": [],
   "panels": [
     {
@@ -70,10 +64,10 @@
       "dataFormat": "tsbuckets",
       "datasource": "${DS_PROMETHEUS}",
       "gridPos": {
-        "h": 7,
+        "h": 10,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 0
       },
       "heatmap": {},
       "highlightCards": true,
@@ -86,7 +80,7 @@
         {
           "expr": "delta(meshping_pings_bucket{target=\"$target\"}[1h])",
           "format": "heatmap",
-          "interval": "15m",
+          "interval": "1h",
           "intervalFactor": 2,
           "legendFormat": "{{ le }}",
           "refId": "A"
@@ -130,12 +124,12 @@
         "mode": "opacity"
       },
       "dataFormat": "tsbuckets",
-      "datasource": null,
+      "datasource": "${DS_PROMETHEUS}",
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 10
       },
       "heatmap": {},
       "highlightCards": true,
@@ -146,7 +140,7 @@
       "links": [],
       "targets": [
         {
-          "expr": "delta(meshping_pings_bucket{target=\"$target\"}[1w])",
+          "expr": "delta(meshping_pings_bucket{target=\"$target\"}[1d])",
           "format": "heatmap",
           "interval": "1d",
           "intervalFactor": 2,
@@ -154,7 +148,7 @@
           "refId": "A"
         }
       ],
-      "title": "Heat Map (week)",
+      "title": "Heat Map (day)",
       "tooltip": {
         "show": true,
         "showHistogram": true
@@ -209,7 +203,7 @@
     ]
   },
   "time": {
-    "from": "now-2d",
+    "from": "now-90d",
     "to": "now"
   },
   "timepicker": {
@@ -240,5 +234,5 @@
   "timezone": "browser",
   "title": "Meshping",
   "uid": "000000004",
-  "version": 30
+  "version": 32
 }
