@@ -11,7 +11,15 @@ Ping daemon that pings a number of targets at once, collecting their response ti
 
 ## Screenshots
 
-If you open the root URL at `http://localhost:9922`, you'll get statistics like this:
+Grafana added Prometheus-compatible Heatmaps in version 5.1. Those let you render graphs like these, showing when your ISP failovers you to a second line:
+
+![ISP outage](examples/heatmap.png)
+
+Or that this power converter hardware you bought recently is a bit weird:
+
+![flaky hardware](examples/heatmap2.png)
+
+If you point your browser to Meshping at `http://localhost:9922`, you'll get statistics like this:
 
 ```
 Target                    Address                    Sent  Recv   Succ    Loss      Min    Avg15m     Avg6h    Avg24h       Max      Last
@@ -64,6 +72,8 @@ meshping_pings_bucket{target="10.5.1.2",le="3821.69"} 7329
 meshping_pings_bucket{target="10.5.1.2",le="4095.99"} 7330
 ```
 
+This endpoint is meant to be scraped by Prometheus.
+
 ### Querying from Prometheus
 
 You can run queries on the data from Prometheus, e.g.
@@ -72,9 +82,20 @@ You can run queries on the data from Prometheus, e.g.
  * quantiles: `histogram_quantile(0.95, rate(meshping_pings_bucket{target="$target"}[2m]))`
  * averages: `rate(meshping_pings_sum{target="10.5.1.2"}[2m]) / rate(meshping_pings_count[2m])`
 
-Ultimate goal is to have Grafana render a [heatmap](http://docs.grafana.org/features/panels/heatmap/) with a
-[histogram over time](http://docs.grafana.org/img/docs/v43/heatmap_histogram_over_time.png) that shows the pings,
-but unfortunately that doesn't work [just yet](https://github.com/grafana/grafana/issues/10009).
+### Heatmaps in Grafana
+
+Grafana added [Heatmap support](https://github.com/grafana/grafana/issues/10009) in v5.1, so we now can produce graphs like the images above,
+that contain a [histogram over time](http://docs.grafana.org/img/docs/v43/heatmap_histogram_over_time.png) that shows the pings.
+
+To do that, add a Heatmap panel to Grafana, and configure it with:
+
+* Query: `delta(meshping_pings_bucket{target=\"$target\"}[1h])`
+* Min step: `15m`
+
+Meshping is meant to look at pings over a long time range (e.g. two days or a week), so be sure not to make those time frames too short.
+Otherwise you'll lose the heatmap effect because every data point will be its own histogram.
+
+In the examples directory, there's also a [json dashboard definition](examples/grafana.json) that you can import.
 
 
 ### How do I get set up? ###
