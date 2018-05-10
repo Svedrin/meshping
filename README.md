@@ -11,6 +11,8 @@ Ping daemon that pings a number of targets at once, collecting their response ti
 
 ## Screenshots
 
+### Heatmaps
+
 Grafana added Prometheus-compatible Heatmaps in version 5.1. Those let you render graphs like these, showing when your ISP failovers you to a second line:
 
 ![ISP outage](examples/heatmap.png)
@@ -18,6 +20,15 @@ Grafana added Prometheus-compatible Heatmaps in version 5.1. Those let you rende
 Or that this power converter hardware you bought recently is a bit weird:
 
 ![flaky hardware](examples/heatmap2.png)
+
+The latter is a normal distribution, which is an indication that you're looking at too small a time frame. Let's look at this heatmap over
+ninety days, and compare it to one that aggregates one day's worth of data per histogram:
+
+![flaky hardware, weekly histogram](examples/heatmap3.png)
+
+This is a log more consistent.
+
+### Summary
 
 If you point your browser to Meshping at `http://localhost:9922`, you'll get statistics like this:
 
@@ -31,6 +42,8 @@ alexi003.local.lan.       10.5.0.124                19644 19470  99.11%   0.89% 
 inverter.local.lan.       192.168.0.101             22863 22821  99.82%   0.18%    0.49     45.01     50.59     41.06    144.25     34.96
 snom370-260DFE.local.lan  192.168.0.117             22863 22812  99.78%   0.22%    0.83      1.51      1.57      1.48   1000.03      1.39
 ```
+
+### Raw data
 
 If you query the `/metrics` endpoint, you get a histogram that carries far more detail:
 
@@ -74,7 +87,7 @@ meshping_pings_bucket{target="10.5.1.2",le="4095.99"} 7330
 
 This endpoint is meant to be scraped by Prometheus.
 
-### Querying from Prometheus
+## Querying from Prometheus
 
 You can run queries on the data from Prometheus, e.g.
 
@@ -82,7 +95,7 @@ You can run queries on the data from Prometheus, e.g.
  * quantiles: `histogram_quantile(0.95, rate(meshping_pings_bucket{target="$target"}[2m]))`
  * averages: `rate(meshping_pings_sum{target="10.5.1.2"}[2m]) / rate(meshping_pings_count[2m])`
 
-### Heatmaps in Grafana
+## Heatmaps in Grafana
 
 Grafana added [Heatmap support](https://github.com/grafana/grafana/issues/10009) in v5.1, so we now can produce graphs like the images above,
 that contain a [histogram over time](http://docs.grafana.org/img/docs/v43/heatmap_histogram_over_time.png) that shows the pings.
@@ -90,6 +103,8 @@ that contain a [histogram over time](http://docs.grafana.org/img/docs/v43/heatma
 To do that, add a Heatmap panel to Grafana, and configure it with:
 
 * Query: `delta(meshping_pings_bucket{target=\"$target\"}[1h])`
+* Legend format: `{{ le }}`
+* Unit: `ms`
 * Min step: `15m`
 
 Meshping is meant to look at pings over a long time range (e.g. two days or a week), so be sure not to make those time frames too short.
@@ -98,7 +113,7 @@ Otherwise you'll lose the heatmap effect because every data point will be its ow
 In the examples directory, there's also a [json dashboard definition](examples/grafana.json) that you can import.
 
 
-### How do I get set up? ###
+# How do I get set up?
 
 Unfortunately, this is a bit involved:
 
@@ -129,7 +144,7 @@ mpcli -a 192.168.0.1
 Meshping will pick up updates to the target list before the next ping iteration.
 
 
-### Distributed Meshping
+# Distributed Meshping
 
 Meshping supports running multiple meshping instances that ping the same targets, each reporting stats from their
 point of view. To use this, set up a master instance like outlined above, and configure its Redis server to be reachable
@@ -142,7 +157,7 @@ ExecStart=/usr/bin/python -- /opt/meshping/src/meshping.py -r hive.local.lan
 Restart Meshping, and it'll pick up on the targets immediately.
 
 
-### Who do I talk to? ###
+# Who do I talk to?
 
 * If you'd like to get in touch, send me an [email](mailto:i.am@svedr.in) or talk to me (Svedrin) on the Freenode IRC network.
 * I also regularly hang out at the Linux User Group or the [mag.lab](http://mag.lab.sh) in Fulda.
