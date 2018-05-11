@@ -105,14 +105,14 @@ that contain a [histogram over time](http://docs.grafana.org/img/docs/v43/heatma
 
 To do that, add a Heatmap panel to Grafana, and configure it with:
 
-* Query: `delta(meshping_pings_bucket{target=\"$target\"}[1h])`
+* Query: `increase(meshping_pings_bucket{target=\"$target\"}[1h])`
 * Legend format: `{{ le }}`
 * Unit: `ms`
 * Min step: `1h`
 
 For a one-histogram-per-day panel, use these settings:
 
-* Query: `delta(meshping_pings_bucket{target=\"$target\"}[1d])`
+* Query: `increase(meshping_pings_bucket{target=\"$target\"}[1d])`
 * Min step: `1d`
 
 

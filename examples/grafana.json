@@ -78,7 +78,7 @@
       "links": [],
       "targets": [
         {
-          "expr": "delta(meshping_pings_bucket{target=\"$target\"}[1h])",
+          "expr": "increase(meshping_pings_bucket{target=\"$target\"}[1h])",
           "format": "heatmap",
           "interval": "1h",
           "intervalFactor": 2,
@@ -140,7 +140,7 @@
       "links": [],
       "targets": [
         {
-          "expr": "delta(meshping_pings_bucket{target=\"$target\"}[1d])",
+          "expr": "increase(meshping_pings_bucket{target=\"$target\"}[1d])",
           "format": "heatmap",
           "interval": "1d",
           "intervalFactor": 2,
