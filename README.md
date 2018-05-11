@@ -124,6 +124,18 @@ In the examples directory, there's also a [json dashboard definition](examples/g
 
 # How do I get set up?
 
+## Using Docker
+
+You can run meshping itself through Docker, but you'll need to provide a Redis instance and will need `mpcli` somewhere so you can add targets to meshping (see below):
+
+```
+docker run --rm --net=host -e REDIS_HOST=redisbox svedrin/meshping:0.1-stretch
+wget https://bitbucket.org/Svedrin/meshping/raw/default/cli.py -O /usr/local/bin/mpcli
+chmod +x /usr/local/bin/mpcli
+```
+
+## Manual setup
+
 Unfortunately, this is a bit involved:
 
 ```
@@ -138,6 +150,8 @@ service meshping start
 ```
 
 Now the daemon should be running.
+
+## Adding targets
 
 To add targets, run `mpcli -a <target name>[@<target IP address>]`. Examples:
 
