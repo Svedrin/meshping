@@ -1,0 +1,9 @@
+kind: pipeline
+name: default
+
+steps:
+- name: build docker image
+  image: plugins/docker
+  settings:
+    repo: docker.funzt-halt.net/meshping
+    tags: latest
