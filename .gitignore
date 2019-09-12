@@ -1,5 +1,3 @@
-syntax:glob
-
 python-ping/
 
 *.pyc

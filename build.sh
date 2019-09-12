@@ -3,7 +3,7 @@
 set -e
 set -u
 
-ROOTDIR="$(hg root)"
+ROOTDIR="$PWD"
 
 cd "$ROOTDIR/oping-py"
 python setup.py build
