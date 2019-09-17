@@ -1,4 +1,4 @@
-FROM debian:stretch-slim
+FROM debian:buster-slim
 
 COPY . /opt/meshping
 WORKDIR /opt/meshping

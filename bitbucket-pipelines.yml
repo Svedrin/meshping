@@ -1,7 +1,0 @@
-image: ubuntu:16.04
-pipelines:
-  default:
-    - step:
-        script:
-        - apt-get update && apt-get -y install mercurial cython liboping-dev
-        - ./build.sh
