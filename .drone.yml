@@ -7,3 +7,4 @@ steps:
   settings:
     repo: docker.funzt-halt.net/meshping
     tags: latest
+    cache_from: "docker.funzt-halt.net/meshping:latest"
