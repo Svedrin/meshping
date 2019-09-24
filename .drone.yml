@@ -1,3 +1,4 @@
+---
 kind: pipeline
 name: default
 
@@ -16,3 +17,8 @@ steps:
     event:
       exclude:
       - pull_request
+---
+kind: signature
+hmac: 3cecf8b3c3fd146ca46ef46398b0047482d220efac4d28fd897688078d8e4d9b
+
+...
