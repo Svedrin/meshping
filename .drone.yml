@@ -10,7 +10,7 @@ steps:
     username: svedrin
     password:
       from_secret: docker-registry-pw
-    #cache_from: "svedrin/meshping:latest"
+    cache_from: "svedrin/meshping:latest"
   when:
     branch: master
     event:
