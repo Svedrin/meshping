@@ -5,6 +5,14 @@ steps:
 - name: build docker image
   image: plugins/docker
   settings:
-    repo: docker.funzt-halt.net/meshping
+    repo: svedrin/meshping
     tags: latest
-    #cache_from: "docker.funzt-halt.net/meshping:latest"
+    username: svedrin
+    password:
+      from_secret: docker-registry-pw
+    #cache_from: "svedrin/meshping:latest"
+  when:
+    branch: master
+    event:
+      exclude:
+      - pull_request
