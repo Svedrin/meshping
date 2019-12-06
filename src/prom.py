@@ -71,24 +71,24 @@ def run_prom(mp):
         for addr, target in mp.targets.items():
 
             respdata.append('\n'.join([
-                'meshping_sent{target="%(addr)s"} %(sent)d',
+                'meshping_sent{name="%(name)s",target="%(addr)s"} %(sent)d',
 
-                'meshping_recv{target="%(addr)s"} %(recv)d',
+                'meshping_recv{name="%(name)s",target="%(addr)s"} %(recv)d',
 
-                'meshping_lost{target="%(addr)s"} %(lost)d',
+                'meshping_lost{name="%(name)s",target="%(addr)s"} %(lost)d',
             ]) % target)
 
             if target["recv"]:
                 target = dict(target, avg=(target["sum"] / target["recv"]))
                 respdata.append('\n'.join([
-                    'meshping_max{target="%(addr)s"} %(max).2f',
+                    'meshping_max{name="%(name)s",target="%(addr)s"} %(max).2f',
 
-                    'meshping_min{target="%(addr)s"} %(min).2f',
+                    'meshping_min{name="%(name)s",target="%(addr)s"} %(min).2f',
                 ]) % target)
 
             respdata.append('\n'.join([
-                'meshping_pings_sum{target="%(addr)s"} %(sum)f',
-                'meshping_pings_count{target="%(addr)s"} %(recv)d',
+                'meshping_pings_sum{name="%(name)s",target="%(addr)s"} %(sum)f',
+                'meshping_pings_count{name="%(name)s",target="%(addr)s"} %(recv)d',
             ]) % target)
 
             histogram = mp.histograms.get(addr, {})
@@ -97,10 +97,11 @@ def run_prom(mp):
             for bucket in buckets:
                 nextping = 2 ** ((bucket + 1) / 10.) - 0.01
                 count += histogram[bucket]
-                respdata.append('meshping_pings_bucket{target="%(addr)s",le="%(le).2f"} %(count)d' % dict(
+                respdata.append('meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="%(le).2f"} %(count)d' % dict(
                     addr  = addr,
                     count = count,
-                    le    = nextping
+                    le    = nextping,
+                    name  = target['name'],
                 ))
 
         return Response('\n'.join(respdata) + '\n', mimetype="text/plain")
