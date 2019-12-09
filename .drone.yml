@@ -3,11 +3,26 @@ kind: pipeline
 name: default
 
 steps:
+- name: set "latest" tag
+  image: alpine:latest
+  commands:
+  - echo -n "latest" > .tags
+  when:
+    branch: master
+    event: tag
+
+- name: set version tag
+  image: alpine:latest
+  commands:
+  - echo -n ",${DRONE_TAG}" >> .tags
+  when:
+    branch: master
+    event: tag
+
 - name: build docker image
   image: plugins/docker
   settings:
     repo: svedrin/meshping
-    tags: latest
     username: svedrin
     password:
       from_secret: docker-registry-pw
@@ -19,6 +34,6 @@ steps:
       - pull_request
 ---
 kind: signature
-hmac: 3cecf8b3c3fd146ca46ef46398b0047482d220efac4d28fd897688078d8e4d9b
+hmac: 159ed986abf3735e067bf4a12d5e2228e99a3d3fafc8a3d3e5cebc939839b317
 
 ...
