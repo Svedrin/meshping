@@ -130,7 +130,7 @@ You can run meshping itself through Docker, but you'll need to provide a Redis i
 
 ```
 docker run --rm --net=host -e REDIS_HOST=redisbox svedrin/meshping:0.1-stretch
-wget https://bitbucket.org/Svedrin/meshping/raw/default/cli.py -O /usr/local/bin/mpcli
+wget https://raw.githubusercontent.com/cglewis/meshping/master/cli.py -O /usr/local/bin/mpcli
 chmod +x /usr/local/bin/mpcli
 ```
 
