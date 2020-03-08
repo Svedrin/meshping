@@ -40,11 +40,13 @@ def main():
                 if "@" in arg:
                     if target == arg:
                         redis.srem("meshping:targets", target)
+                        redis.srem("meshping:foreign_targets", target)
                         print(target)
                 else:
                     name, addr = target.split("@", 1)
                     if name == arg or addr == arg:
                         redis.srem("meshping:targets", target)
+                        redis.srem("meshping:foreign_targets", target)
                         print(target)
 
     else:
