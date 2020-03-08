@@ -84,6 +84,10 @@ class MeshPing(object):
                 self.targets.pop(addr, None)
                 self.histograms.pop(addr, None)
 
+            if not current_targets:
+                sleep(next_ping - time())
+                continue
+
             pingobj.send()
 
             rdspipe = self.redis.pipeline()
