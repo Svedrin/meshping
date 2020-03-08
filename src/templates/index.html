@@ -1,0 +1,36 @@
+<h1>Meshping</h1>
+<meta http-equiv="refresh" content="30">
+<a href="/metrics">metrics</a>
+
+<table cellspacing="10px">
+  <tr>
+    <th>Target</th>
+    <th>Address</th>
+    <th>Sent</th>
+    <th>Recv</th>
+    <th>Succ</th>
+    <th>Loss</th>
+    <th>Min</th>
+    <th>Avg15m</th>
+    <th>Avg6h</th>
+    <th>Avg24h</th>
+    <th>Max</th>
+    <th>Last</th>
+  </tr>
+  {% for target in Targets %}
+    <tr><!-- """%(name)-25s %(addr)-25s %(sent)5d %(recv)5d %(succ)6.2f%% %(loss)6.2f%% %(min)7.2f   %(avg15m)7.2f   %(avg6h)7.2f   %(avg24h)7.2f   %(max)7.2f   %(last)7.2f""" % -->
+      <td>{{ target["name"]   }}</td>
+      <td>{{ target["addr"]   }}</td>
+      <td align="right">{{ target["sent"]   }}</td>
+      <td align="right">{{ target["recv"]   }}</td>
+      <td align="right">{{ "%7.2f"|format(target["succ"]  ) }}</td>
+      <td align="right">{{ "%7.2f"|format(target["loss"]  ) }}</td>
+      <td align="right">{{ "%7.2f"|format(target["min"]   ) }}</td>
+      <td align="right">{{ "%7.2f"|format(target["avg15m"]) }}</td>
+      <td align="right">{{ "%7.2f"|format(target["avg6h"] ) }}</td>
+      <td align="right">{{ "%7.2f"|format(target["avg24h"]) }}</td>
+      <td align="right">{{ "%7.2f"|format(target["max"]   ) }}</td>
+      <td align="right">{{ "%7.2f"|format(target["last"]  ) }}</td>
+    </tr>
+  {% endfor %}
+</table>

@@ -3,7 +3,7 @@
 from __future__ import division
 
 from uuid  import uuid4
-from flask import Flask, Response
+from flask import Flask, Response, render_template
 
 def run_prom(mp):
     app = Flask(__name__)
@@ -11,9 +11,7 @@ def run_prom(mp):
     @app.route("/")
     def hai():
 
-        targets = [
-            "Target                    Address                    Sent  Recv   Succ    Loss      Min    Avg15m     Avg6h    Avg24h       Max      Last"
-        ]
+        targets = []
 
         def ip_as_int(tgt):
             import socket
@@ -31,7 +29,7 @@ def run_prom(mp):
             if targetinfo["sent"]:
                 loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
             targets.append(
-                """%(name)-25s %(addr)-25s %(sent)5d %(recv)5d %(succ)6.2f%% %(loss)6.2f%% %(min)7.2f   %(avg15m)7.2f   %(avg6h)7.2f   %(avg24h)7.2f   %(max)7.2f   %(last)7.2f""" % dict(
+                dict(
                     targetinfo,
                     name=targetinfo["name"][:24],
                     succ=100 - loss,
@@ -42,15 +40,7 @@ def run_prom(mp):
                 )
             )
 
-        return Response('\n'.join([
-            """<h1>Meshping</h1>""",
-            """<meta http-equiv="refresh" content="30">""",
-            """<a href="/metrics">metrics</a>""",
-            """<pre style="white-space: pre-wrap">""",
-                '\n'.join(targets),
-            """</pre>""",
-            ''
-        ]))
+        return render_template("index.html", Targets=targets)
 
     @app.route("/metrics")
     def metrics():
