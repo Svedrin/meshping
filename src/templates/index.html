@@ -18,7 +18,7 @@
     <th>Last</th>
   </tr>
   {% for target in Targets %}
-    <tr><!-- """%(name)-25s %(addr)-25s %(sent)5d %(recv)5d %(succ)6.2f%% %(loss)6.2f%% %(min)7.2f   %(avg15m)7.2f   %(avg6h)7.2f   %(avg24h)7.2f   %(max)7.2f   %(last)7.2f""" % -->
+    <tr>
       <td>{{ target["name"]   }}</td>
       <td>{{ target["addr"]   }}</td>
       <td align="right">{{ target["sent"]   }}</td>
