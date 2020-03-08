@@ -3,7 +3,9 @@
 from __future__ import division
 
 from uuid  import uuid4
-from flask import Flask, Response, render_template
+from flask import Flask, Response, render_template, request, jsonify
+
+from ifaces import Ifaces4
 
 def run_prom(mp):
     app = Flask(__name__)
@@ -96,6 +98,49 @@ def run_prom(mp):
                 ))
 
         return Response('\n'.join(respdata) + '\n', mimetype="text/plain")
+
+    @app.route("/peer", methods=["POST"])
+    def peer():
+        # Allows peers to POST a json structure such as this:
+        # {
+        #    "targets": [
+        #       { "name": "raspi",  "addr": "192.168.0.123", "local": true  },
+        #       { "name": "google", "addr": "8.8.8.8",       "local": false }
+        #    ]
+        # }
+        # The non-local targets will then be added to our target list
+        # and stats will be returned for these targets (if known).
+        # Local targets will only be added if they are also local to us.
+
+        if request.json is None:
+            return "Please send content-type:application/json", 400
+
+        if type(request.json.get("targets")) != list:
+            return "need targets as a list", 400
+
+        stats = []
+        if4   = Ifaces4()
+
+        for target in request.json["targets"]:
+            if type(target) != dict:
+                return "targets must be dicts", 400
+            if ("name" not in target  or not target["name"].strip() or
+                "addr" not in target  or not target["addr"].strip() or
+                "local" not in target or type(target["local"]) != bool):
+                return "required field missing in target", 400
+
+            target["name"] = target["name"].strip()
+            target["addr"] = target["addr"].strip()
+
+            if target["local"] and not if4.is_local(target["addr"]):
+                continue
+
+            target_str = "%(name)s@%(addr)s" % target
+            mp.redis.sadd("meshping:foreign_targets", target_str)
+            mp.redis.sadd("meshping:targets", target_str)
+            stats.append(mp.targets.get(target["addr"]))
+
+        return jsonify(success=True, targets=stats)
 
     app.secret_key = str(uuid4())
     app.debug = False
