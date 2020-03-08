@@ -4,6 +4,7 @@ import netifaces
 
 class Ifaces4:
     def __init__(self):
+        self.addrs = []
         self.networks = []
         # Get addresses from our interfaces
         for iface in netifaces.interfaces():
@@ -12,6 +13,7 @@ class Ifaces4:
                     continue
 
                 for addrinfo in addresses:
+                    self.addrs.append(ipaddress.ip_address(addrinfo["addr"]))
                     self.networks.append(
                         ipaddress.IPv4Network("%s/%s" % (
                             ipaddress.ip_address(addrinfo["addr"]),
@@ -29,8 +31,13 @@ class Ifaces4:
     def is_local(self, target):
         return self.find_iface_for_network(target) is not None
 
+    def is_interface(self, target):
+        target = ipaddress.IPv4Address(target)
+        return target in self.addrs
+
 class Ifaces6:
     def __init__(self):
+        self.addrs = []
         self.networks = []
         # Get addresses from our interfaces
         for iface in netifaces.interfaces():
@@ -47,6 +54,7 @@ class Ifaces6:
                     # netmask is ffff:ffff:ffff:etc:ffff/128 for some reason, we only need the length
                     addrinfo["netmask"] = int(addrinfo["netmask"].split("/")[1], 10)
 
+                    self.addrs.append(ipaddress.ip_address(addrinfo["addr"]))
                     self.networks.append(
                         ipaddress.IPv6Network("%s/%d" % (
                             ipaddress.ip_address(addrinfo["addr"]),
@@ -63,6 +71,10 @@ class Ifaces6:
 
     def is_local(self, target):
         return self.find_iface_for_network(target) is not None
+
+    def is_interface(self, target):
+        target = ipaddress.IPv4Address(target)
+        return target in self.addrs
 
 
 def test():
