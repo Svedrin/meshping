@@ -53,10 +53,11 @@ class MeshPing(object):
 
             unseen_targets = current_targets.copy()
             for target in self.redis.smembers("meshping:targets"):
+                target = target.decode("utf-8")
                 if target not in current_targets:
                     current_targets.add(target)
                     name, addr = target.split("@", 1)
-                    pingobj.add_host(addr)
+                    pingobj.add_host(addr.encode("utf-8"))
 
                     self.targets[addr] = self.redis_load(addr, "target") or {
                         "name": name, "addr": addr,
@@ -74,7 +75,7 @@ class MeshPing(object):
                 current_targets.remove(target)
                 name, addr = target.split("@", 1)
                 try:
-                    pingobj.remove_host(addr)
+                    pingobj.remove_host(addr.encode("utf-8"))
                 except PingError:
                     # Host probably not there anyway
                     pass
@@ -86,6 +87,9 @@ class MeshPing(object):
             rdspipe = self.redis.pipeline()
 
             for hostinfo in pingobj.get_hosts():
+                hostinfo["name"] = hostinfo["name"].decode("utf-8")
+                hostinfo["addr"] = hostinfo["addr"].decode("utf-8")
+
                 target = self.targets[hostinfo["addr"]]
                 histogram  = self.histograms.setdefault(hostinfo["addr"], {})
 

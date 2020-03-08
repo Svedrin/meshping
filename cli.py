@@ -30,6 +30,7 @@ def main():
 
     elif options.delete:
         for target in redis.smembers("meshping:targets"):
+            target = target.decode("utf-8")
             for arg in posargs:
                 if "@" in arg:
                     if target == arg:
@@ -41,7 +42,7 @@ def main():
 
     else:
         for target in redis.smembers("meshping:targets"):
-            print(target)
+            print(target.decode("utf-8"))
 
 
 if __name__ == '__main__':
