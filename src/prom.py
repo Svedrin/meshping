@@ -132,6 +132,10 @@ def run_prom(mp):
             target["name"] = target["name"].strip()
             target["addr"] = target["addr"].strip()
 
+            if if4.is_interface(target["addr"]):
+                # no need to ping my own interfaces, ignore
+                continue
+
             if target["local"] and not if4.is_local(target["addr"]):
                 continue
 
