@@ -14,7 +14,7 @@ RUN mkdir src && ./build.sh
 
 FROM alpine:latest
 
-RUN apk add --no-cache python3 liboping bash
+RUN apk add --no-cache python3 liboping bash py3-netifaces~=0.10.9
 COPY requirements.txt /opt/meshping/requirements.txt
 RUN pip3 install -r /opt/meshping/requirements.txt
 

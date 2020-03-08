@@ -17,7 +17,8 @@ from redis     import StrictRedis
 from threading import Thread
 from time      import sleep, time
 
-from prom import run_prom
+from prom  import run_prom
+from peers import run_peers
 
 INTERVAL = 30
 
@@ -166,6 +167,10 @@ def main():
     promrunner = Thread(target=run_prom, args=(mp,))
     promrunner.daemon = True
     promrunner.start()
+
+    peers_pusher = Thread(target=run_peers, args=(mp,))
+    peers_pusher.daemon = True
+    peers_pusher.start()
 
     try:
         mp.run()

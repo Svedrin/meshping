@@ -26,9 +26,11 @@ def main():
                 for info in socket.getaddrinfo(target, 0, 0, socket.SOCK_STREAM):
                     target_with_addr = "%s@%s" % (target, info[4][0])
                     redis.sadd("meshping:targets", target_with_addr)
+                    redis.srem("meshping:foreign_targets", target_with_addr)
                     print(target_with_addr)
             else:
                 redis.sadd("meshping:targets", target)
+                redis.srem("meshping:foreign_targets", target)
                 print(target)
 
     elif options.delete:
@@ -46,8 +48,16 @@ def main():
                         print(target)
 
     else:
+        forn_targets = set([
+            target.decode("utf-8")
+            for target in redis.smembers("meshping:foreign_targets")
+        ])
         for target in sorted(redis.smembers("meshping:targets")):
-            print(target.decode("utf-8"))
+            target = target.decode("utf-8")
+            if target in forn_targets:
+                print("%s (FOREIGN)" % target)
+            else:
+                print(target)
 
 
 if __name__ == '__main__':
