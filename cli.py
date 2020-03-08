@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # kate: space-indent on; indent-width 4; replace-tabs on;
 
@@ -41,7 +41,7 @@ def main():
 
     else:
         for target in redis.smembers("meshping:targets"):
-            print target
+            print(target)
 
 
 if __name__ == '__main__':
