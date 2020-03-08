@@ -24,9 +24,12 @@ def main():
         for target in posargs:
             if "@" not in target:
                 for info in socket.getaddrinfo(target, 0, 0, socket.SOCK_STREAM):
-                    redis.sadd("meshping:targets", "%s@%s" % (target, info[4][0]))
+                    target_with_addr = "%s@%s" % (target, info[4][0])
+                    redis.sadd("meshping:targets", target_with_addr)
+                    print(target_with_addr)
             else:
                 redis.sadd("meshping:targets", target)
+                print(target)
 
     elif options.delete:
         for target in redis.smembers("meshping:targets"):
@@ -35,10 +38,12 @@ def main():
                 if "@" in arg:
                     if target == arg:
                         redis.srem("meshping:targets", target)
+                        print(target)
                 else:
                     name, addr = target.split("@", 1)
                     if name == arg or addr == arg:
                         redis.srem("meshping:targets", target)
+                        print(target)
 
     else:
         for target in sorted(redis.smembers("meshping:targets")):
