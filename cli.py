@@ -41,7 +41,7 @@ def main():
                         redis.srem("meshping:targets", target)
 
     else:
-        for target in redis.smembers("meshping:targets"):
+        for target in sorted(redis.smembers("meshping:targets")):
             print(target.decode("utf-8"))
 
 
