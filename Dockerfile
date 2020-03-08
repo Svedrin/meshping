@@ -22,6 +22,5 @@ WORKDIR /opt/meshping
 COPY --from=0 /usr/lib/python3.8/site-packages/oping.*.so /usr/lib/python3.8/site-packages
 COPY cli.py /usr/local/bin/mpcli
 COPY src    /opt/meshping/src
-COPY docker /opt/meshping/docker
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["/usr/bin/python3", "--", "/opt/meshping/src/meshping.py"]
