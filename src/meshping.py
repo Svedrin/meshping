@@ -63,6 +63,7 @@ class MeshPing(object):
                         "name": name, "addr": addr,
                         "sent": 0, "lost": 0, "recv": 0, "last": 0, "sum":  0, "min":  0, "max":  0
                     }
+                    self.targets[addr]["name"] = name
                     histogram = self.redis_load(addr, "histogram") or {}
                     # json sucks and converts dict keys to strings
                     histogram = dict([(int(x), y) for (x, y) in histogram.items()])
