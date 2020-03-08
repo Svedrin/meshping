@@ -4,6 +4,7 @@
 
 from __future__ import division
 
+import os
 import sys
 import socket
 
@@ -15,10 +16,9 @@ def main():
 
     parser.add_option("-d", "--delete",    help="remove target",    default=False, action="store_true")
     parser.add_option("-a", "--add",       help="add target",       default=False, action="store_true")
-    parser.add_option("-r", "--redishost", help="Redis Host [127.0.0.1]", default="127.0.0.1")
     options, posargs = parser.parse_args()
 
-    redis = StrictRedis(host=options.redishost)
+    redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
 
     if options.add:
         for target in posargs:
