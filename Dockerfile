@@ -20,7 +20,7 @@ RUN pip3 install -r /opt/meshping/requirements.txt
 
 WORKDIR /opt/meshping
 COPY --from=0 /usr/lib/python3.8/site-packages/oping.*.so /usr/lib/python3.8/site-packages
-COPY cli.py /opt/meshping/cli.py
+COPY cli.py /usr/local/bin/mpcli
 COPY src    /opt/meshping/src
 COPY docker /opt/meshping/docker
 CMD ["/opt/meshping/docker/run.sh"]

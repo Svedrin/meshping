@@ -129,27 +129,16 @@ In the examples directory, there's also a [json dashboard definition](examples/g
 You can run meshping itself through Docker, but you'll need to provide a Redis instance and will need `mpcli` somewhere so you can add targets to meshping (see below):
 
 ```
-docker run --rm --net=host -e REDIS_HOST=redisbox svedrin/meshping:0.1-stretch
+docker run --rm --net=host -e REDIS_HOST=redisbox svedrin/meshping:latest
 wget https://raw.githubusercontent.com/Svedrin/meshping/master/cli.py -O /usr/local/bin/mpcli
 chmod +x /usr/local/bin/mpcli
 ```
 
-## Manual setup
-
-Unfortunately, this is a bit involved:
+The CLI needs to be able to talk to the Redis instance. It is included in the Docker image, so you can also use:
 
 ```
-apt-get install mercurial cython liboping-dev python-flask python-redis redis-server
-hg clone http://bitbucket.org/Svedrin/meshping /opt/meshping
-cd /opt/meshping
-./build.sh
-ln -s $PWD/cli.py /usr/local/bin/mpcli
-cp meshping.service /etc/systemd/system
-systemctl daemon-reload
-service meshping start
+docker run --rm -it --net=host svedrin/meshping:latest mpcli
 ```
-
-Now the daemon should be running.
 
 ## Adding targets
 
