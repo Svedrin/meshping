@@ -26,9 +26,11 @@ def main():
                 for info in socket.getaddrinfo(target, 0, 0, socket.SOCK_STREAM):
                     target_with_addr = "%s@%s" % (target, info[4][0])
                     redis.sadd("meshping:targets", target_with_addr)
+                    redis.srem("meshping:foreign_targets", target_with_addr)
                     print(target_with_addr)
             else:
                 redis.sadd("meshping:targets", target)
+                redis.srem("meshping:foreign_targets", target)
                 print(target)
 
     elif options.delete:
