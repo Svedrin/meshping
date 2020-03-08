@@ -48,8 +48,16 @@ def main():
                         print(target)
 
     else:
+        forn_targets = set([
+            target.decode("utf-8")
+            for target in redis.smembers("meshping:foreign_targets")
+        ])
         for target in sorted(redis.smembers("meshping:targets")):
-            print(target.decode("utf-8"))
+            target = target.decode("utf-8")
+            if target in forn_targets:
+                print("%s (FOREIGN)" % target)
+            else:
+                print(target)
 
 
 if __name__ == '__main__':
