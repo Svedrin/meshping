@@ -124,9 +124,7 @@ In the examples directory, there's also a [json dashboard definition](examples/g
 
 # How do I get set up?
 
-## Using Docker
-
-You can run meshping itself through Docker, but you'll need to provide a Redis instance and will need `mpcli` somewhere so you can add targets to meshping (see below):
+You can run meshping through Docker, but you'll need to provide a Redis instance and will need `mpcli` somewhere so you can add targets to meshping (see below):
 
 ```
 docker run --rm --net=host -e REDIS_HOST=redisbox svedrin/meshping:latest
@@ -139,6 +137,9 @@ The CLI needs to be able to talk to the Redis instance. It is included in the Do
 ```
 docker run --rm -it --net=host svedrin/meshping:latest mpcli
 ```
+
+You can add a bash alias for that command for easier access.
+
 
 ## Adding targets
 
@@ -156,17 +157,37 @@ mpcli -a 192.168.0.1
 Meshping will pick up updates to the target list before the next ping iteration.
 
 
+# Configuration options
+
+Meshping is configured through environment variables. These exist:
+
+* `MESHPING_REDIS_HOST`: The address of your redis instance (default: `127.0.0.1`).
+* `MESHPING_TIMEOUT`: Ping timeout (default: 5s).
+* `MESHPING_PEERS`: Comma-separated list of other Meshping instances to peer with (only `ip:port`, no URLs).
+
+
 # Distributed Meshping
+
+Meshping can be distributed in two ways: You can point multiple instances to the same Redis DB for local distribution,
+and you can configre peering to have multiple Meshping instances collaborate across WAN links.
+
+## Local distribution: Shared Redis
 
 Meshping supports running multiple meshping instances that ping the same targets, each reporting stats from their
 point of view. To use this, set up a master instance like outlined above, and configure its Redis server to be reachable
-from the slaves. Then, edit `meshping.service` on the slaves to point to the Master's redis instance, like so:
-
-```
-ExecStart=/usr/bin/python -- /opt/meshping/src/meshping.py -r hive.local.lan
-```
+from the slaves. Then, edit `meshping.service` on the slaves to point to the Master's redis instance, by setting the
+`MESHPING_REDIS_HOST` to an IP or FQDN of your master server.
 
 Restart Meshping, and it'll pick up on the targets immediately.
+
+## Wide distribution: Peering
+
+If you have set up multiple Meshping instances with WAN links in between, using a shared Redis instance is not an
+option because if the WAN link is down -- the very condition you would like Meshping to detect -- access to Redis
+is not possible and Meshping won't work. In such a scenario, you can run two separate Meshping instances, each using
+its own Redis instance in the background, and have them exchange targets via peering. To do this, set the
+`MESHPING_PEERS` env var in each instance to point to each other. That way, they will exchange target lists regularly,
+and you will be able to retrieve statistics from both sides to see how your links are doing.
 
 
 # Who do I talk to?

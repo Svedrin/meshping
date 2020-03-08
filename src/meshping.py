@@ -12,7 +12,6 @@ import os.path
 import json
 
 from oping     import PingObj, PingError
-from optparse  import OptionParser
 from redis     import StrictRedis
 from threading import Thread
 from time      import sleep, time
@@ -149,24 +148,8 @@ def main():
     ctrl = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.SOL_UDP)
     ctrl.bind(("127.0.0.1", 55432))
 
-    parser = OptionParser("Usage: %prog [options] <target ...>")
-    parser.add_option(
-        "-t", "--timeout",  help="Ping timeout [5s]", type=int, default=5
-    )
-    parser.add_option(
-        "-r", "--redishost",  help="Redis Host [127.0.0.1]", default="127.0.0.1"
-    )
-    options, posargs = parser.parse_args()
-
-    redis = StrictRedis(host=options.redishost)
-    mp = MeshPing(redis, options.timeout)
-
-    for target in posargs:
-        if "@" not in target:
-            for info in socket.getaddrinfo(target, 0, 0, socket.SOCK_STREAM):
-                redis.sadd("meshping:targets", "%s@%s" % (target, info[4][0]))
-        else:
-            redis.sadd("meshping:targets", target)
+    redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
+    mp = MeshPing(redis, int(os.environ.get("MESHPING_PING_TIMEOUT", 5)))
 
     promrunner = Thread(target=run_prom, args=(mp,))
     promrunner.daemon = True

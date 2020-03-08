@@ -14,7 +14,7 @@ RUN mkdir src && ./build.sh
 
 FROM alpine:latest
 
-RUN apk add --no-cache python3 liboping bash py3-netifaces~=0.10.9
+RUN apk add --no-cache python3 liboping bash py3-netifaces~=0.10.9 dumb-init
 COPY requirements.txt /opt/meshping/requirements.txt
 RUN pip3 install -r /opt/meshping/requirements.txt
 
@@ -23,4 +23,5 @@ COPY --from=0 /usr/lib/python3.8/site-packages/oping.*.so /usr/lib/python3.8/sit
 COPY cli.py /usr/local/bin/mpcli
 COPY src    /opt/meshping/src
 COPY docker /opt/meshping/docker
-CMD ["/opt/meshping/docker/run.sh"]
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["/usr/bin/python3", "--", "/opt/meshping/src/meshping.py"]
