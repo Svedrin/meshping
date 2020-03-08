@@ -44,6 +44,7 @@ def run_prom(mp):
 
         return Response('\n'.join([
             """<h1>Meshping</h1>""",
+            """<meta http-equiv="refresh" content="30">""",
             """<a href="/metrics">metrics</a>""",
             """<pre style="white-space: pre-wrap">""",
                 '\n'.join(targets),
