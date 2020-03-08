@@ -1,9 +1,10 @@
-FROM debian:buster-slim
-
-WORKDIR /opt/meshping
+FROM alpine:latest
 
 # Install and build dependencies first
-RUN apt-get update && apt-get install -y build-essential mercurial liboping-dev cython python-flask python-redis && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache python3 python3-dev musl-dev liboping-dev make gcc bash
+RUN pip3 install Cython redis
+
+WORKDIR /opt/meshping
 COPY build.sh /opt/meshping/build.sh
 COPY oping-py /opt/meshping/oping-py
 RUN mkdir src && ./build.sh
