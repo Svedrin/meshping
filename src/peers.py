@@ -16,14 +16,19 @@ def run_peers(mp):
 
     while True:
         if4 = Ifaces4()
-        peer_targets = []
-
-        for target in mp.targets.values():
-            peer_targets.append(dict(
+        forn_targets = [
+            target.decode("utf-8")
+            for target in mp.redis.smembers("meshping:foreign_targets")
+        ]
+        peer_targets = [
+            dict(
                 name  = target["name"],
                 addr  = target["addr"],
                 local = if4.is_local(target["addr"])
-            ))
+            )
+            for target in mp.targets.values()
+            if "%(name)s@%(addr)s" not in forn_targets # ENOFORN
+        ]
 
         for peer in peers:
             try:
