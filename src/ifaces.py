@@ -4,7 +4,7 @@ import netifaces
 
 class Ifaces4:
     def __init__(self):
-        self.addrs = []
+        self.networks = []
         # Get addresses from our interfaces
         for iface in netifaces.interfaces():
             for family, addresses in netifaces.ifaddresses(iface).items():
@@ -12,26 +12,26 @@ class Ifaces4:
                     continue
 
                 for addrinfo in addresses:
-                    self.addrs.append(
+                    self.networks.append(
                         ipaddress.IPv4Network("%s/%s" % (
                             ipaddress.ip_address(addrinfo["addr"]),
                             ipaddress.ip_address(addrinfo["netmask"])
                         ), strict=False)
                     )
 
-    def find_iface_for_addr(self, target):
+    def find_iface_for_network(self, target):
         target = ipaddress.IPv4Address(target)
-        for addr in self.addrs:
+        for addr in self.networks:
             if target in addr:
                 return addr
         return None
 
     def is_local(self, target):
-        return self.find_iface_for_addr(target) is not None
+        return self.find_iface_for_network(target) is not None
 
 class Ifaces6:
     def __init__(self):
-        self.addrs = []
+        self.networks = []
         # Get addresses from our interfaces
         for iface in netifaces.interfaces():
             for family, addresses in netifaces.ifaddresses(iface).items():
@@ -47,22 +47,22 @@ class Ifaces6:
                     # netmask is ffff:ffff:ffff:etc:ffff/128 for some reason, we only need the length
                     addrinfo["netmask"] = int(addrinfo["netmask"].split("/")[1], 10)
 
-                    self.addrs.append(
+                    self.networks.append(
                         ipaddress.IPv6Network("%s/%d" % (
                             ipaddress.ip_address(addrinfo["addr"]),
                             addrinfo["netmask"]
                         ), strict=False)
                     )
 
-    def find_iface_for_addr(self, target):
+    def find_iface_for_network(self, target):
         target = ipaddress.IPv6Address(target)
-        for addr in self.addrs:
+        for addr in self.networks:
             if target in addr:
                 return addr
         return None
 
     def is_local(self, target):
-        return self.find_iface_for_addr(target) is not None
+        return self.find_iface_for_network(target) is not None
 
 
 def test():
