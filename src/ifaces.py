@@ -1,4 +1,3 @@
-import struct
 import socket
 import ipaddress
 import netifaces

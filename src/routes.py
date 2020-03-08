@@ -1,6 +1,3 @@
-# /proc/net/route -> socket.htonl
-# /proc/net/ipv6_route
-
 import struct
 import socket
 import ipaddress
