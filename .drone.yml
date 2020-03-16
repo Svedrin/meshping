@@ -49,7 +49,7 @@ steps:
 - name: set "latest" tag
   image: alpine:latest
   commands:
-  - echo -n "latest" > .tags
+  - echo -n "latest-armv7l" > .tags
   when:
     branch: master
     event: tag
@@ -57,7 +57,7 @@ steps:
 - name: set version tag
   image: alpine:latest
   commands:
-  - echo -n ",${DRONE_TAG}" >> .tags
+  - echo -n ",${DRONE_TAG}-armv7l" >> .tags
   when:
     branch: master
     event: tag
@@ -69,7 +69,7 @@ steps:
     username: svedrin
     password:
       from_secret: docker-registry-pw
-    cache_from: "svedrin/meshping:latest"
+    cache_from: "svedrin/meshping:latest-armv7l"
   when:
     branch: master
     event:
@@ -77,6 +77,6 @@ steps:
       - pull_request
 ---
 kind: signature
-hmac: 03b7b52a101dbd6474c32b5f015505d393a55f8d9b19b05a27ae1349ab760afb
+hmac: 0d2a68a49b47ac39ac669af9e25ad5b5f29731c27d823fbd268c026fff04212e
 
 ...
