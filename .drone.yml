@@ -1,6 +1,49 @@
 ---
 kind: pipeline
-name: default
+name: linux-amd64
+
+platform:
+  arch: amd64
+  os: linux
+
+steps:
+- name: set "latest" tag
+  image: alpine:latest
+  commands:
+  - echo -n "latest" > .tags
+  when:
+    branch: master
+    event: tag
+
+- name: set version tag
+  image: alpine:latest
+  commands:
+  - echo -n ",${DRONE_TAG}" >> .tags
+  when:
+    branch: master
+    event: tag
+
+- name: build docker image
+  image: plugins/docker
+  settings:
+    repo: svedrin/meshping
+    username: svedrin
+    password:
+      from_secret: docker-registry-pw
+    cache_from: "svedrin/meshping:latest"
+  when:
+    branch: master
+    event:
+      exclude:
+      - pull_request
+
+---
+kind: pipeline
+name: linux-arm
+
+platform:
+  arch: arm
+  os: linux
 
 steps:
 - name: set "latest" tag
@@ -34,6 +77,6 @@ steps:
       - pull_request
 ---
 kind: signature
-hmac: 159ed986abf3735e067bf4a12d5e2228e99a3d3fafc8a3d3e5cebc939839b317
+hmac: 03b7b52a101dbd6474c32b5f015505d393a55f8d9b19b05a27ae1349ab760afb
 
 ...
