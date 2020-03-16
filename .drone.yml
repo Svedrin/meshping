@@ -13,7 +13,6 @@ steps:
   - echo -n "latest" > .tags
   when:
     branch: master
-    event: tag
 
 - name: set version tag
   image: alpine:latest
@@ -52,7 +51,6 @@ steps:
   - echo -n "latest-armv7l" > .tags
   when:
     branch: master
-    event: tag
 
 - name: set version tag
   image: alpine:latest
@@ -77,6 +75,6 @@ steps:
       - pull_request
 ---
 kind: signature
-hmac: 0d2a68a49b47ac39ac669af9e25ad5b5f29731c27d823fbd268c026fff04212e
+hmac: e64cddccb3b46dd70b95125b7d2d9771ebb15fd6ca2ddb320e3bcad95709ed55
 
 ...
