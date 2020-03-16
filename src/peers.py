@@ -27,7 +27,7 @@ def run_peers(mp):
                 local = if4.is_local(target["addr"])
             )
             for target in mp.targets.values()
-            if "%(name)s@%(addr)s" not in forn_targets # ENOFORN
+            if ("%(name)s@%(addr)s" % target) not in forn_targets # ENOFORN
         ]
 
         for peer in peers:
