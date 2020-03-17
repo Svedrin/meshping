@@ -4,10 +4,12 @@ Ping daemon that pings a number of targets at once, collecting their response ti
 
 ## Features
 
+* Meshping instances can be [peered](#wide-distribution-peering) with one another and will then ping the same targets.
 * Scrapeable by [Prometheus](prometheus.io).
 * Targets can be added and removed on-the-fly, without restarting or reloading anything.
 * CLI tool to interact with the daemon.
 * IPv6 supported.
+* Docker images: https://hub.docker.com/r/svedrin/meshping
 
 ## Screenshots
 
@@ -122,23 +124,63 @@ Otherwise you'll lose the heatmap effect because every data point will be its ow
 In the examples directory, there's also a [json dashboard definition](examples/grafana.json) that you can import.
 
 
-# How do I get set up?
+# Deploying
 
-You can run meshping through Docker, but you'll need to provide a Redis instance and will need `mpcli` somewhere so you can add targets to meshping (see below):
+Deploying meshping is easiest using `docker-compose`:
 
+```yaml
+version: '2'
+
+services:
+  meshping:
+    # for x86_64 and amd64:
+    # image: "svedrin/meshping:latest"
+    # for raspberry Pi 3 or other ARMv7-based things (see `uname -m`):
+    image: "svedrin/meshping:latest-armv7l"
+    network_mode: "host"
+    restart: always
+    labels:
+      "com.centurylinklabs.watchtower.enable": "true"
+    # If you want to add other Meshping instances to peer with, uncomment this:
+    #environment:
+    #  MESHPING_PEERS: 10.10.10.1:9922,10.10.20.1:9922
+
+  redis:
+    image: "redis:alpine"
+    network_mode: "host"
+    restart: always
+    volumes:
+      - "redis-data:/data"
+
+  watchtower:
+    image: "containrrr/watchtower:latest"
+    command: "--label-enable --cleanup --debug --interval 60"
+    restart: always
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+volumes:
+  redis-data:
 ```
-docker run --rm --net=host -e MESHPING_REDIS_HOST=redisbox svedrin/meshping:latest
-wget https://raw.githubusercontent.com/Svedrin/meshping/master/cli.py -O /usr/local/bin/mpcli
-chmod +x /usr/local/bin/mpcli
-```
 
-The CLI needs to be able to talk to the Redis instance. It is included in the Docker image, so you can also use:
+This will deploy meshping and redis, along with a [Watchtower](https://hub.docker.com/r/containrrr/watchtower) instance that keeps Meshping up-to-date. It can be deployed as-is by adding a Stack through Portainer, or using `docker-compose`:
 
-```
-docker run --rm -it --net=host svedrin/meshping:latest mpcli
-```
+    mkdir meshping
+    cd meshping
+    $EDITOR docker-compose.yml
+    (paste in the file)
+    docker-compose up --detach
 
-You can add a bash alias for that command for easier access.
+I also highly recommend adding these two aliases to your `.bashrc` file:
+
+    alias redis-cli="docker run --net=host --rm -it redis:alpine redis-cli"
+    alias mpcli='docker run --rm -it --net=host svedrin/meshping:latest-armv7l mpcli'
+
+You can reload `.bashrc` in a live shell session using:
+
+    source ~/.bashrc
+
+Meshping should now be reachable at `http://<your-ip>:9922`, and `mpcli` should work.
 
 
 ## Adding targets
@@ -192,5 +234,6 @@ and you will be able to retrieve statistics from both sides to see how your link
 
 # Who do I talk to?
 
+* First and foremost: Feel free to open an [issue](https://github.com/Svedrin/meshping/issues/new) in this repository. :)
 * If you'd like to get in touch, you can send me an [email](mailto:i.am@svedr.in).
-* I also regularly hang out at the Linux User Group or the [mag.lab](http://mag.lab.sh) in Fulda.
+* I also regularly hang out at the Linux User Group in Fulda.
