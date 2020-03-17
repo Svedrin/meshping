@@ -1,4 +1,4 @@
-# meshping #
+# meshping
 
 Ping daemon that pings a number of targets at once, collecting their response times in histograms. Meant to be deployed at strategic points in your network in order to detect weak links.
 
@@ -150,7 +150,7 @@ services:
     network_mode: "host"
     restart: always
     volumes:
-      - "redis-data:/data"
+      - "meshping-redis-data:/data"
 
   watchtower:
     image: "containrrr/watchtower:latest"
@@ -158,9 +158,6 @@ services:
     restart: always
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-
-volumes:
-  redis-data:
 ```
 
 This will deploy meshping and redis, along with a [Watchtower](https://hub.docker.com/r/containrrr/watchtower) instance that keeps Meshping up-to-date. It can be deployed as-is by adding a Stack through Portainer, or using `docker-compose`:
