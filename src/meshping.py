@@ -88,8 +88,8 @@ class MeshPing(object):
                 await trio.sleep(next_ping - time())
                 continue
 
-            await trio.to_thread.run_sync(lambda:
-                pingobj.send()
+            await trio.to_thread.run_sync(
+                lambda: pingobj.send()
             )
 
             rdspipe = self.redis.pipeline()
