@@ -112,16 +112,18 @@ def run_prom(mp):
         # and stats will be returned for these targets (if known).
         # Local targets will only be added if they are also local to us.
 
-        if request.json is None:
+        request_json = await request.get_json()
+
+        if request_json is None:
             return "Please send content-type:application/json", 400
 
-        if type(request.json.get("targets")) != list:
+        if type(request_json.get("targets")) != list:
             return "need targets as a list", 400
 
         stats = []
         if4   = Ifaces4()
 
-        for target in request.json["targets"]:
+        for target in request_json["targets"]:
             if type(target) != dict:
                 return "targets must be dicts", 400
             if ("name" not in target  or not target["name"].strip() or
