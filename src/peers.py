@@ -1,13 +1,12 @@
-from time import sleep
-
 import os
 import json
 import traceback
-import requests
+import httpx
+import trio
 
 from ifaces import Ifaces4
 
-def run_peers(mp):
+async def run_peers(mp):
     peers = os.environ.get("MESHPING_PEERS", "")
     if peers:
         peers = peers.split(",")
@@ -30,16 +29,17 @@ def run_peers(mp):
             if ("%(name)s@%(addr)s" % target) not in forn_targets # ENOFORN
         ]
 
-        for peer in peers:
-            try:
-                requests.post(
-                    "http://%s/peer" % peer,
-                    headers={
-                        "Content-Type": "application/json"
-                    },
-                    data=json.dumps(dict(targets=peer_targets))
-                )
-            except:
-                traceback.print_exc()
+        async with httpx.AsyncClient() as client:
+            for peer in peers:
+                try:
+                    await client.post(
+                        "http://%s/peer" % peer,
+                        headers={
+                            "Content-Type": "application/json"
+                        },
+                        data=json.dumps(dict(targets=peer_targets))
+                    )
+                except:
+                    traceback.print_exc()
 
-        sleep(30)
+        await trio.sleep(30)

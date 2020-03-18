@@ -3,16 +3,16 @@
 from __future__ import division
 
 from uuid  import uuid4
-from flask import Flask, Response, render_template, request, jsonify
+from quart      import Response, render_template, request, jsonify
+from quart_trio import QuartTrio
 
 from ifaces import Ifaces4
 
 def run_prom(mp):
-    app = Flask(__name__)
+    app = QuartTrio(__name__)
 
     @app.route("/")
-    def hai():
-
+    async def index():
         targets = []
 
         def ip_as_int(tgt):
@@ -42,10 +42,10 @@ def run_prom(mp):
                 )
             )
 
-        return render_template("index.html", Targets=targets)
+        return await render_template("index.html", Targets=targets)
 
     @app.route("/metrics")
-    def metrics():
+    async def metrics():
         respdata = ['\n'.join([
             '# HELP meshping_sent Sent pings',
             '# TYPE meshping_sent counter',
@@ -100,7 +100,7 @@ def run_prom(mp):
         return Response('\n'.join(respdata) + '\n', mimetype="text/plain")
 
     @app.route("/peer", methods=["POST"])
-    def peer():
+    async def peer():
         # Allows peers to POST a json structure such as this:
         # {
         #    "targets": [
@@ -149,4 +149,4 @@ def run_prom(mp):
     app.secret_key = str(uuid4())
     app.debug = False
 
-    app.run(host="::", port=9922)
+    return app

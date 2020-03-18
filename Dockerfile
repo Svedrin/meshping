@@ -3,7 +3,7 @@
 FROM alpine:latest
 
 RUN apk add --no-cache python3 python3-dev musl-dev liboping-dev make gcc bash
-RUN pip3 install Cython redis
+RUN pip3 install Cython
 
 WORKDIR /opt/meshping
 COPY build.sh /opt/meshping/build.sh

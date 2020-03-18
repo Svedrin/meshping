@@ -7,6 +7,7 @@ from __future__ import division
 import os
 import math
 import socket
+import trio
 import os.path
 
 import json
@@ -14,7 +15,7 @@ import json
 from oping     import PingObj, PingError
 from redis     import StrictRedis
 from threading import Thread
-from time      import sleep, time
+from time      import time
 
 from prom  import run_prom
 from peers import run_peers
@@ -39,7 +40,7 @@ class MeshPing(object):
             return None
         return json.loads(rds_value)
 
-    def run(self):
+    async def run(self):
         pingobj = PingObj()
         pingobj.set_timeout(self.timeout)
 
@@ -84,10 +85,12 @@ class MeshPing(object):
                 self.histograms.pop(addr, None)
 
             if not current_targets:
-                sleep(next_ping - time())
+                await trio.sleep(next_ping - time())
                 continue
 
-            pingobj.send()
+            await trio.to_thread.run_sync(lambda:
+                pingobj.send()
+            )
 
             rdspipe = self.redis.pipeline()
 
@@ -139,30 +142,23 @@ class MeshPing(object):
 
             rdspipe.execute()
 
-            sleep(next_ping - time())
+            await trio.sleep(next_ping - time())
 
 def main():
     if os.getuid() != 0:
         raise RuntimeError("need to be root, sorry about that")
 
-    ctrl = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.SOL_UDP)
-    ctrl.bind(("127.0.0.1", 55432))
-
     redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
     mp = MeshPing(redis, int(os.environ.get("MESHPING_PING_TIMEOUT", 5)))
 
-    promrunner = Thread(target=run_prom, args=(mp,))
-    promrunner.daemon = True
-    promrunner.start()
+    app = run_prom(mp)
 
-    peers_pusher = Thread(target=run_peers, args=(mp,))
-    peers_pusher.daemon = True
-    peers_pusher.start()
+    @app.before_serving
+    async def startup():
+        app.nursery.start_soon(mp.run)
+        app.nursery.start_soon(run_peers, mp)
 
-    try:
-        mp.run()
-    except KeyboardInterrupt:
-        pass
+    app.run(host="::", port=9922)
 
 if __name__ == '__main__':
     main()
