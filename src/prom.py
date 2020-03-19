@@ -3,13 +3,14 @@
 from __future__ import division
 
 from uuid  import uuid4
-from quart      import Response, render_template, request, jsonify
+from quart      import Response, render_template, request, jsonify, send_from_directory
 from quart_trio import QuartTrio
 
 from ifaces import Ifaces4
 
 def run_prom(mp):
-    app = QuartTrio(__name__)
+    app = QuartTrio(__name__, static_url_path="")
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
 
     @app.route("/")
     async def index():
@@ -147,6 +148,32 @@ def run_prom(mp):
             stats.append(mp.targets.get(target["addr"]))
 
         return jsonify(success=True, targets=stats)
+
+    @app.route('/ui/<path:path>')
+    async def send_js(path):
+        return await send_from_directory('ui', path)
+
+    @app.route("/api/targets")
+    async def targets():
+        targets = []
+
+        for targetinfo in mp.targets.values():
+            loss = 0
+            if targetinfo["sent"]:
+                loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
+            targets.append(
+                dict(
+                    targetinfo,
+                    name=targetinfo["name"][:24],
+                    succ=100 - loss,
+                    loss=loss,
+                    avg15m=targetinfo.get("avg15m", 0),
+                    avg6h =targetinfo.get("avg6h",  0),
+                    avg24h=targetinfo.get("avg24h", 0),
+                )
+            )
+
+        return jsonify(success=True, targets=targets)
 
     app.secret_key = str(uuid4())
     app.debug = False

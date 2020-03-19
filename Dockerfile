@@ -14,9 +14,12 @@ RUN mkdir src && ./build.sh
 
 FROM alpine:latest
 
-RUN apk add --no-cache python3 liboping bash py3-netifaces~=0.10.9 dumb-init
+RUN apk add --no-cache python3 liboping bash py3-netifaces~=0.10.9 dumb-init nodejs npm
 COPY requirements.txt /opt/meshping/requirements.txt
 RUN pip3 install -r /opt/meshping/requirements.txt
+
+COPY ui/package*.json /opt/meshping/ui/
+RUN cd /opt/meshping/ui && npm install
 
 WORKDIR /opt/meshping
 COPY --from=0 /usr/lib/python3.8/site-packages/oping.*.so /usr/lib/python3.8/site-packages
