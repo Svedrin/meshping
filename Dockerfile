@@ -22,7 +22,7 @@ COPY requirements.txt /opt/meshping/requirements.txt
 RUN pip3 install -r /opt/meshping/requirements.txt
 
 WORKDIR /opt/meshping
-COPY --from=0 /opt/meshping/ui/node_modules/jquery/dist/js/jquery.slim.min.js     /opt/meshping/ui/node_modules/jquery/dist/js/
+COPY --from=0 /opt/meshping/ui/node_modules/jquery/dist/jquery.slim.min.js        /opt/meshping/ui/node_modules/jquery/dist/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap/dist/css/bootstrap.min.css  /opt/meshping/ui/node_modules/bootstrap/dist/css/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap/dist/js/bootstrap.min.js    /opt/meshping/ui/node_modules/bootstrap/dist/js/
 COPY --from=0 /opt/meshping/ui/node_modules/vue/dist/vue.min.js                   /opt/meshping/ui/node_modules/vue/dist/
