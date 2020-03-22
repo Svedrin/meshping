@@ -151,7 +151,13 @@ def run_prom(mp):
 
     @app.route('/ui/<path:path>')
     async def send_js(path):
-        return await send_from_directory('ui', path)
+        resp = await send_from_directory('ui', path)
+        # Cache bust XXL
+        resp.cache_control.no_cache = True
+        resp.cache_control.no_store = True
+        resp.cache_control.max_age  = None
+        resp.cache_control.must_revalidate = True
+        return resp
 
     @app.route("/api/targets")
     async def targets():
