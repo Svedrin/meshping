@@ -2,7 +2,7 @@ var app = new Vue({
     el: '#app',
     data: {
         last_update: 0,
-        search: "",
+        search: localStorage.getItem("meshping_search") || "",
         targets_all: [],
         targets_filtered: [],
     },
@@ -28,14 +28,22 @@ var app = new Vue({
         }
     },
     created: function() {
+        var self = this;
         window.setInterval(function(vue){
             if( new Date() - vue.last_update > 29500 ){
                 vue.update_targets();
             }
         }, 1000, this);
+        $(window).keydown(function(ev){
+            if (ev.ctrlKey && ev.key === "f") {
+                ev.preventDefault();
+                $("#inpsearch").focus();
+            }
+        });
     },
     watch: {
-        search: function() {
+        search: function(search) {
+            localStorage.setItem("meshping_search", search);
             this.reapply_filters();
         },
         targets_all: function() {
