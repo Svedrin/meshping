@@ -19,7 +19,7 @@
             <div class="input-group-prepend">
               <div class="input-group-text" id="btnGroupSearch">Search</div>
             </div>
-            <input type="text" v-model="search" class="form-control" placeholder="Name or IP" aria-label="Name or IP" aria-describedby="btnGroupSearch">
+            <input type="text" v-model="search" id="inpsearch" class="form-control" placeholder="Name or IP" aria-label="Name or IP" aria-describedby="btnGroupSearch">
           </div>
         </div>
         {% raw %}
@@ -38,8 +38,11 @@
               <th class="text-right">Max</th>
               <th class="text-right">Last</th>
             </tr>
-            <tr v-if="targets_filtered.length == 0">
+            <tr v-if="targets_all.length == 0">
               <td colspan="12"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading</td>
+            </tr>
+            <tr v-if="targets_filtered.length == 0 &amp;&amp; targets_all.length > 0">
+              <td colspan="12">No targets match your search</td>
             </tr>
             <tr
               v-show="targets_filtered.length > 0" style="display: none"
