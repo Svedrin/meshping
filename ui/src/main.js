@@ -86,6 +86,15 @@ var app = new Vue({
                     "</ul>New targets will show up after the next ping cycle."
                 );
             }
+        },
+        clear_stats: async function() {
+            var response = await this.$http.delete('/api/stats');
+            var json = await response.json();
+            if (json.success) {
+                this.success_msg = (
+                    "<strong>Success!</strong>Stats are cleared, and targets will be reloaded before the next ping cycle."
+                );
+            }
         }
     },
     created: function() {

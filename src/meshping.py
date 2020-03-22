@@ -39,6 +39,47 @@ class MeshPing:
             return None
         return json.loads(rds_value)
 
+    def iter_targets(self):
+        for target in self.redis.smembers("meshping:targets"):
+            target = target.decode("utf-8")
+            name, addr = target.split("@", 1)
+            yield target, name, addr
+
+    def add_target(self, target):
+        assert "@" in target
+        self.redis.sadd("meshping:targets", target)
+        self.redis.srem("meshping:foreign_targets", target)
+
+    def remove_target(self, target):
+        assert "@" in target
+        self.redis.srem("meshping:targets", target)
+        self.redis.srem("meshping:foreign_targets", target)
+
+    def get_target_info(self, addr, name_if_created):
+        if addr not in self.targets:
+            self.targets[addr] = self.redis_load(addr, "target") or {
+                "name": name_if_created, "addr": addr,
+                "sent": 0, "lost": 0, "recv": 0, "last": 0, "sum":  0, "min":  0, "max":  0
+            }
+        return self.targets[addr]
+
+    def get_target_histogram(self, addr):
+        if addr not in self.histograms:
+            histogram = self.redis_load(addr, "histogram") or {}
+            # json sucks and converts dict keys to strings
+            histogram = {int(x): y for (x, y) in histogram.items()}
+            self.histograms[addr] = histogram
+        return self.histograms[addr]
+
+    def clear_stats(self):
+        keys = self.redis.keys("meshping:%s:*" % socket.gethostname())
+        rdspipe = self.redis.pipeline()
+        for key in keys:
+            self.redis.delete(key)
+        rdspipe.execute()
+        self.targets = {}
+        self.histograms = {}
+
     async def run(self):
         pingobj = PingObj()
         pingobj.set_timeout(self.timeout)
@@ -52,24 +93,12 @@ class MeshPing:
             next_ping = now + 30
 
             unseen_targets = current_targets.copy()
-            for target in self.redis.smembers("meshping:targets"):
-                target = target.decode("utf-8")
+            for target, name, addr in self.iter_targets():
                 if target not in current_targets:
                     current_targets.add(target)
-                    name, addr = target.split("@", 1)
                     pingobj.add_host(addr.encode("utf-8"))
-
-                    self.targets[addr] = self.redis_load(addr, "target") or {
-                        "name": name, "addr": addr,
-                        "sent": 0, "lost": 0, "recv": 0, "last": 0, "sum":  0, "min":  0, "max":  0
-                    }
-                    self.targets[addr]["name"] = name
-                    histogram = self.redis_load(addr, "histogram") or {}
-                    # json sucks and converts dict keys to strings
-                    histogram = {int(x): y for (x, y) in histogram.items()}
-                    self.histograms[addr] = histogram
-
-                else:
+                    self.get_target_info(addr, name)["name"] = name
+                if target in unseen_targets:
                     unseen_targets.remove(target)
 
             for target in unseen_targets:
@@ -97,8 +126,8 @@ class MeshPing:
                 hostinfo["name"] = hostinfo["name"].decode("utf-8")
                 hostinfo["addr"] = hostinfo["addr"].decode("utf-8")
 
-                target = self.targets[hostinfo["addr"]]
-                histogram  = self.histograms.setdefault(hostinfo["addr"], {})
+                target    = self.get_target_info(hostinfo["addr"], hostinfo["name"])
+                histogram = self.get_target_histogram(hostinfo["addr"])
 
                 target["sent"] += 1
 

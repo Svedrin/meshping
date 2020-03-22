@@ -31,8 +31,8 @@ def add_api_views(app, mp):
             '# TYPE meshping_pings histogram',
         ])]
 
-        for addr, target in mp.targets.items():
-
+        for _, name, addr in mp.iter_targets():
+            target = mp.get_target_info(addr, name)
             respdata.append('\n'.join([
                 'meshping_sent{name="%(name)s",target="%(addr)s"} %(sent)d',
 
@@ -54,7 +54,7 @@ def add_api_views(app, mp):
                 'meshping_pings_count{name="%(name)s",target="%(addr)s"} %(recv)d',
             ]) % target)
 
-            histogram = mp.histograms.get(addr, {})
+            histogram = mp.get_target_histogram(addr)
             buckets = sorted(histogram.keys(), key=float)
             count = 0
             for bucket in buckets:
@@ -114,9 +114,8 @@ def add_api_views(app, mp):
                 continue
 
             target_str = "%(name)s@%(addr)s" % target
-            mp.redis.sadd("meshping:foreign_targets", target_str)
-            mp.redis.sadd("meshping:targets", target_str)
-            stats.append(mp.targets.get(target["addr"]))
+            mp.add_target(target_str)
+            stats.append(mp.get_target_info(target["addr"], target["name"]))
 
         return jsonify(success=True, targets=stats)
 
@@ -145,7 +144,8 @@ def add_api_views(app, mp):
         if request.method == "GET":
             targets = []
 
-            for targetinfo in mp.targets.values():
+            for _, name, addr in mp.iter_targets():
+                targetinfo = mp.get_target_info(addr, name)
                 loss = 0
                 if targetinfo["sent"]:
                     loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
@@ -174,12 +174,10 @@ def add_api_views(app, mp):
             if "@" not in target:
                 for info in socket.getaddrinfo(target, 0, 0, socket.SOCK_STREAM):
                     target_with_addr = "%s@%s" % (target, info[4][0])
-                    mp.redis.sadd("meshping:targets", target_with_addr)
-                    mp.redis.srem("meshping:foreign_targets", target_with_addr)
+                    mp.add_target(target_with_addr)
                     added.append(target_with_addr)
             else:
-                mp.redis.sadd("meshping:targets", target)
-                mp.redis.srem("meshping:foreign_targets", target)
+                mp.add_target(target)
                 added.append(target)
 
             return jsonify(success=True, targets=added)
@@ -187,8 +185,12 @@ def add_api_views(app, mp):
     @app.route("/api/targets/<target>", methods=["PATCH", "PUT", "DELETE"])
     async def edit_target(target):
         if request.method == "DELETE":
-            mp.redis.srem("meshping:targets", target)
-            mp.redis.srem("meshping:foreign_targets", target)
+            mp.remove_target(target)
             return jsonify(success=True)
 
         return jsonify(success=False)
+
+    @app.route("/api/stats", methods=["DELETE"])
+    async def clear_stats():
+        mp.clear_stats()
+        return jsonify(success=True)
