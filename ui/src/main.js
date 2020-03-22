@@ -13,6 +13,10 @@ var app = new Vue({
         }
     },
     created: function() {
-        this.update_targets();
+        window.setInterval(function(vue){
+            if( new Date() - vue.last_update > 29500 ){
+                vue.update_targets();
+            }
+        }, 1000, this);
     }
 });
