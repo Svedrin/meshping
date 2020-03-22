@@ -2,22 +2,20 @@
 # -*- coding: utf-8 -*-
 # kate: space-indent on; indent-width 4; replace-tabs on;
 
-from __future__ import division
-
+import json
 import os
+import os.path
 import math
 import socket
-import trio
-import os.path
 
-import json
-
-from oping      import PingObj, PingError
+from uuid       import uuid4
+from time       import time
 from quart_trio import QuartTrio
 from redis      import StrictRedis
-from threading  import Thread
-from time       import time
 
+import trio
+
+from oping import PingObj, PingError
 from api   import add_api_views
 from peers import run_peers
 
@@ -28,7 +26,7 @@ FAC_6h  = math.exp(-INTERVAL / ( 6 * 60 * 60.))
 FAC_24h = math.exp(-INTERVAL / (24 * 60 * 60.))
 
 
-class MeshPing(object):
+class MeshPing:
     def __init__(self, redis, timeout=1):
         self.targets = {}
         self.histograms = {}
@@ -68,7 +66,7 @@ class MeshPing(object):
                     self.targets[addr]["name"] = name
                     histogram = self.redis_load(addr, "histogram") or {}
                     # json sucks and converts dict keys to strings
-                    histogram = dict([(int(x), y) for (x, y) in histogram.items()])
+                    histogram = {int(x): y for (x, y) in histogram.items()}
                     self.histograms[addr] = histogram
 
                 else:
@@ -151,6 +149,8 @@ def main():
 
     app = QuartTrio(__name__, static_url_path="")
     app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.secret_key = str(uuid4())
+    app.debug = False
 
     redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
     mp = MeshPing(redis, int(os.environ.get("MESHPING_PING_TIMEOUT", 5)))

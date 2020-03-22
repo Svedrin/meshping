@@ -3,10 +3,9 @@
 from __future__ import division
 
 import socket
+import struct
 
-from uuid  import uuid4
-from quart      import Response, render_template, request, jsonify, send_from_directory
-from quart_trio import QuartTrio
+from quart  import Response, render_template, request, jsonify, send_from_directory
 
 from ifaces import Ifaces4
 
@@ -61,12 +60,14 @@ def add_api_views(app, mp):
             for bucket in buckets:
                 nextping = 2 ** ((bucket + 1) / 10.) - 0.01
                 count += histogram[bucket]
-                respdata.append('meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="%(le).2f"} %(count)d' % dict(
-                    addr  = addr,
-                    count = count,
-                    le    = nextping,
-                    name  = target['name'],
-                ))
+                respdata.append(
+                    'meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="%(le).2f"} %(count)d' % dict(
+                        addr  = addr,
+                        count = count,
+                        le    = nextping,
+                        name  = target['name'],
+                    )
+                )
 
         return Response('\n'.join(respdata) + '\n', mimetype="text/plain")
 
@@ -88,18 +89,18 @@ def add_api_views(app, mp):
         if request_json is None:
             return "Please send content-type:application/json", 400
 
-        if type(request_json.get("targets")) != list:
+        if not isinstance(request_json.get("targets"), list):
             return "need targets as a list", 400
 
         stats = []
         if4   = Ifaces4()
 
         for target in request_json["targets"]:
-            if type(target) != dict:
+            if not isinstance(target, dict):
                 return "targets must be dicts", 400
-            if ("name" not in target  or not target["name"].strip() or
-                "addr" not in target  or not target["addr"].strip() or
-                "local" not in target or type(target["local"]) != bool):
+            if  "name" not in target  or not target["name"].strip() or \
+                "addr" not in target  or not target["addr"].strip() or \
+                "local" not in target or not isinstance(target["local"], bool):
                 return "required field missing in target", 400
 
             target["name"] = target["name"].strip()
@@ -134,11 +135,11 @@ def add_api_views(app, mp):
         targets = []
 
         def ip_as_int(addr):
-            import socket
-            import struct
             if ":" not in addr:
+                # IPv4
                 return struct.unpack("!I", socket.inet_aton(addr))[0]
             else:
+                # IPv6
                 ret = 0
                 for intpart in struct.unpack("!IIII", socket.inet_pton(socket.AF_INET6, addr)):
                     ret = ret<<32 | intpart
@@ -149,7 +150,8 @@ def add_api_views(app, mp):
             if targetinfo["sent"]:
                 loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
             targets.append(
-                dict(targetinfo,
+                dict(
+                    targetinfo,
                     name=targetinfo["name"][:24],
                     addr_as_int=ip_as_int(targetinfo["addr"]),
                     succ=100 - loss,
@@ -161,6 +163,3 @@ def add_api_views(app, mp):
             )
 
         return jsonify(success=True, targets=targets)
-
-    app.secret_key = str(uuid4())
-    app.debug = False

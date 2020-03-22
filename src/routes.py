@@ -74,10 +74,13 @@ class Routes4:
         target = ipaddress.IPv4Address(target)
         best_match = None
 
-        for dest, route in self.routes.items():
+        for _, route in self.routes.items():
             if target not in route["Destination"]:
                 continue
-            if best_match is None or route["Destination"].subnet_of(best_match["Destination"]):
+            if best_match is None:
+                continue
+            assert isinstance(best_match, dict)
+            if route["Destination"].subnet_of(best_match["Destination"]):
                 best_match = route
                 #print("%s -- %s via %s dev %s metric %d" % (
                     #target, best_match["Destination"], best_match["Gateway"], best_match["Iface"], best_match["Metric"]
@@ -169,7 +172,7 @@ class Routes6:
         target = ipaddress.IPv6Address(target)
         best_match = None
 
-        for dest, route in self.routes.items():
+        for _, route in self.routes.items():
             if target not in route["Destination"]:
                 continue
             if best_match is None or route["Destination"].subnet_of(best_match["Destination"]):

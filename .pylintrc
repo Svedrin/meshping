@@ -1,0 +1,15 @@
+[MASTER]
+extension-pkg-whitelist = netifaces
+
+[FORMAT]
+max-line-length=120
+
+[MESSAGES CONTROL]
+disable=E1101,E1102,E1103,W0142,C0111,C0103,C0326,R0201,W0613,W0108,W0212,W0232,R0903
+
+[DESIGN]
+max-public-methods=100
+
+[REPORTS]
+reports=y
+include-ids=y
