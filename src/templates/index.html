@@ -41,7 +41,10 @@
             <tr v-if="targets.length == 0">
               <td colspan="12"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading</td>
             </tr>
-            <tr v-for="target in targets" :key="target.addr">
+            <tr
+              v-show="targets.length > 0" style="display: none"
+              v-for="target in targets" :key="target.addr"
+            >
               <td>{{ target.name }}</td>
               <td>{{ target.addr }}</td>
               <td class="text-right">{{ target.sent }}</td>
