@@ -15,7 +15,8 @@ var app = new Vue({
         },
         reapply_filters: function() {
             if( this.search === "" ){
-                this.targets_filtered = this.targets_all;
+                // Make a copy of the array, or else chrome goes 100% CPU in sort() :o
+                this.targets_filtered = this.targets_all.slice();
             } else {
                 var search = this.search;
                 this.targets_filtered = this.targets_all.filter(function(target){
@@ -25,6 +26,9 @@ var app = new Vue({
                     );
                 });
             }
+            this.targets_filtered.sort(function(a, b){
+                return a.addr_as_int - b.addr_as_int;
+            });
         }
     },
     created: function() {

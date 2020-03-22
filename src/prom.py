@@ -16,19 +16,6 @@ def run_prom(mp):
 
     @app.route("/")
     async def index():
-        targets = []
-
-        def ip_as_int(tgt):
-            import socket
-            import struct
-            if ":" not in tgt["addr"]:
-                return struct.unpack("!I", socket.inet_aton( tgt["addr"] ))[0]
-            else:
-                ret = 0
-                for intpart in struct.unpack("!IIII", socket.inet_pton(socket.AF_INET6, tgt["addr"] )):
-                    ret = ret<<32 | intpart
-                return ret
-
         return await render_template("index.html", Hostname=socket.gethostname())
 
     @app.route("/metrics")
@@ -149,14 +136,25 @@ def run_prom(mp):
     async def targets():
         targets = []
 
+        def ip_as_int(addr):
+            import socket
+            import struct
+            if ":" not in addr:
+                return struct.unpack("!I", socket.inet_aton(addr))[0]
+            else:
+                ret = 0
+                for intpart in struct.unpack("!IIII", socket.inet_pton(socket.AF_INET6, addr)):
+                    ret = ret<<32 | intpart
+                return ret
+
         for targetinfo in mp.targets.values():
             loss = 0
             if targetinfo["sent"]:
                 loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
             targets.append(
-                dict(
-                    targetinfo,
+                dict(targetinfo,
                     name=targetinfo["name"][:24],
+                    addr_as_int=ip_as_int(targetinfo["addr"]),
                     succ=100 - loss,
                     loss=loss,
                     avg15m=targetinfo.get("avg15m", 0),
