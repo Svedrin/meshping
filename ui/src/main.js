@@ -2,14 +2,29 @@ var app = new Vue({
     el: '#app',
     data: {
         last_update: 0,
-        targets: [],
+        search: "",
+        targets_all: [],
+        targets_filtered: [],
     },
     methods: {
         update_targets: async function () {
             var response = await this.$http.get('/api/targets');
             var json = await response.json();
-            this.targets = json.targets;
+            this.targets_all = json.targets;
             this.last_update = new Date();
+        },
+        reapply_filters: function() {
+            if( this.search === "" ){
+                this.targets_filtered = this.targets_all;
+            } else {
+                var search = this.search;
+                this.targets_filtered = this.targets_all.filter(function(target){
+                    return (
+                        target.name.indexOf(search) !== -1 ||
+                        target.addr.indexOf(search) !== -1
+                    );
+                });
+            }
         }
     },
     created: function() {
@@ -18,5 +33,13 @@ var app = new Vue({
                 vue.update_targets();
             }
         }, 1000, this);
+    },
+    watch: {
+        search: function() {
+            this.reapply_filters();
+        },
+        targets_all: function() {
+            this.reapply_filters();
+        }
     }
 });
