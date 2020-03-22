@@ -134,17 +134,6 @@ def add_api_views(app, mp):
     async def targets():
         targets = []
 
-        def ip_as_int(addr):
-            if ":" not in addr:
-                # IPv4
-                return struct.unpack("!I", socket.inet_aton(addr))[0]
-            else:
-                # IPv6
-                ret = 0
-                for intpart in struct.unpack("!IIII", socket.inet_pton(socket.AF_INET6, addr)):
-                    ret = ret<<32 | intpart
-                return ret
-
         for targetinfo in mp.targets.values():
             loss = 0
             if targetinfo["sent"]:
@@ -153,7 +142,6 @@ def add_api_views(app, mp):
                 dict(
                     targetinfo,
                     name=targetinfo["name"][:24],
-                    addr_as_int=ip_as_int(targetinfo["addr"]),
                     succ=100 - loss,
                     loss=loss,
                     avg15m=targetinfo.get("avg15m", 0),

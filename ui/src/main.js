@@ -26,8 +26,25 @@ var app = new Vue({
                     );
                 });
             }
+            var ip_as_int = function(ipaddr) {
+                if (ipaddr.indexOf(":") === -1) {
+                    // IPv4
+                    return (ipaddr
+                        .split(".")
+                        .map(x => parseInt(x, 10))
+                        .reduce((acc, cur) => (acc <<  8n) | BigInt(cur), 0n)
+                    );
+                } else {
+                    // IPv6
+                    return (ipaddr
+                        .split(":")
+                        .map(x => parseInt(x, 16))
+                        .reduce((acc, cur) => (acc << 16n) | BigInt(cur), 0n)
+                    );
+                }
+            }
             this.targets_filtered.sort(function(a, b){
-                return a.addr_as_int - b.addr_as_int;
+                return Number(ip_as_int(a.addr) - ip_as_int(b.addr));
             });
         }
     },
