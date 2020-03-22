@@ -69,7 +69,6 @@ var app = new Vue({
             }
         },
         create_target: async function() {
-            console.log([this.add_tgt_name, this.add_tgt_addr]);
             var target_str = this.add_tgt_name;
             if (this.add_tgt_addr !== "") {
                 target_str += "@" + this.add_tgt_addr;
