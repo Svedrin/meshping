@@ -2,6 +2,8 @@
 
 from __future__ import division
 
+import socket
+
 from uuid  import uuid4
 from quart      import Response, render_template, request, jsonify, send_from_directory
 from quart_trio import QuartTrio
@@ -27,23 +29,7 @@ def run_prom(mp):
                     ret = ret<<32 | intpart
                 return ret
 
-        for targetinfo in sorted(mp.targets.values(), key=ip_as_int):
-            loss = 0
-            if targetinfo["sent"]:
-                loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
-            targets.append(
-                dict(
-                    targetinfo,
-                    name=targetinfo["name"][:24],
-                    succ=100 - loss,
-                    loss=loss,
-                    avg15m=targetinfo.get("avg15m", 0),
-                    avg6h =targetinfo.get("avg6h",  0),
-                    avg24h=targetinfo.get("avg24h", 0),
-                )
-            )
-
-        return await render_template("index.html", Targets=targets)
+        return await render_template("index.html", Hostname=socket.gethostname())
 
     @app.route("/metrics")
     async def metrics():
