@@ -39,6 +39,9 @@ var app = new Vue({
                 ev.preventDefault();
                 $("#inpsearch").focus();
             }
+            else if (ev.key === "Escape") {
+                $("#inpsearch").blur();
+            }
         });
     },
     watch: {
