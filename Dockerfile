@@ -9,7 +9,6 @@ COPY ui/package*.json /opt/meshping/ui/
 RUN cd /opt/meshping/ui && npm install
 
 WORKDIR /opt/meshping
-COPY build.sh /opt/meshping/build.sh
 COPY oping-py /opt/meshping/oping-py
 RUN cd /opt/meshping/oping-py && python3 setup.py build && python3 setup.py install
 
