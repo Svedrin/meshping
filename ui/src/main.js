@@ -22,10 +22,10 @@ var app = new Vue({
                 // Make a copy of the array, or else chrome goes 100% CPU in sort() :o
                 this.targets_filtered = this.targets_all.slice();
             } else {
-                var search = this.search;
+                var search = this.search.toLowerCase();
                 this.targets_filtered = this.targets_all.filter(function(target){
                     return (
-                        target.name.indexOf(search) !== -1 ||
+                        target.name.toLowerCase().indexOf(search) !== -1 ||
                         target.addr.indexOf(search) !== -1
                     );
                 });
