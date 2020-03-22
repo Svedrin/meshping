@@ -62,6 +62,7 @@ var app = new Vue({
             }
             else if (ev.key === "Escape") {
                 $("#inpsearch").blur();
+                self.search = "";
             }
         });
     },
