@@ -229,6 +229,26 @@ its own Redis instance in the background, and have them exchange targets via pee
 and you will be able to retrieve statistics from both sides to see how your links are doing.
 
 
+# Dev build
+
+Building locally for development works like this. First build the container:
+
+```
+docker build -t meshping:latest-dev .
+```
+
+Then run it and pass in your current source code as volumes, overriding the source code from the container:
+
+```
+docker run --rm -it --net=host \
+    -v $PWD/src:/opt/meshping/src \
+    -v $PWD/ui/src:/opt/meshping/ui/src \
+    meshping:latest-dev
+```
+
+You can now make changes in your local clone and they will become visible in the container.
+
+
 # Who do I talk to?
 
 * First and foremost: Feel free to open an [issue](https://github.com/Svedrin/meshping/issues/new) in this repository. :)
