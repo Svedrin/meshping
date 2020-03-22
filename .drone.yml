@@ -7,6 +7,14 @@ platform:
   os: linux
 
 steps:
+- name: pylint
+  image: alpine:latest
+  commands:
+  - apk add --no-cache python3 py3-netifaces
+  - pip3 install pylint pylint-fail-under
+  - pip3 install -r requirements.txt
+  - pylint-fail-under --fail_under 9 src/
+
 - name: set "latest" tag
   image: alpine:latest
   commands:
@@ -75,6 +83,6 @@ steps:
       - pull_request
 ---
 kind: signature
-hmac: e64cddccb3b46dd70b95125b7d2d9771ebb15fd6ca2ddb320e3bcad95709ed55
+hmac: 54a209269b80f3e40f73ec00c652b4d294f10ef631d49d5b16e696ba3240fa00
 
 ...
