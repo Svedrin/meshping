@@ -1,10 +1,13 @@
 var app = new Vue({
     el: '#app',
     data: {
+        success_msg: "",
         last_update: 0,
         search: localStorage.getItem("meshping_search") || "",
         targets_all: [],
         targets_filtered: [],
+        add_tgt_name: "",
+        add_tgt_addr: "",
     },
     methods: {
         update_targets: async function () {
@@ -12,6 +15,7 @@ var app = new Vue({
             var json = await response.json();
             this.targets_all = json.targets;
             this.last_update = new Date();
+            this.success_msg = "";
         },
         reapply_filters: function() {
             if( this.search === "" ){
@@ -46,6 +50,43 @@ var app = new Vue({
             this.targets_filtered.sort(function(a, b){
                 return Number(ip_as_int(a.addr) - ip_as_int(b.addr));
             });
+        },
+        delete_target: async function(target) {
+            var target_str = target.name + "@" + target.addr;
+            var message = (
+                "Delete target <target>?"
+                    .replace("<target>", target_str)
+            );
+            if (confirm(message)) {
+                var response = await this.$http.delete('/api/targets/' + target_str);
+                var json = await response.json();
+                if (json.success) {
+                    this.success_msg = (
+                        "<strong>Success!</strong> Deleted target " + target_str + ". " +
+                        "It will disappear after the next ping cycle."
+                    );
+                }
+            }
+        },
+        create_target: async function() {
+            console.log([this.add_tgt_name, this.add_tgt_addr]);
+            var target_str = this.add_tgt_name;
+            if (this.add_tgt_addr !== "") {
+                target_str += "@" + this.add_tgt_addr;
+            }
+            var response = await this.$http.post('/api/targets', {
+                "target": target_str
+            });
+            var json = await response.json();
+            if (json.success) {
+                this.add_tgt_name = "";
+                this.add_tgt_addr = "";
+                this.success_msg = (
+                    "<strong>Success!</strong> Added targets: <ul>" +
+                      json.targets.map(tgt => "<li>" + tgt + "</li>").join("") +
+                    "</ul>New targets will show up after the next ping cycle."
+                );
+            }
         }
     },
     created: function() {

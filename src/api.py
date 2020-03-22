@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import division
+# pylint: disable=unused-variable
 
 import socket
 import struct
@@ -130,24 +130,65 @@ def add_api_views(app, mp):
         resp.cache_control.must_revalidate = True
         return resp
 
-    @app.route("/api/targets")
+    @app.route("/api/resolve/<name>")
+    async def resolve(name):
+        try:
+            return jsonify(success=True, addrs=[
+                info[4][0]
+                for info in socket.getaddrinfo(name, 0, 0, socket.SOCK_STREAM)
+            ])
+        except socket.gaierror as err:
+            return jsonify(success=False, error=str(err))
+
+    @app.route("/api/targets", methods=["GET", "POST"])
     async def targets():
-        targets = []
+        if request.method == "GET":
+            targets = []
 
-        for targetinfo in mp.targets.values():
-            loss = 0
-            if targetinfo["sent"]:
-                loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
-            targets.append(
-                dict(
-                    targetinfo,
-                    name=targetinfo["name"][:24],
-                    succ=100 - loss,
-                    loss=loss,
-                    avg15m=targetinfo.get("avg15m", 0),
-                    avg6h =targetinfo.get("avg6h",  0),
-                    avg24h=targetinfo.get("avg24h", 0),
+            for targetinfo in mp.targets.values():
+                loss = 0
+                if targetinfo["sent"]:
+                    loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
+                targets.append(
+                    dict(
+                        targetinfo,
+                        name=targetinfo["name"][:24],
+                        succ=100 - loss,
+                        loss=loss,
+                        avg15m=targetinfo.get("avg15m", 0),
+                        avg6h =targetinfo.get("avg6h",  0),
+                        avg24h=targetinfo.get("avg24h", 0),
+                    )
                 )
-            )
 
-        return jsonify(success=True, targets=targets)
+            return jsonify(success=True, targets=targets)
+
+        elif request.method == "POST":
+            request_json = await request.get_json()
+            if "target" not in request_json:
+                return "missing target", 400
+
+            target = request_json["target"]
+            added = []
+
+            if "@" not in target:
+                for info in socket.getaddrinfo(target, 0, 0, socket.SOCK_STREAM):
+                    target_with_addr = "%s@%s" % (target, info[4][0])
+                    mp.redis.sadd("meshping:targets", target_with_addr)
+                    mp.redis.srem("meshping:foreign_targets", target_with_addr)
+                    added.append(target_with_addr)
+            else:
+                mp.redis.sadd("meshping:targets", target)
+                mp.redis.srem("meshping:foreign_targets", target)
+                added.append(target)
+
+            return jsonify(success=True, targets=added)
+
+    @app.route("/api/targets/<target>", methods=["PATCH", "PUT", "DELETE"])
+    async def edit_target(target):
+        if request.method == "DELETE":
+            mp.redis.srem("meshping:targets", target)
+            mp.redis.srem("meshping:foreign_targets", target)
+            return jsonify(success=True)
+
+        return jsonify(success=False)
