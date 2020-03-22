@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import socket
-import struct
 
 from quart  import Response, render_template, request, jsonify, send_from_directory
 
