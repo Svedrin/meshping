@@ -10,10 +10,7 @@ from quart_trio import QuartTrio
 
 from ifaces import Ifaces4
 
-def run_prom(mp):
-    app = QuartTrio(__name__, static_url_path="")
-    app.config["TEMPLATES_AUTO_RELOAD"] = True
-
+def add_api_views(app, mp):
     @app.route("/")
     async def index():
         return await render_template("index.html", Hostname=socket.gethostname())
@@ -167,5 +164,3 @@ def run_prom(mp):
 
     app.secret_key = str(uuid4())
     app.debug = False
-
-    return app

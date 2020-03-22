@@ -12,12 +12,13 @@ import os.path
 
 import json
 
-from oping     import PingObj, PingError
-from redis     import StrictRedis
-from threading import Thread
-from time      import time
+from oping      import PingObj, PingError
+from quart_trio import QuartTrio
+from redis      import StrictRedis
+from threading  import Thread
+from time       import time
 
-from prom  import run_prom
+from api   import add_api_views
 from peers import run_peers
 
 INTERVAL = 30
@@ -148,10 +149,13 @@ def main():
     if os.getuid() != 0:
         raise RuntimeError("need to be root, sorry about that")
 
+    app = QuartTrio(__name__, static_url_path="")
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
+
     redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
     mp = MeshPing(redis, int(os.environ.get("MESHPING_PING_TIMEOUT", 5)))
 
-    app = run_prom(mp)
+    add_api_views(app, mp)
 
     @app.before_serving
     async def startup():
