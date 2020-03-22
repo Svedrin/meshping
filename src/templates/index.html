@@ -1,36 +1,71 @@
-<h1>Meshping</h1>
-<meta http-equiv="refresh" content="30">
-<a href="/metrics">metrics</a>
-
-<table cellspacing="10px">
-  <tr>
-    <th>Target</th>
-    <th>Address</th>
-    <th>Sent</th>
-    <th>Recv</th>
-    <th>Succ</th>
-    <th>Loss</th>
-    <th>Min</th>
-    <th>Avg15m</th>
-    <th>Avg6h</th>
-    <th>Avg24h</th>
-    <th>Max</th>
-    <th>Last</th>
-  </tr>
-  {% for target in Targets %}
-    <tr>
-      <td>{{ target["name"]   }}</td>
-      <td>{{ target["addr"]   }}</td>
-      <td align="right">{{ target["sent"]   }}</td>
-      <td align="right">{{ target["recv"]   }}</td>
-      <td align="right">{{ "%7.2f"|format(target["succ"]  ) }}</td>
-      <td align="right">{{ "%7.2f"|format(target["loss"]  ) }}</td>
-      <td align="right">{{ "%7.2f"|format(target["min"]   ) }}</td>
-      <td align="right">{{ "%7.2f"|format(target["avg15m"]) }}</td>
-      <td align="right">{{ "%7.2f"|format(target["avg6h"] ) }}</td>
-      <td align="right">{{ "%7.2f"|format(target["avg24h"]) }}</td>
-      <td align="right">{{ "%7.2f"|format(target["max"]   ) }}</td>
-      <td align="right">{{ "%7.2f"|format(target["last"]  ) }}</td>
-    </tr>
-  {% endfor %}
-</table>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{ Hostname }} &mdash; Meshping</title>
+    <link rel="stylesheet"        href="/ui/node_modules/bootstrap/dist/css/bootstrap.min.css"></script>
+    <script type="text/javascript" src="/ui/node_modules/jquery/dist/jquery.slim.min.js"></script>
+    <script type="text/javascript" src="/ui/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/ui/node_modules/vue/dist/vue.min.js"></script>
+    <script type="text/javascript" src="/ui/node_modules/vue-resource/dist/vue-resource.min.js"></script>
+  </head>
+  <body>
+    <div class="container mt-sm-3">
+      <h1>Meshping: {{ Hostname }}</h1>
+      <div id="app">
+        <div class="btn-toolbar justify-content-between py-sm-3" role="toolbar" aria-label="Toolbar with button groups">
+          <div class="btn-group" role="group" aria-label="Links">
+            <a type="button" class="btn btn-light" href="/metrics">Metrics</a>
+          </div>
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <div class="input-group-text" id="btnGroupSearch">Search</div>
+            </div>
+            <input type="text" v-model="search" id="inpsearch" class="form-control" placeholder="Name or IP" aria-label="Name or IP" aria-describedby="btnGroupSearch">
+          </div>
+        </div>
+        {% raw %}
+          <table class="table">
+            <tr>
+              <th>Target</th>
+              <th>Address</th>
+              <th class="text-right">Sent</th>
+              <th class="text-right">Recv</th>
+              <th class="text-right">Succ</th>
+              <th class="text-right">Loss</th>
+              <th class="text-right">Min</th>
+              <th class="text-right">Avg15m</th>
+              <th class="text-right">Avg6h</th>
+              <th class="text-right">Avg24h</th>
+              <th class="text-right">Max</th>
+              <th class="text-right">Last</th>
+            </tr>
+            <tr v-if="targets_all.length == 0">
+              <td colspan="12"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading</td>
+            </tr>
+            <tr v-if="targets_filtered.length == 0 &amp;&amp; targets_all.length > 0">
+              <td colspan="12">No targets match your search</td>
+            </tr>
+            <tr
+              v-show="targets_filtered.length > 0" style="display: none"
+              v-for="target in targets_filtered" :key="target.addr"
+            >
+              <td>{{ target.name }}</td>
+              <td>{{ target.addr }}</td>
+              <td class="text-right">{{ target.sent }}</td>
+              <td class="text-right">{{ target.recv }}</td>
+              <td class="text-right">{{ target.succ.toFixed(2)   }}</td>
+              <td class="text-right">{{ target.loss.toFixed(2)   }}</td>
+              <td class="text-right">{{ target.min.toFixed(2)    }}</td>
+              <td class="text-right">{{ target.avg15m.toFixed(2) }}</td>
+              <td class="text-right">{{ target.avg6h.toFixed(2)  }}</td>
+              <td class="text-right">{{ target.avg24h.toFixed(2) }}</td>
+              <td class="text-right">{{ target.max.toFixed(2)    }}</td>
+              <td class="text-right">{{ target.last.toFixed(2)   }}</td>
+            </tr>
+          </table>
+        {% endraw %}
+      </div>
+    </div>
+    <script type="text/javascript" src="/ui/src/main.js"></script>
+  </body>
+</html>

@@ -5,3 +5,5 @@ python-ping/
 oping.c
 oping.so
 build/
+
+ui/node_modules/
