@@ -85,7 +85,7 @@ kind: pipeline
 name: linux-arm64
 
 platform:
-  arch: aarch64
+  arch: arm64
   os: linux
 
 steps:
@@ -117,6 +117,6 @@ trigger:
     - pull_request
 ---
 kind: signature
-hmac: 13a4c163afffa75cc3dc1dc193bbf68c51d6df95e81e9274bb8e2c738ca59edb
+hmac: 822b9e2d54f1c15b3e960f2cc28fc20d86b642cf3a71fe4f1dd0640a7343e0d5
 
 ...
