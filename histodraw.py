@@ -7,6 +7,8 @@ from __future__ import division
 import sys
 import json
 import math
+import pandas
+import requests
 
 from time import time
 from datetime import datetime
@@ -16,49 +18,65 @@ base = 2
 
 
 def main():
-    if len(sys.argv) != 3:
-        print >> sys.stderr, "Usage: %s <logfile.txt> <output.png>" % sys.argv[0]
+    if len(sys.argv) != 5:
+        print("Usage: %s <prometheus URL> <pingnode> <target> <output.png>" % sys.argv[0], file=sys.stderr)
         return 2
 
-    histograms = []
-    hmin = None
-    hmax = None
+    _, prometheus, pingnode, target, outfile = sys.argv
 
+    response = requests.get(prometheus + "/api/v1/query_range", timeout=2, params={
+        "query": 'increase(meshping_pings_bucket{instance="%s",name="%s"}[1h])' % (pingnode, target),
+        "start": time() - 3 * 24 * 60 * 60,
+        "end":   time(),
+        "step":  3600,
+    }).json()
+
+    assert response["status"] == "success", "Prometheus query failed"
+    assert response["data"]["result"], "Result is empty"
+
+    histograms_df = None
     now = time()
 
-    # Parse the logfile
-    for line in open(sys.argv[1], "r"):
-        tstamp, data = line.strip().split(' ', 1)
-        tstamp = int(tstamp)
-        if now - tstamp > 3 * 24 * 60 * 60:
-            continue
-        data   = dict([(int(x), y) for (x, y) in json.loads(data).items()])
+    # Parse Prometheus timeseries into a two-dimensional DataFrame.
+    # Columns: t (time), plus one for every Histogram bucket.
+    for result in response["data"]["result"]:
+        bucket = int(math.log(float(result["metric"]["le"]), 2) * 10) - 1
+        metric_df = (
+            pandas.DataFrame(result["values"], dtype=float, columns=["t", bucket])
+                .set_index("t")
+        )
+        if histograms_df is None:
+            histograms_df = metric_df
+        else:
+            histograms_df = histograms_df.join(metric_df)
 
-        biggestbkt = 0
-        for bktval, bktcount in data.items():
-            biggestbkt = max(biggestbkt, bktcount)
+    # Transpose (so that `le` is the first column, rather than `t`), sort and diff
+    # (Prometheus uses cumulative histograms rather than absolutes)
+    # then transpose back so we can continue our work
+    transposed_df = histograms_df.T.sort_index().diff()
+    histograms_df = transposed_df.T
 
-        histograms.append((tstamp, data, biggestbkt))
+    # Normalize Buckets by transforming the number of actual pings sent
+    # into a float [0..1] indicating the grayness of that bucket.
+    biggestbkt = transposed_df.max()
+    normalized_df = histograms_df.div(biggestbkt, axis="index")
+    # prune outliers -> keep only values > 0.05%
+    pruned_df = normalized_df[normalized_df > 0.05]
+    # drop columns that contain only NaNs now
+    dropped_df = pruned_df.dropna(axis="columns", how="all")
+    # replace all the _remaining_ NaNs with 0
+    histograms_df = dropped_df.fillna(0)
 
-    # prune outliers, detect dynamic range
-    for (tstamp, data, biggestbkt) in histograms:
-        for bktval, bktcount in data.items():
-            if bktcount / biggestbkt < 0.05:
-                # outliers <5% which would be barely visible in the graph anyway
-                del data[bktval]
-            else:
-                if hmin is None:
-                    hmin = bktval
-                else:
-                    hmin = min(hmin, bktval)
-                hmax = max(hmax, bktval)
+    # detect dynamic range
+    hmin = histograms_df.columns.min()
+    hmax = histograms_df.columns.max()
 
-    print >> sys.stderr, "hmin =", hmin
-    print >> sys.stderr, "hmax =", hmax
+    print("hmin =", hmin, file=sys.stderr)
+    print("hmax =", hmax, file=sys.stderr)
 
     rows = hmax - hmin
-    print >> sys.stderr, "rows =", rows
-    cols = len(histograms)
+    print("rows =", rows, file=sys.stderr)
+    cols = len(histograms_df)
 
     # How big do you want the squares to be?
     sqsz = 8
@@ -68,11 +86,11 @@ def main():
     height = rows * sqsz
     pixels = [(0xFF, 0xFF, 0xFF)] * (width * height)
 
-    for col, (tstamp, histogram, biggestbkt) in enumerate(histograms):
-        for bktval, bktcount in histogram.items():
+    for col, (tstamp, histogram) in enumerate(histograms_df.iterrows()):
+        for bktval, bktgrayness in histogram.items():
             bottomrow = (bktval - hmin)
             toprow    = bottomrow + 1
-            pixelval  = 0xFF - int(bktcount / biggestbkt * 0xFF)
+            pixelval  = 0xFF - int(bktgrayness * 0xFF)
 
             offset_x = col * sqsz
             offset_y = height - toprow * sqsz - 1
@@ -112,7 +130,7 @@ def main():
         draw.text((graph_x - len(label) * 6 - 10, offset_y - 5), label, 0x333333, font=font)
 
     # X axis ticks
-    for col, (tstamp, _, _) in list(enumerate(histograms))[::3]:
+    for col, (tstamp, _) in list(enumerate(histograms_df.iterrows()))[::3]:
         offset_x = graph_x + col * 8
         draw.line((offset_x, height - 2, offset_x, height + 2), fill=0xAAAAAA)
 
@@ -122,7 +140,7 @@ def main():
     tmpim = Image.new("RGB", (80, width + 20), "white")
     tmpdraw = ImageDraw.Draw(tmpim)
 
-    for col, (tstamp, _, _) in list(enumerate(histograms))[::6]:
+    for col, (tstamp, _) in list(enumerate(histograms_df.iterrows()))[::6]:
         dt = datetime.fromtimestamp(tstamp)
         offset_x = col * 8
         tmpdraw.text(( 6, offset_x + 0), dt.strftime("%Y-%m-%d"), 0x333333, font=font)
@@ -137,7 +155,7 @@ def main():
     im.paste( tmpim.rotate(270), (width + graph_x + 9, 0) )
 
     if sys.argv[2] != "-":
-        im.save(sys.argv[2])
+        im.save(outfile)
     else:
         im.save(sys.stdout, format="png")
 
