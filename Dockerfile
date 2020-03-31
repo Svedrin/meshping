@@ -16,9 +16,13 @@ RUN cd /opt/meshping/oping-py && python3 setup.py build && python3 setup.py inst
 
 FROM alpine:latest
 
-RUN apk add --no-cache python3 liboping bash py3-netifaces~=0.10.9 dumb-init
+RUN apk add --no-cache python3 liboping bash py3-netifaces~=0.10.9 py3-pillow dumb-init ttf-dejavu
 COPY requirements.txt /opt/meshping/requirements.txt
-RUN pip3 install -r /opt/meshping/requirements.txt
+RUN pip3 install --no-cache-dir -r /opt/meshping/requirements.txt
+
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+RUN apk add --no-cache py3-pandas
+
 
 WORKDIR /opt/meshping
 COPY --from=0 /opt/meshping/ui/node_modules/jquery/dist/jquery.slim.min.js            /opt/meshping/ui/node_modules/jquery/dist/

@@ -6,7 +6,6 @@ import sys
 import json
 import math
 import pandas
-import requests
 
 from time import time
 from datetime import datetime
@@ -51,11 +50,7 @@ def render(prometheus_json):
     hmin = int(histograms_df.columns.min())
     hmax = int(histograms_df.columns.max())
 
-    print("hmin =", hmin, file=sys.stderr)
-    print("hmax =", hmax, file=sys.stderr)
-
     rows = hmax - hmin + 1
-    print("rows =", rows, file=sys.stderr)
     cols = len(histograms_df)
 
     # How big do you want the squares to be?
@@ -143,6 +138,7 @@ def main():
 
     _, prometheus, pingnode, target, outfile = sys.argv
 
+    import requests
     response = requests.get(prometheus + "/api/v1/query_range", timeout=2, params={
         "query": 'increase(meshping_pings_bucket{instance="%s",name="%s"}[1h])' % (pingnode, target),
         "start": time() - 3 * 24 * 60 * 60,

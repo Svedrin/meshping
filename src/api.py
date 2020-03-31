@@ -3,10 +3,15 @@
 # pylint: disable=unused-variable
 
 import socket
+import os
+import httpx
 
-from quart  import Response, render_template, request, jsonify, send_from_directory
+from time   import time
+from io     import BytesIO
+from quart  import Response, render_template, request, jsonify, send_from_directory, send_file, abort
 
 from ifaces import Ifaces4
+from histodraw import render
 
 def add_api_views(app, mp):
     @app.route("/")
@@ -193,3 +198,23 @@ def add_api_views(app, mp):
     async def clear_stats():
         mp.clear_stats()
         return jsonify(success=True)
+
+    @app.route("/histogram/<node>/<targetname>.png")
+    async def histogram(node, targetname):
+        prom_url = os.environ.get("MESHPING_PROMETHEUS")
+        if prom_url is None:
+            abort(503)
+
+        async with httpx.AsyncClient() as client:
+            response = (await client.get(prom_url + "/api/v1/query_range", timeout=2, params={
+                "query": 'increase(meshping_pings_bucket{instance="%s",name="%s"}[1h])' % (node, targetname),
+                "start": time() - 3 * 24 * 60 * 60,
+                "end":   time(),
+                "step":  3600,
+            })).json()
+
+        img = render(response)
+        img_io = BytesIO()
+        img.save(img_io, 'png')
+        img_io.seek(0)
+        return await send_file(img_io, mimetype='image/png')
