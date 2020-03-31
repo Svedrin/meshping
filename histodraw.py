@@ -13,29 +13,13 @@ from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 
 
-def main():
-    if len(sys.argv) != 5:
-        print("Usage: %s <prometheus URL> <pingnode> <target> <output.png>" % sys.argv[0], file=sys.stderr)
-        return 2
-
-    _, prometheus, pingnode, target, outfile = sys.argv
-
-    response = requests.get(prometheus + "/api/v1/query_range", timeout=2, params={
-        "query": 'increase(meshping_pings_bucket{instance="%s",name="%s"}[1h])' % (pingnode, target),
-        "start": time() - 3 * 24 * 60 * 60,
-        "end":   time(),
-        "step":  3600,
-    }).json()
-
-    assert response["status"] == "success", "Prometheus query failed"
-    assert response["data"]["result"], "Result is empty"
-
+def render(prometheus_json):
     histograms_df = None
     now = time()
 
     # Parse Prometheus timeseries into a two-dimensional DataFrame.
     # Columns: t (time), plus one for every Histogram bucket.
-    for result in response["data"]["result"]:
+    for result in prometheus_json["data"]["result"]:
         bucket = int(math.log(float(result["metric"]["le"]), 2) * 10) - 1
         metric_df = (
             pandas.DataFrame(result["values"], dtype=float, columns=["t", bucket])
@@ -64,8 +48,8 @@ def main():
     histograms_df = dropped_df.fillna(0)
 
     # detect dynamic range
-    hmin = histograms_df.columns.min()
-    hmax = histograms_df.columns.max()
+    hmin = int(histograms_df.columns.min())
+    hmax = int(histograms_df.columns.max())
 
     print("hmin =", hmin, file=sys.stderr)
     print("hmax =", hmax, file=sys.stderr)
@@ -103,7 +87,6 @@ def main():
 
     # im will hold the output image
     im = Image.new("RGB", (width + graph_x + 20, height + 100), "white")
-
     im.paste(graph, (graph_x, 0))
 
     # draw a rect around the graph
@@ -149,6 +132,28 @@ def main():
     tmpdraw = ImageDraw.Draw(tmpim)
     tmpdraw.text((0, 0), "Meshping by Michael Ziegler", 0x999999, font=font)
     im.paste( tmpim.rotate(270, expand=1), (width + graph_x + 9, 0) )
+
+    return im
+
+
+def main():
+    if len(sys.argv) != 5:
+        print("Usage: %s <prometheus URL> <pingnode> <target> <output.png>" % sys.argv[0], file=sys.stderr)
+        return 2
+
+    _, prometheus, pingnode, target, outfile = sys.argv
+
+    response = requests.get(prometheus + "/api/v1/query_range", timeout=2, params={
+        "query": 'increase(meshping_pings_bucket{instance="%s",name="%s"}[1h])' % (pingnode, target),
+        "start": time() - 3 * 24 * 60 * 60,
+        "end":   time(),
+        "step":  3600,
+    }).json()
+
+    assert response["status"] == "success", "Prometheus query failed"
+    assert response["data"]["result"], "Result is empty"
+
+    im = render(response)
 
     if sys.argv[2] != "-":
         im.save(outfile)
