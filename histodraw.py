@@ -70,7 +70,7 @@ def main():
     print("hmin =", hmin, file=sys.stderr)
     print("hmax =", hmax, file=sys.stderr)
 
-    rows = hmax - hmin
+    rows = hmax - hmin + 1
     print("rows =", rows, file=sys.stderr)
     cols = len(histograms_df)
 
@@ -78,22 +78,25 @@ def main():
     sqsz = 8
 
     # Draw the graph in a pixels array which we then copy to an image
-    width  = cols * sqsz
-    height = rows * sqsz
-    pixels = [(0xFF, 0xFF, 0xFF)] * (width * height)
+    width  = cols
+    height = rows
+    pixels = [0xFF] * (width * height)
 
     for col, (tstamp, histogram) in enumerate(histograms_df.iterrows()):
         for bktval, bktgrayness in histogram.items():
-            bottomrow = (bktval - hmin)
-            toprow    = bottomrow + 1
-            pixelval  = 0xFF - int(bktgrayness * 0xFF)
+            pixelval = int((1.0 - bktgrayness) * 0xFF)
+            #       (     y       )            (x)
+            pixels[((hmax - bktval) * width) + col] = pixelval
 
-            offset_x = col * sqsz
-            offset_y = height - toprow * sqsz - 1
+    # copy pixels to an Image and paste that into the output image
+    graph = Image.new("L", (width, height), "white")
+    graph.putdata(pixels)
 
-            for y in range(0, sqsz):
-                for x in range(0, sqsz):
-                    pixels[(offset_y + y) * width + (offset_x + x)] = (pixelval, ) * 3
+    # Scale graph so each Pixel becomes a square
+    width  *= sqsz
+    height *= sqsz
+
+    graph = graph.resize((width, height))
 
     # X position of the graph
     graph_x = 70
@@ -101,9 +104,6 @@ def main():
     # im will hold the output image
     im = Image.new("RGB", (width + graph_x + 20, height + 100), "white")
 
-    # copy pixels to an Image and paste that into the output image
-    graph = Image.new("RGB", (width, height), "white")
-    graph.putdata(pixels)
     im.paste(graph, (graph_x, 0))
 
     # draw a rect around the graph
