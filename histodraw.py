@@ -12,8 +12,6 @@ from time import time
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 
-base = 2
-
 
 def main():
     if len(sys.argv) != 5:
@@ -123,7 +121,7 @@ def main():
         offset_y = height - bottomrow * sqsz - 1
         draw.line((graph_x - 2, offset_y, graph_x + 2, offset_y), fill=0xAAAAAA)
 
-        ping = base ** (hidx / 10.)
+        ping = 2 ** (hidx / 10.)
         label = "%.2f" % ping
         draw.text((graph_x - len(label) * 6 - 10, offset_y - 5), label, 0x333333, font=font)
 
