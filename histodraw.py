@@ -1,8 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # kate: space-indent on; indent-width 4; replace-tabs on;
-
-from __future__ import division
 
 import sys
 import json
@@ -146,13 +144,13 @@ def main():
         tmpdraw.text(( 6, offset_x + 0), dt.strftime("%Y-%m-%d"), 0x333333, font=font)
         tmpdraw.text((18, offset_x + 8), dt.strftime("%H:%M:%S"), 0x333333, font=font)
 
-    im.paste( tmpim.rotate(90), (graph_x - 10, height + 1) )
+    im.paste( tmpim.rotate(90, expand=1), (graph_x - 10, height + 1) )
 
     # This worked pretty well for Tobi Oetiker...
     tmpim = Image.new("RGB", (170, 11), "white")
     tmpdraw = ImageDraw.Draw(tmpim)
     tmpdraw.text((0, 0), "Meshping by Michael Ziegler", 0x999999, font=font)
-    im.paste( tmpim.rotate(270), (width + graph_x + 9, 0) )
+    im.paste( tmpim.rotate(270, expand=1), (width + graph_x + 9, 0) )
 
     if sys.argv[2] != "-":
         im.save(outfile)
