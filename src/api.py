@@ -57,7 +57,7 @@ def add_api_views(app, mp):
             buckets = sorted(histogram.keys(), key=float)
             count = 0
             for bucket in buckets:
-                nextping = 2 ** ((bucket + 1) / 10.) - 0.01
+                nextping = 2 ** ((bucket + 1) / 10.)
                 count += histogram[bucket]
                 respdata.append(
                     'meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="%(le).2f"} %(count)d' % dict(
