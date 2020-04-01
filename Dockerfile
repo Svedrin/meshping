@@ -28,6 +28,7 @@ WORKDIR /opt/meshping
 COPY --from=0 /opt/meshping/ui/node_modules/jquery/dist/jquery.slim.min.js            /opt/meshping/ui/node_modules/jquery/dist/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap/dist/css/bootstrap.min.css      /opt/meshping/ui/node_modules/bootstrap/dist/css/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js /opt/meshping/ui/node_modules/bootstrap/dist/js/
+COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/graph-up.svg        /opt/meshping/ui/node_modules/bootstrap-icons/icons/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/trash.svg           /opt/meshping/ui/node_modules/bootstrap-icons/icons/
 COPY --from=0 /opt/meshping/ui/node_modules/vue/dist/vue.min.js                       /opt/meshping/ui/node_modules/vue/dist/
 COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/dist/vue-resource.min.js     /opt/meshping/ui/node_modules/vue-resource/dist/
