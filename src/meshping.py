@@ -58,12 +58,17 @@ class MeshPing:
         self.redis.srem("meshping:targets", target)
         self.redis.srem("meshping:foreign_targets", target)
 
-    def get_target_info(self, addr, name_if_created):
+    def get_target_info(self, addr, name_if_created=None):
         if addr not in self.targets:
-            self.targets[addr] = self.redis_load(addr, "target") or {
-                "name": name_if_created, "addr": addr,
-                "sent": 0, "lost": 0, "recv": 0, "last": 0, "sum":  0, "min":  0, "max":  0
-            }
+            self.targets[addr] = self.redis_load(addr, "target")
+            if self.targets[addr] is None:
+                if name_if_created is not None:
+                    self.targets[addr] = {
+                        "name": name_if_created, "addr": addr,
+                        "sent": 0, "lost": 0, "recv": 0, "last": 0, "sum":  0, "min":  0, "max":  0
+                    }
+                else:
+                    raise KeyError(addr)
         return self.targets[addr]
 
     def get_target_histogram(self, addr):
@@ -127,10 +132,15 @@ class MeshPing:
             rdspipe = self.redis.pipeline()
 
             for hostinfo in pingobj.get_hosts():
-                hostinfo["name"] = hostinfo["name"].decode("utf-8")
                 hostinfo["addr"] = hostinfo["addr"].decode("utf-8")
 
-                target    = self.get_target_info(hostinfo["addr"], hostinfo["name"])
+                try:
+                    target = self.get_target_info(hostinfo["addr"])
+                except KeyError:
+                    if hostinfo["addr"] in current_targets:
+                        current_targets.remove(hostinfo["addr"])
+                    pingobj.remove_host(hostinfo["addr"].encode("utf-8"))
+
                 histogram = self.get_target_histogram(hostinfo["addr"])
 
                 target["sent"] += 1
