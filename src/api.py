@@ -3,15 +3,24 @@
 # pylint: disable=unused-variable
 
 import socket
+import os
+import httpx
 
-from quart  import Response, render_template, request, jsonify, send_from_directory
+from time   import time
+from io     import BytesIO
+from quart  import Response, render_template, request, jsonify, send_from_directory, send_file, abort
 
 from ifaces import Ifaces4
+from histodraw import render
 
 def add_api_views(app, mp):
     @app.route("/")
     async def index():
-        return await render_template("index.html", Hostname=socket.gethostname())
+        return await render_template(
+            "index.html",
+            Hostname=socket.gethostname(),
+            HaveProm=("true" if "MESHPING_PROMETHEUS_URL" in os.environ else "false"),
+        )
 
     @app.route("/metrics")
     async def metrics():
@@ -57,7 +66,7 @@ def add_api_views(app, mp):
             buckets = sorted(histogram.keys(), key=float)
             count = 0
             for bucket in buckets:
-                nextping = 2 ** ((bucket + 1) / 10.) - 0.01
+                nextping = 2 ** ((bucket + 1) / 10.)
                 count += histogram[bucket]
                 respdata.append(
                     'meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="%(le).2f"} %(count)d' % dict(
@@ -193,3 +202,42 @@ def add_api_views(app, mp):
     async def clear_stats():
         mp.clear_stats()
         return jsonify(success=True)
+
+    @app.route("/histogram/<node>/<target>.png")
+    async def histogram(node, target):
+        prom_url = os.environ.get("MESHPING_PROMETHEUS_URL")
+        if prom_url is None:
+            abort(503)
+
+        prom_query = os.environ.get(
+            "MESHPING_PROMETHEUS_QUERY",
+            'increase(meshping_pings_bucket{instance="%(pingnode)s",name="%(name)s",target="%(addr)s"}[1h])'
+        )
+
+        if "@" in target:
+            name, addr = target.split("@")
+        else:
+            for _, name, addr in mp.iter_targets():
+                if name == target or addr == target:
+                    break
+            else:
+                abort(400)
+
+        async with httpx.AsyncClient() as client:
+            response = (await client.get(prom_url + "/api/v1/query_range", timeout=2, params={
+                "query": prom_query % dict(pingnode=node, name=name, addr=addr),
+                "start": time() - 3 * 24 * 60 * 60,
+                "end":   time(),
+                "step":  3600,
+            })).json()
+
+        if response["status"] != "success":
+            abort(500)
+        if not response["data"]["result"]:
+            abort(404)
+
+        img = render(response)
+        img_io = BytesIO()
+        img.save(img_io, 'png')
+        img_io.seek(0)
+        return await send_file(img_io, mimetype='image/png')

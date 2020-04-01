@@ -1,6 +1,8 @@
 var app = new Vue({
     el: '#app',
     data: {
+        hostname: window.meshping_hostname,
+        haveprom: window.meshping_haveprom,
         success_msg: "",
         last_update: 0,
         search: localStorage.getItem("meshping_search") || "",

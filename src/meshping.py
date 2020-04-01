@@ -7,6 +7,7 @@ import os
 import os.path
 import math
 import socket
+import sys
 
 from uuid       import uuid4
 from time       import time
@@ -175,6 +176,18 @@ class MeshPing:
 def main():
     if os.getuid() != 0:
         raise RuntimeError("need to be root, sorry about that")
+
+    known_env_vars = (
+        "MESHPING_REDIS_HOST",
+        "MESHPING_PING_TIMEOUT",
+        "MESHPING_PROMETHEUS_URL",
+        "MESHPING_PROMETHEUS_QUERY",
+    )
+
+    for key in os.environ.keys():
+        if key.startswith("MESHPING_") and key not in known_env_vars:
+            print("env var %s is unknown" % key, file=sys.stderr)
+            sys.exit(1)
 
     app = QuartTrio(__name__, static_url_path="")
     app.config["TEMPLATES_AUTO_RELOAD"] = True
