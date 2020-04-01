@@ -28,10 +28,12 @@ FAC_24h = math.exp(-INTERVAL / (24 * 60 * 60.))
 
 
 class MeshPing:
-    def __init__(self, redis, timeout=1):
+    def __init__(self, redis, timeout=5, interval=30):
+        assert interval > timeout, "Interval must be larger than the timeout"
         self.targets = {}
         self.histograms = {}
         self.timeout  = timeout
+        self.interval = interval
         self.redis = redis
 
     def redis_load(self, addr, field):
@@ -91,7 +93,7 @@ class MeshPing:
 
         while True:
             now = time()
-            next_ping = now + 30
+            next_ping = now + self.interval
 
             unseen_targets = current_targets.copy()
             for target, name, addr in self.iter_targets():
@@ -114,7 +116,8 @@ class MeshPing:
                 self.histograms.pop(addr, None)
 
             if not current_targets:
-                await trio.sleep(next_ping - time())
+                if time() < next_ping:
+                    await trio.sleep(next_ping - time())
                 continue
 
             await trio.to_thread.run_sync(
@@ -171,7 +174,8 @@ class MeshPing:
 
             rdspipe.execute()
 
-            await trio.sleep(next_ping - time())
+            if time() < next_ping:
+                await trio.sleep(next_ping - time())
 
 def main():
     if os.getuid() != 0:
@@ -180,6 +184,7 @@ def main():
     known_env_vars = (
         "MESHPING_REDIS_HOST",
         "MESHPING_PING_TIMEOUT",
+        "MESHPING_PING_INTERVAL",
         "MESHPING_PEERS",
         "MESHPING_PROMETHEUS_URL",
         "MESHPING_PROMETHEUS_QUERY",
@@ -196,7 +201,11 @@ def main():
     app.debug = False
 
     redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
-    mp = MeshPing(redis, int(os.environ.get("MESHPING_PING_TIMEOUT", 5)))
+    mp = MeshPing(
+        redis,
+        int(os.environ.get("MESHPING_PING_TIMEOUT",   5)),
+        int(os.environ.get("MESHPING_PING_INTERVAL", 30))
+    )
 
     add_api_views(app, mp)
 
