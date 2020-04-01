@@ -81,42 +81,7 @@ trigger:
     - pull_request
 
 ---
-kind: pipeline
-name: linux-arm64
-
-platform:
-  arch: arm64
-  os: linux
-
-steps:
-- name: set "latest" tag
-  image: alpine:latest
-  commands:
-  - echo -n "latest-aarch64" > .tags
-
-- name: set version tag
-  image: alpine:latest
-  commands:
-  - echo -n ",${DRONE_TAG}-aarch64" >> .tags
-  when:
-    event: tag
-
-- name: build docker image
-  image: plugins/docker
-  settings:
-    repo: svedrin/meshping
-    username: svedrin
-    password:
-      from_secret: docker-registry-pw
-    cache_from: "svedrin/meshping:latest-aarch64"
-
-trigger:
-  branch: master
-  event:
-    exclude:
-    - pull_request
----
 kind: signature
-hmac: 822b9e2d54f1c15b3e960f2cc28fc20d86b642cf3a71fe4f1dd0640a7343e0d5
+hmac: 8ef1141b444d43c595522217b72ae740cd7953d000cc19281a1dede2ca29cf59
 
 ...
