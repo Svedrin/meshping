@@ -124,6 +124,29 @@ Otherwise you'll lose the heatmap effect because every data point will be its ow
 In the examples directory, there's also a [json dashboard definition](examples/grafana.json) that you can import.
 
 
+## Built-in heatmaps
+
+Meshping also has a built-in heatmaps feature. These do not look as pretty as the ones from Grafana, but I find they are better readable and more useful. They look like this:
+
+![built-in heatmap](examples/heatmap4.png)
+
+To enable these, configure the `MESHPING_PROMETHEUS_URL` environment variable to point to your prometheus instance, like so:
+
+```
+MESHPING_PROMETHEUS_URL="http://192.168.0.1:9090"
+```
+
+Then Meshping will enable buttons in the UI to view these graphs.
+
+The default query that Meshping sends to Prometheus to fetch the data is this one:
+
+```
+increase(meshping_pings_bucket{instance="%(pingnode)s",name="%(name)s",target="%(addr)s"}[1h])
+```
+
+Names get substituted with the respective values before sending the query. If you need to modify it, you can override it via the `MESHPING_PROMETHEUS_QUERY` environment variable.
+
+
 # Deploying
 
 Deploying meshping is easiest using `docker-compose`:
