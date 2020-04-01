@@ -199,19 +199,38 @@ def add_api_views(app, mp):
         mp.clear_stats()
         return jsonify(success=True)
 
-    @app.route("/histogram/<node>/<targetname>.png")
-    async def histogram(node, targetname):
-        prom_url = os.environ.get("MESHPING_PROMETHEUS")
+    @app.route("/histogram/<node>/<target>.png")
+    async def histogram(node, target):
+        prom_url = os.environ.get("MESHPING_PROMETHEUS_URL")
         if prom_url is None:
             abort(503)
 
+        prom_query = os.environ.get(
+            "MESHPING_PROMETHEUS_QUERY",
+            'increase(meshping_pings_bucket{instance="%(pingnode)s",name="%(name)s",target="%(addr)s"}[1h])'
+        )
+
+        if "@" in target:
+            name, addr = target.split("@")
+        else:
+            for _, name, addr in mp.iter_targets():
+                if name == target or addr == target:
+                    break
+            else:
+                abort(400)
+
         async with httpx.AsyncClient() as client:
             response = (await client.get(prom_url + "/api/v1/query_range", timeout=2, params={
-                "query": 'increase(meshping_pings_bucket{instance="%s",name="%s"}[1h])' % (node, targetname),
+                "query": prom_query % dict(pingnode=node, name=name, addr=addr),
                 "start": time() - 3 * 24 * 60 * 60,
                 "end":   time(),
                 "step":  3600,
             })).json()
+
+        if response["status"] != "success":
+            abort(500)
+        if not response["data"]["result"]:
+            abort(404)
 
         img = render(response)
         img_io = BytesIO()
