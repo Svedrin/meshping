@@ -16,7 +16,11 @@ from histodraw import render
 def add_api_views(app, mp):
     @app.route("/")
     async def index():
-        return await render_template("index.html", Hostname=socket.gethostname())
+        return await render_template(
+            "index.html",
+            Hostname=socket.gethostname(),
+            HaveProm=("true" if "MESHPING_PROMETHEUS_URL" in os.environ else "false"),
+        )
 
     @app.route("/metrics")
     async def metrics():
