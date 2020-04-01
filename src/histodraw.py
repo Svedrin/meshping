@@ -25,6 +25,8 @@ def render(prometheus_json):
         )
         if histograms_df is None:
             histograms_df = metric_df
+        elif bucket in histograms_df.columns:
+            histograms_df[bucket].update(metric_df[bucket])
         else:
             histograms_df = histograms_df.join(metric_df)
 
@@ -46,8 +48,8 @@ def render(prometheus_json):
     histograms_df = dropped_df.fillna(0)
 
     # detect dynamic range
-    hmin = int(histograms_df.columns.min())
-    hmax = int(histograms_df.columns.max())
+    hmin = histograms_df.columns.min()
+    hmax = histograms_df.columns.max()
 
     rows = hmax - hmin + 1
     cols = len(histograms_df)
