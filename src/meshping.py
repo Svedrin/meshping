@@ -180,6 +180,7 @@ def main():
     known_env_vars = (
         "MESHPING_REDIS_HOST",
         "MESHPING_PING_TIMEOUT",
+        "MESHPING_PEERS",
         "MESHPING_PROMETHEUS_URL",
         "MESHPING_PROMETHEUS_QUERY",
     )
