@@ -66,6 +66,9 @@ def add_api_views(app, mp):
             buckets = sorted(histogram.keys(), key=float)
             count = 0
             for bucket in buckets:
+                # I cannot for the life of me remember why I need this "- 0.01" part here,
+                # and it totally looks like it should be unneccessary. Unfortunately if I
+                # remove it, this breaks Prometheus in very non-obvious ways. (I tried.)
                 nextping = 2 ** ((bucket + 1) / 10.) - 0.01
                 count += histogram[bucket]
                 respdata.append(
