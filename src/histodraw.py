@@ -3,18 +3,17 @@
 # kate: space-indent on; indent-width 4; replace-tabs on;
 
 import sys
-import json
 import math
-import pandas
 
 from time import time
 from datetime import datetime
-from PIL import Image, ImageDraw, ImageFont
 
+import pandas
+
+from PIL import Image, ImageDraw, ImageFont
 
 def render(prometheus_json):
     histograms_df = None
-    now = time()
 
     # Parse Prometheus timeseries into a two-dimensional DataFrame.
     # Columns: t (time), plus one for every Histogram bucket.
@@ -138,7 +137,6 @@ def main():
 
     _, prometheus, pingnode, target, outfile = sys.argv
 
-    import requests
     response = requests.get(prometheus + "/api/v1/query_range", timeout=2, params={
         "query": 'increase(meshping_pings_bucket{instance="%s",name="%s"}[1h])' % (pingnode, target),
         "start": time() - 3 * 24 * 60 * 60,
@@ -160,4 +158,5 @@ def main():
 
 
 if __name__ == '__main__':
+    import requests
     sys.exit(main())
