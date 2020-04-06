@@ -28,7 +28,7 @@ def render(prometheus_json):
         elif bucket in histograms_df.columns:
             histograms_df[bucket].update(metric_df[bucket])
         else:
-            histograms_df = histograms_df.join(metric_df)
+            histograms_df = histograms_df.join(metric_df, how="outer")
 
     # Transpose (so that `le` is the first column, rather than `t`), sort and diff
     # (Prometheus uses cumulative histograms rather than absolutes)
