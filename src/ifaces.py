@@ -1,5 +1,6 @@
 import socket
 import ipaddress
+import logging
 import netifaces
 
 class Ifaces4:
@@ -8,7 +9,13 @@ class Ifaces4:
         self.networks = []
         # Get addresses from our interfaces
         for iface in netifaces.interfaces():
-            for family, addresses in netifaces.ifaddresses(iface).items():
+            try:
+                ifaddrs = netifaces.ifaddresses(iface)
+            except ValueError:
+                logging.warning("Could not retrieve addresses of interface %s, ignoring interface", iface, exc_info=True)
+                continue
+
+            for family, addresses in ifaddrs.items():
                 if family != socket.AF_INET:
                     continue
 
@@ -41,7 +48,13 @@ class Ifaces6:
         self.networks = []
         # Get addresses from our interfaces
         for iface in netifaces.interfaces():
-            for family, addresses in netifaces.ifaddresses(iface).items():
+            try:
+                ifaddrs = netifaces.ifaddresses(iface)
+            except ValueError:
+                logging.warning("Could not retrieve addresses of interface %s, ignoring interface", iface, exc_info=True)
+                continue
+
+            for family, addresses in ifaddrs.items():
                 if family != socket.AF_INET6:
                     continue
 
