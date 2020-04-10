@@ -1,6 +1,6 @@
 import os
 import json
-import traceback
+import logging
 import httpx
 import trio
 
@@ -39,7 +39,7 @@ async def run_peers(mp):
                         },
                         data=json.dumps(dict(targets=peer_targets))
                     )
-                except:
-                    traceback.print_exc()
+                except Exception as err:
+                    logging.warning("Could not connect to peer %s: %s", peer, err)
 
         await trio.sleep(30)
