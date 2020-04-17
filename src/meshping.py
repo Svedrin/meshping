@@ -206,9 +206,8 @@ def main():
             sys.exit(1)
 
     app = QuartTrio(__name__, static_url_path="")
-    app.config["TEMPLATES_AUTO_RELOAD"] = True
+    #app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.secret_key = str(uuid4())
-    app.debug = False
 
     redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
     mp = MeshPing(
@@ -224,7 +223,7 @@ def main():
         app.nursery.start_soon(mp.run)
         app.nursery.start_soon(run_peers, mp)
 
-    app.run(host="::", port=9922)
+    app.run(host="::", port=9922, debug=False, use_reloader=False)
 
 if __name__ == '__main__':
     main()
