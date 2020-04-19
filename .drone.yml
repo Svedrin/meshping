@@ -22,6 +22,13 @@ steps:
   when:
     branch: master
 
+- name: set "staging" tag
+  image: alpine:latest
+  commands:
+  - echo -n "staging" > .tags
+  when:
+    branch: staging
+
 - name: set version tag
   image: alpine:latest
   commands:
@@ -39,7 +46,9 @@ steps:
       from_secret: docker-registry-pw
     cache_from: "svedrin/meshping:latest"
   when:
-    branch: master
+    branch:
+    - master
+    - staging
     event:
       exclude:
       - pull_request
@@ -57,12 +66,22 @@ steps:
   image: alpine:latest
   commands:
   - echo -n "latest-armv7l" > .tags
+  when:
+    branch: master
+
+- name: set "staging" tag
+  image: alpine:latest
+  commands:
+  - echo -n "staging-armv7l" > .tags
+  when:
+    branch: staging
 
 - name: set version tag
   image: alpine:latest
   commands:
   - echo -n ",${DRONE_TAG}-armv7l" >> .tags
   when:
+    branch: master
     event: tag
 
 - name: build docker image
@@ -75,13 +94,15 @@ steps:
     cache_from: "svedrin/meshping:latest-armv7l"
 
 trigger:
-  branch: master
+  branch:
+  - master
+  - staging
   event:
     exclude:
     - pull_request
 
 ---
 kind: signature
-hmac: 8ef1141b444d43c595522217b72ae740cd7953d000cc19281a1dede2ca29cf59
+hmac: 5d5f0de0c860b7792901b17cb561fa1e159a4a10b9dfaaa2950273ef67bf952e
 
 ...
