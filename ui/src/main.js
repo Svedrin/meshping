@@ -1,4 +1,4 @@
-var app = new Vue({
+window.app = new Vue({
     el: '#app',
     data: {
         hostname: window.meshping_hostname,
