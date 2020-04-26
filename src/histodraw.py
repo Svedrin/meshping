@@ -14,10 +14,16 @@ from PIL import Image, ImageDraw, ImageFont
 
 def render(prometheus_json):
     histograms_df = None
+    pingnode      = None
+    target_name   = None
+    target_addr   = None
 
     # Parse Prometheus timeseries into a two-dimensional DataFrame.
     # Columns: t (time), plus one for every Histogram bucket.
     for result in prometheus_json["data"]["result"]:
+        pingnode    = result["metric"].get("instance", "?")
+        target_name = result["metric"].get("name",     "?")
+        target_addr = result["metric"].get("target",   "?")
         bucket = int(math.log(float(result["metric"]["le"]), 2) * 10) - 1
         metric_df = (
             pandas.DataFrame(result["values"], dtype=float, columns=["t", bucket])
@@ -83,26 +89,42 @@ def render(prometheus_json):
 
     graph = graph.resize((width, height))
 
-    # X position of the graph
+    # position of the graph
     graph_x = 70
+    graph_y = 40
 
     # im will hold the output image
-    im = Image.new("RGB", (width + graph_x + 20, height + 100), "white")
-    im.paste(graph, (graph_x, 0))
+    im = Image.new("RGB", (graph_x + width + 20, graph_y + height + 100), "white")
+    im.paste(graph, (graph_x, graph_y))
 
     # draw a rect around the graph
     draw = ImageDraw.Draw(im)
-    draw.rectangle((graph_x, 0, graph_x + width - 1, height - 1), outline=0x333333)
+    draw.rectangle((graph_x, graph_y, graph_x + width - 1, graph_y + height - 1), outline=0x333333)
 
     try:
-        font = ImageFont.truetype("DejaVuSansMono.ttf", 10)
+        font   = ImageFont.truetype("DejaVuSansMono.ttf", 10)
+        lgfont = ImageFont.truetype("DejaVuSansMono.ttf", 16)
     except IOError:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 10)
+        font   = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 10)
+        lgfont = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 16)
+
+    # Headline
+    if target_name == target_addr:
+        headline_text = u"%s → %s" % (pingnode, target_name)
+    else:
+        headline_text = u"%s → %s (%s)" % (pingnode, target_name, target_addr)
+
+    headline_width, headline_height = draw.textsize(headline_text, font=lgfont)
+    draw.text(
+        ((graph_x + width + 20 - headline_width) // 2,
+         (graph_y - headline_height) // 2 - 1),
+        headline_text, 0x000000, font=lgfont
+    )
 
     # Y axis ticks and annotations
     for hidx in range(hmin, hmax, 5):
         bottomrow = (hidx - hmin)
-        offset_y = height - bottomrow * sqsz - 1
+        offset_y = height + graph_y - bottomrow * sqsz - 1
         draw.line((graph_x - 2, offset_y, graph_x + 2, offset_y), fill=0xAAAAAA)
 
         ping = 2 ** (hidx / 10.)
@@ -112,7 +134,7 @@ def render(prometheus_json):
     # X axis ticks
     for col, (tstamp, _) in list(enumerate(histograms_df.iterrows()))[::3]:
         offset_x = graph_x + col * 8
-        draw.line((offset_x, height - 2, offset_x, height + 2), fill=0xAAAAAA)
+        draw.line((offset_x, height + graph_y - 2, offset_x, height + graph_y + 2), fill=0xAAAAAA)
 
     # X axis annotations
     # Create a temp image for the bottom label that we then rotate by 90° and attach to the other one
@@ -126,13 +148,13 @@ def render(prometheus_json):
         tmpdraw.text(( 6, offset_x + 0), dt.strftime("%Y-%m-%d"), 0x333333, font=font)
         tmpdraw.text((18, offset_x + 8), dt.strftime("%H:%M:%S"), 0x333333, font=font)
 
-    im.paste( tmpim.rotate(90, expand=1), (graph_x - 10, height + 1) )
+    im.paste( tmpim.rotate(90, expand=1), (graph_x - 10, height + graph_y + 1) )
 
     # This worked pretty well for Tobi Oetiker...
-    tmpim = Image.new("RGB", (170, 11), "white")
+    tmpim = Image.new("RGB", (170, 13), "white")
     tmpdraw = ImageDraw.Draw(tmpim)
     tmpdraw.text((0, 0), "Meshping by Michael Ziegler", 0x999999, font=font)
-    im.paste( tmpim.rotate(270, expand=1), (width + graph_x + 9, 0) )
+    im.paste( tmpim.rotate(270, expand=1), (width + graph_x + 7, graph_y) )
 
     return im
 
