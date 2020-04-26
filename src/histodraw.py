@@ -47,9 +47,14 @@ def render(prometheus_json):
     # replace all the _remaining_ NaNs with 0
     histograms_df = dropped_df.fillna(0)
 
-    # detect dynamic range
-    hmin = histograms_df.columns.min()
-    hmax = histograms_df.columns.max()
+    # detect dynamic range, and round to the nearest multiple of 10.
+    # this ensures that the ticks are drawn at powers of 2, which makes
+    # the graph more easily understandable. (I hope.)
+    # Btw:  27 // 10 * 10   # =  20
+    #      -27 // 10 * 10   # = -30
+    # hmax needs to be nearest power of 10 + 1 for the top tick to be drawn.
+    hmin = histograms_df.columns.min() // 10 * 10
+    hmax = histograms_df.columns.max() // 10 * 10 + 11
 
     rows = hmax - hmin + 1
     cols = len(histograms_df)
