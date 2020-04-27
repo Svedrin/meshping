@@ -9,10 +9,13 @@ import math
 import socket
 import sys
 
+from datetime   import datetime
 from uuid       import uuid4
 from time       import time
+from influxdb   import InfluxDBClient
 from quart_trio import QuartTrio
 from redis      import StrictRedis
+from urllib.parse import urlparse
 
 import trio
 
@@ -28,13 +31,14 @@ FAC_24h = math.exp(-INTERVAL / (24 * 60 * 60.))
 
 
 class MeshPing:
-    def __init__(self, redis, timeout=5, interval=30):
+    def __init__(self, redis, influxdb, timeout=5, interval=30):
         assert interval > timeout, "Interval must be larger than the timeout"
         self.targets = {}
         self.histograms = {}
         self.timeout  = timeout
         self.interval = interval
-        self.redis = redis
+        self.redis    = redis
+        self.influxdb = influxdb
 
     def redis_load(self, addr, field):
         rds_value = self.redis.get("meshping:%s:%s:%s" % (socket.gethostname(), addr, field))
@@ -130,6 +134,8 @@ class MeshPing:
             )
 
             rdspipe = self.redis.pipeline()
+            influxdb_datapoints = []
+            now = datetime.now()
 
             for hostinfo in pingobj.get_hosts():
                 hostinfo["addr"] = hostinfo["addr"].decode("utf-8")
@@ -175,6 +181,17 @@ class MeshPing:
                     histogram.setdefault(histbucket, 0)
                     histogram[histbucket] += 1
 
+                    influxdb_datapoints.append({
+                        "measurement": "latency",
+                        "tags": {
+                            "from": socket.gethostname(),
+                            "name": target["name"],
+                            "addr": target["addr"],
+                        },
+                        "time": now.isoformat(),
+                        "fields": { "latency": hostinfo["latency"] }
+                    })
+
                 else:
                     target["lost"] += 1
 
@@ -183,6 +200,9 @@ class MeshPing:
                 rdspipe.setex("%s:histogram" % rds_prefix, 7 * 86400, json.dumps(histogram))
 
             rdspipe.execute()
+
+            if self.influxdb is not None:
+                self.influxdb.write_points(influxdb_datapoints)
 
             if time() < next_ping:
                 await trio.sleep(next_ping - time())
@@ -198,6 +218,7 @@ def main():
         "MESHPING_PEERS",
         "MESHPING_PROMETHEUS_URL",
         "MESHPING_PROMETHEUS_QUERY",
+        "MESHPING_INFLUXDB_URL",
     )
 
     for key in os.environ.keys():
@@ -210,8 +231,15 @@ def main():
     app.secret_key = str(uuid4())
 
     redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
+
+    influxdb = None
+    if "MESHPING_INFLUXDB_URL" in os.environ:
+        urlp = urlparse(os.environ["MESHPING_INFLUXDB_URL"])
+        influxdb = InfluxDBClient(urlp.hostname, urlp.port, urlp.username, urlp.password, urlp.path.lstrip("/"))
+
     mp = MeshPing(
         redis,
+        influxdb,
         int(os.environ.get("MESHPING_PING_TIMEOUT",   5)),
         int(os.environ.get("MESHPING_PING_INTERVAL", 30))
     )
