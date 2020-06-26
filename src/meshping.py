@@ -81,10 +81,10 @@ class MeshPing:
                 if target.addr in unseen_targets:
                     unseen_targets.remove(target.addr)
 
-            for target.addr in unseen_targets:
-                current_targets.remove(target.addr)
+            for target_addr in unseen_targets:
+                current_targets.remove(target_addr)
                 try:
-                    pingobj.remove_host(target.addr.encode("utf-8"))
+                    pingobj.remove_host(target_addr.encode("utf-8"))
                 except PingError:
                     # Host probably not there anyway
                     pass
