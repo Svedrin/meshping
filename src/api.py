@@ -39,30 +39,35 @@ def add_api_views(app, mp):
             '# TYPE meshping_pings histogram',
         ])]
 
-        for _, name, addr in mp.iter_targets():
-            target = mp.get_target_info(addr, name)
+        for target in mp.all_targets():
+            target_info = dict(
+                mp.get_target_stats(addr),
+                addr = target.addr,
+                name = target.name
+            )
             respdata.append('\n'.join([
                 'meshping_sent{name="%(name)s",target="%(addr)s"} %(sent)d',
 
                 'meshping_recv{name="%(name)s",target="%(addr)s"} %(recv)d',
 
                 'meshping_lost{name="%(name)s",target="%(addr)s"} %(lost)d',
-            ]) % target)
+            ]) % target_info)
 
-            if target["recv"]:
-                target = dict(target, avg=(target["sum"] / target["recv"]))
+            if target_info["recv"]:
+                # Amend the target_info with avg = sum / recv
+                target_info = dict(target_info, avg=(target_info["sum"] / target_info["recv"]))
                 respdata.append('\n'.join([
                     'meshping_max{name="%(name)s",target="%(addr)s"} %(max).2f',
 
                     'meshping_min{name="%(name)s",target="%(addr)s"} %(min).2f',
-                ]) % target)
+                ]) % target_info)
 
             respdata.append('\n'.join([
                 'meshping_pings_sum{name="%(name)s",target="%(addr)s"} %(sum)f',
                 'meshping_pings_count{name="%(name)s",target="%(addr)s"} %(recv)d',
-            ]) % target)
+            ]) % target_info)
 
-            histogram = mp.get_target_histogram(addr)
+            histogram = mp.get_histogram(target.addr)
             buckets = sorted(histogram.keys(), key=float)
             count = 0
             for bucket in buckets:
@@ -152,20 +157,20 @@ def add_api_views(app, mp):
         if request.method == "GET":
             targets = []
 
-            for _, name, addr in mp.iter_targets():
-                targetinfo = mp.get_target_info(addr, name)
+            for target in mp.all_targets():
+                target_stats = mp.get_target_stats(target.addr)
                 loss = 0
-                if targetinfo["sent"]:
-                    loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
+                if target_stats["sent"]:
+                    loss = (target_stats["sent"] - target_stats["recv"]) / target_stats["sent"] * 100
                 targets.append(
                     dict(
-                        targetinfo,
-                        name=targetinfo["name"][:24],
+                        target_stats,
+                        name=target.name,
                         succ=100 - loss,
                         loss=loss,
-                        avg15m=targetinfo.get("avg15m", 0),
-                        avg6h =targetinfo.get("avg6h",  0),
-                        avg24h=targetinfo.get("avg24h", 0),
+                        avg15m=target_stats.get("avg15m", 0),
+                        avg6h =target_stats.get("avg6h",  0),
+                        avg24h=target_stats.get("avg24h", 0),
                     )
                 )
 

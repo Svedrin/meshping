@@ -19,6 +19,7 @@ import trio
 from oping import PingObj, PingError
 from api   import add_api_views
 from peers import run_peers
+from db    import Database, OperationalError
 
 INTERVAL = 30
 
@@ -28,65 +29,37 @@ FAC_24h = math.exp(-INTERVAL / (24 * 60 * 60.))
 
 
 class MeshPing:
-    def __init__(self, redis, timeout=5, interval=30):
+    def __init__(self, db, timeout=5, interval=30):
         assert interval > timeout, "Interval must be larger than the timeout"
-        self.targets = {}
-        self.histograms = {}
+        self.db = db
         self.timeout  = timeout
         self.interval = interval
-        self.redis = redis
 
-    def redis_load(self, addr, field):
-        rds_value = self.redis.get("meshping:%s:%s:%s" % (socket.gethostname(), addr, field))
-        if rds_value is None:
-            return None
-        return json.loads(rds_value)
-
-    def iter_targets(self):
-        for target in self.redis.smembers("meshping:targets"):
-            target = target.decode("utf-8")
-            name, addr = target.split("@", 1)
-            yield target, name, addr
+    def all_targets(self):
+        return self.db.all_targets()
 
     def add_target(self, target):
         assert "@" in target
-        self.redis.sadd("meshping:targets", target)
-        self.redis.srem("meshping:foreign_targets", target)
+        name, addr = target.split("@", 1)
+        self.db.add_target(addr, name)
 
     def remove_target(self, target):
         assert "@" in target
-        self.redis.srem("meshping:targets", target)
-        self.redis.srem("meshping:foreign_targets", target)
+        name, addr = target.split("@", 1)
+        self.db.delete_target(addr)
 
-    def get_target_info(self, addr, name_if_created=None):
-        if addr not in self.targets:
-            self.targets[addr] = self.redis_load(addr, "target")
-            if self.targets[addr] is None:
-                if name_if_created is not None:
-                    self.targets[addr] = {
-                        "name": name_if_created, "addr": addr,
-                        "sent": 0, "lost": 0, "recv": 0, "last": 0, "sum":  0, "min":  0, "max":  0
-                    }
-                else:
-                    raise KeyError(addr)
-        return self.targets[addr]
+    def get_target_stats(self, addr):
+        stats = {
+            "sent": 0, "lost": 0, "recv": 0, "last": 0, "sum":  0, "min":  0, "max":  0
+        }
+        stats.update(self.db.get_statistics(addr))
+        return stats
 
     def get_target_histogram(self, addr):
-        if addr not in self.histograms:
-            histogram = self.redis_load(addr, "histogram") or {}
-            # json sucks and converts dict keys to strings
-            histogram = {int(x): y for (x, y) in histogram.items()}
-            self.histograms[addr] = histogram
-        return self.histograms[addr]
+        return self.db.get_histogram(addr)
 
     def clear_stats(self):
-        keys = self.redis.keys("meshping:%s:*" % socket.gethostname())
-        rdspipe = self.redis.pipeline()
-        for key in keys:
-            self.redis.delete(key)
-        rdspipe.execute()
-        self.targets = {}
-        self.histograms = {}
+        raise NotImplementedError("clear_stats")
 
     async def run(self):
         pingobj = PingObj()
@@ -101,88 +74,83 @@ class MeshPing:
             next_ping = now + self.interval
 
             unseen_targets = current_targets.copy()
-            for target, name, addr in self.iter_targets():
-                if target not in current_targets:
-                    current_targets.add(target)
-                    pingobj.add_host(addr.encode("utf-8"))
-                    self.get_target_info(addr, name)["name"] = name
-                if target in unseen_targets:
-                    unseen_targets.remove(target)
+            for target in self.db.all_targets():
+                if target.addr not in current_targets:
+                    current_targets.add(target.addr)
+                    pingobj.add_host(target.addr.encode("utf-8"))
+                if target.addr in unseen_targets:
+                    unseen_targets.remove(target.addr)
 
-            for target in unseen_targets:
-                current_targets.remove(target)
-                name, addr = target.split("@", 1)
+            for target.addr in unseen_targets:
+                current_targets.remove(target.addr)
                 try:
-                    pingobj.remove_host(addr.encode("utf-8"))
+                    pingobj.remove_host(target.addr.encode("utf-8"))
                 except PingError:
                     # Host probably not there anyway
                     pass
-                self.targets.pop(addr, None)
-                self.histograms.pop(addr, None)
 
+            # If we don't have any targets, we're done for now -- just sleep
             if not current_targets:
                 if time() < next_ping:
                     await trio.sleep(next_ping - time())
                 continue
 
+            # We do have targets, so first, let's ping them
             await trio.to_thread.run_sync(
                 lambda: pingobj.send()
             )
-
-            rdspipe = self.redis.pipeline()
 
             for hostinfo in pingobj.get_hosts():
                 hostinfo["addr"] = hostinfo["addr"].decode("utf-8")
 
                 try:
-                    target = self.get_target_info(hostinfo["addr"])
-                except KeyError:
+                    target_stats = self.get_target_stats(hostinfo["addr"])
+                except LookupError:
+                    # ping takes a while. it's possible that while we were busy, this
+                    # target has been deleted from the DB. If so, ignore it.
                     if hostinfo["addr"] in current_targets:
                         current_targets.remove(hostinfo["addr"])
-                    pingobj.remove_host(hostinfo["addr"].encode("utf-8"))
 
                 histogram = self.get_target_histogram(hostinfo["addr"])
 
-                target["sent"] += 1
+                target_stats["sent"] += 1
 
                 if hostinfo["latency"] != -1:
-                    target["recv"] += 1
-                    target["last"]  = hostinfo["latency"]
-                    target["sum"]  += target["last"]
-                    target["max"]   = max(target["max"], target["last"])
+                    target_stats["recv"] += 1
+                    target_stats["last"]  = hostinfo["latency"]
+                    target_stats["sum"]  += target_stats["last"]
+                    target_stats["max"]   = max(target_stats["max"], target_stats["last"])
 
-                    if target["min"] == 0:
-                        target["min"] = target["last"]
+                    if target_stats["min"] == 0:
+                        target_stats["min"] = target_stats["last"]
                     else:
-                        target["min"] = min(target["min"], target["last"])
+                        target_stats["min"] = min(target_stats["min"], target_stats["last"])
 
-                    if "avg15m" not in target:
-                        target["avg15m"] = target["last"]
+                    if "avg15m" not in target_stats:
+                        target_stats["avg15m"] = target_stats["last"]
                     else:
-                        target["avg15m"] = (target["avg15m"] * FAC_15m) + (target["last"] * (1 - FAC_15m))
+                        target_stats["avg15m"] = (target_stats["avg15m"] * FAC_15m) + (target_stats["last"] * (1 - FAC_15m))
 
-                    if "avg6h" not in target:
-                        target["avg6h"] = target["last"]
+                    if "avg6h" not in target_stats:
+                        target_stats["avg6h"] = target_stats["last"]
                     else:
-                        target["avg6h"] = (target["avg6h"] * FAC_6h) + (target["last"] * (1 - FAC_6h))
+                        target_stats["avg6h"] = (target_stats["avg6h"] * FAC_6h) + (target_stats["last"] * (1 - FAC_6h))
 
-                    if "avg24h" not in target:
-                        target["avg24h"] = target["last"]
+                    if "avg24h" not in target_stats:
+                        target_stats["avg24h"] = target_stats["last"]
                     else:
-                        target["avg24h"] = (target["avg24h"] * FAC_24h) + (target["last"] * (1 - FAC_24h))
+                        target_stats["avg24h"] = (target_stats["avg24h"] * FAC_24h) + (target_stats["last"] * (1 - FAC_24h))
 
-                    histbucket = int(math.log(hostinfo["latency"], 2) * 10)
-                    histogram.setdefault(histbucket, 0)
-                    histogram[histbucket] += 1
+                    self.db.add_measurement(
+                        hostinfo["addr"],
+                        timestamp = now // 3600 * 3600,
+                        bucket    = int(math.log(hostinfo["latency"], 2) * 10)
+                    )
 
                 else:
-                    target["lost"] += 1
+                    target_stats["lost"] += 1
 
-                rds_prefix = "meshping:%s:%s" % (socket.gethostname(), target["addr"])
-                rdspipe.setex("%s:target"    % rds_prefix, 7 * 86400, json.dumps(target))
-                rdspipe.setex("%s:histogram" % rds_prefix, 7 * 86400, json.dumps(histogram))
-
-            rdspipe.execute()
+                self.db.update_statistics(hostinfo["addr"], target_stats)
 
             if time() < next_ping:
                 await trio.sleep(next_ping - time())
@@ -192,6 +160,7 @@ def main():
         raise RuntimeError("need to be root, sorry about that")
 
     known_env_vars = (
+        "MESHPING_DATABASE_PATH",
         "MESHPING_REDIS_HOST",
         "MESHPING_PING_TIMEOUT",
         "MESHPING_PING_INTERVAL",
@@ -209,9 +178,24 @@ def main():
     #app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.secret_key = str(uuid4())
 
-    redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
+    try:
+        db_path = os.path.join(os.environ.get("MESHPING_DATABASE_PATH", "db"), "meshping.db")
+        db = Database(db_path)
+    except OperationalError as err:
+        print("Could not open database %s: %s" % (db_path, err), file=sys.stderr)
+        return 2
+
+    if "MESHPING_REDIS_HOST" in os.environ:
+        redis = StrictRedis(host=os.environ["MESHPING_REDIS_HOST"])
+
+        # Transition period: Read all targets from redis and add them to our DB
+        for target in redis.smembers("meshping:targets"):
+            target = target.decode("utf-8")
+            name, addr = target.split("@", 1)
+            db.add_target(addr, name)
+
     mp = MeshPing(
-        redis,
+        db,
         int(os.environ.get("MESHPING_PING_TIMEOUT",   5)),
         int(os.environ.get("MESHPING_PING_INTERVAL", 30))
     )
