@@ -4,6 +4,7 @@ import pandas
 
 from dataclasses        import dataclass
 from packaging.version  import parse as parse_version
+from sqlite3            import OperationalError
 
 # WAL mode is supported since 3.7.0: https://sqlite.org/wal.html
 assert parse_version(sqlite3.sqlite_version) >= parse_version("3.7.0"), "need WAL mode support"
