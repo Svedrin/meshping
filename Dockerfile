@@ -36,5 +36,8 @@ COPY --from=0 /usr/lib/python3.8/site-packages/oping.*.so /usr/lib/python3.8/sit
 COPY cli.py /usr/local/bin/mpcli
 COPY src    /opt/meshping/src
 COPY ui/src /opt/meshping/ui/src
+
+VOLUME /opt/meshping/db
+
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["/usr/bin/python3", "--", "/opt/meshping/src/meshping.py"]
