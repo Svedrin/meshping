@@ -2,7 +2,7 @@
 
 FROM alpine:latest
 
-RUN apk add --no-cache python3 python3-dev musl-dev liboping-dev make gcc bash nodejs npm
+RUN apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash nodejs npm
 RUN pip3 install Cython
 
 COPY ui/package*.json /opt/meshping/ui/
@@ -16,7 +16,7 @@ RUN cd /opt/meshping/oping-py && python3 setup.py build && python3 setup.py inst
 
 FROM alpine:latest
 
-RUN apk add --no-cache python3 liboping bash py3-netifaces~=0.10.9 py3-pillow dumb-init ttf-dejavu
+RUN apk add --no-cache python3 py3-pip liboping bash py3-netifaces~=0.10.9 py3-pillow dumb-init ttf-dejavu
 COPY requirements.txt /opt/meshping/requirements.txt
 RUN pip3 install --no-cache-dir -r /opt/meshping/requirements.txt
 
