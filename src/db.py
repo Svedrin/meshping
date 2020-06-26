@@ -64,6 +64,7 @@ SELECT h.timestamp, h.bucket, h.count
 FROM   histograms h
 INNER JOIN targets t ON t.id = h.target_id
 WHERE t.addr = ?
+ORDER BY h.timestamp, h.bucket
 """
 
 QRY_INSERT_STATS = """
@@ -132,8 +133,11 @@ class Database:
             sql     = QRY_SELECT_MEASUREMENTS,
             con     = self.conn,
             params  = (addr, ),
-            index_col   = ['timestamp', 'bucket'],
             parse_dates = {'timestamp': 's'}
+        ).pivot(                    # flip the dataframe: turn each value of the
+            index="timestamp",      # "bucket" DB column into a separate column in
+            columns="bucket",       # the DF, using the timestamp as the index
+            values="count"          # and the count for the values.
         )
 
     def prune_histograms(self, before_timestamp):
