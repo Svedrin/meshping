@@ -10,7 +10,7 @@ steps:
 - name: pylint
   image: alpine:latest
   commands:
-  - apk add --no-cache python3 py3-netifaces
+  - apk add --no-cache python3 py3-pip py3-netifaces
   - pip3 install pylint pylint-fail-under
   - pip3 install -r requirements.txt
   - pylint-fail-under --fail_under 9 src/
@@ -103,6 +103,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 5d5f0de0c860b7792901b17cb561fa1e159a4a10b9dfaaa2950273ef67bf952e
+hmac: 91e713b7d2fbddb1a880a8f98fe7f6db69869483cb8f596dbed66baff1e90759
 
 ...
