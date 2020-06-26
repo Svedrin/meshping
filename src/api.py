@@ -2,6 +2,7 @@
 
 # pylint: disable=unused-variable
 
+import math
 import socket
 import os
 import httpx
@@ -41,7 +42,7 @@ def add_api_views(app, mp):
 
         for target in mp.all_targets():
             target_info = dict(
-                mp.get_target_stats(addr),
+                mp.get_target_stats(target.addr),
                 addr = target.addr,
                 name = target.name
             )
@@ -67,18 +68,19 @@ def add_api_views(app, mp):
                 'meshping_pings_count{name="%(name)s",target="%(addr)s"} %(recv)d',
             ]) % target_info)
 
-            histogram = mp.get_histogram(target.addr)
-            buckets = sorted(histogram.keys(), key=float)
+            histogram = mp.get_target_histogram(target.addr).tail(1)
             count = 0
-            for bucket in buckets:
+            for bucket in histogram.columns:
+                if math.isnan(histogram[bucket][0]):
+                    continue
                 nextping = 2 ** ((bucket + 1) / 10.)
-                count += histogram[bucket]
+                count += histogram[bucket][0]
                 respdata.append(
                     'meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="%(le).2f"} %(count)d' % dict(
-                        addr  = addr,
+                        addr  = target.addr,
                         count = count,
                         le    = nextping,
-                        name  = target['name'],
+                        name  = target.name,
                     )
                 )
 
@@ -165,6 +167,7 @@ def add_api_views(app, mp):
                 targets.append(
                     dict(
                         target_stats,
+                        addr=target.addr,
                         name=target.name,
                         succ=100 - loss,
                         loss=loss,
