@@ -16,7 +16,6 @@ window.app = new Vue({
             var json = await response.json();
             this.targets_all = json.targets;
             this.last_update = new Date();
-            this.success_msg = "";
         },
         reapply_filters: function() {
             if( this.search === "" ){
@@ -62,10 +61,8 @@ window.app = new Vue({
                 var response = await this.$http.delete('/api/targets/' + target_str);
                 var json = await response.json();
                 if (json.success) {
-                    this.success_msg = (
-                        "<strong>Success!</strong> Deleted target " + target_str + ". " +
-                        "It will disappear after the next ping cycle."
-                    );
+                    this.show_success("<strong>Success!</strong> Deleted target " + target_str + ". ");
+                    this.update_targets();
                 }
             }
         },
@@ -81,21 +78,29 @@ window.app = new Vue({
             if (json.success) {
                 this.add_tgt_name = "";
                 this.add_tgt_addr = "";
-                this.success_msg = (
+                this.show_success(
                     "<strong>Success!</strong> Added targets: <ul>" +
                       json.targets.map(tgt => "<li>" + tgt + "</li>").join("") +
-                    "</ul>New targets will show up after the next ping cycle."
+                    "</ul>"
                 );
+                this.update_targets();
             }
         },
         clear_stats: async function() {
             var response = await this.$http.delete('/api/stats');
             var json = await response.json();
             if (json.success) {
-                this.success_msg = (
-                    "<strong>Success!</strong>Stats are cleared, and targets will be reloaded before the next ping cycle."
+                this.show_success(
+                    "<strong>Success!</strong>Stats are cleared."
                 );
+                this.update_targets();
             }
+        },
+        show_success: function(msg) {
+            this.success_msg = msg;
+            setTimeout(function(vue){
+                vue.success_msg = "";
+            }, 5000, this);
         }
     },
     created: function() {
