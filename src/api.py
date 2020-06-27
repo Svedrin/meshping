@@ -222,4 +222,7 @@ def add_api_views(app, mp):
         img_io = BytesIO()
         img.save(img_io, 'png')
         img_io.seek(0)
-        return await send_file(img_io, mimetype='image/png')
+
+        resp = await send_file(img_io, mimetype='image/png')
+        resp.headers["refresh"] = "300"
+        return resp
