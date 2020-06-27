@@ -111,38 +111,41 @@ class MeshPing:
                 hostinfo["addr"] = hostinfo["addr"].decode("utf-8")
 
                 try:
-                    target_stats = self.get_target_stats(hostinfo["addr"])
+                    self.process_ping_result(now, hostinfo)
                 except LookupError:
                     # ping takes a while. it's possible that while we were busy, this
-                    # target has been deleted from the DB. If so, ignore it.
+                    # target has been deleted from the DB. If so, forget about it.
                     if hostinfo["addr"] in current_targets:
                         current_targets.remove(hostinfo["addr"])
 
-                target_stats["sent"] += 1
-
-                if hostinfo["latency"] != -1:
-                    target_stats["recv"] += 1
-                    target_stats["last"]  = hostinfo["latency"]
-                    target_stats["sum"]  += target_stats["last"]
-                    target_stats["max"]   = max(target_stats.get("max", 0),            target_stats["last"])
-                    target_stats["min"]   = min(target_stats.get("min", float('inf')), target_stats["last"])
-                    target_stats["avg15m"] = exp_avg(target_stats.get("avg15m"), target_stats["last"], FAC_15m)
-                    target_stats["avg6h" ] = exp_avg(target_stats.get("avg6h"),  target_stats["last"], FAC_6h )
-                    target_stats["avg24h"] = exp_avg(target_stats.get("avg24h"), target_stats["last"], FAC_24h)
-
-                    self.db.add_measurement(
-                        hostinfo["addr"],
-                        timestamp = now // 3600 * 3600,
-                        bucket    = int(math.log(hostinfo["latency"], 2) * 10)
-                    )
-
-                else:
-                    target_stats["lost"] += 1
-
-                self.db.update_statistics(hostinfo["addr"], target_stats)
-
             if time() < next_ping:
                 await trio.sleep(next_ping - time())
+
+    def process_ping_result(self, timestamp, hostinfo):
+        target_stats = self.get_target_stats(hostinfo["addr"])
+        target_stats["sent"] += 1
+
+        if hostinfo["latency"] != -1:
+            target_stats["recv"] += 1
+            target_stats["last"]  = hostinfo["latency"]
+            target_stats["sum"]  += target_stats["last"]
+            target_stats["max"]   = max(target_stats.get("max", 0),            target_stats["last"])
+            target_stats["min"]   = min(target_stats.get("min", float('inf')), target_stats["last"])
+            target_stats["avg15m"] = exp_avg(target_stats.get("avg15m"), target_stats["last"], FAC_15m)
+            target_stats["avg6h" ] = exp_avg(target_stats.get("avg6h"),  target_stats["last"], FAC_6h )
+            target_stats["avg24h"] = exp_avg(target_stats.get("avg24h"), target_stats["last"], FAC_24h)
+
+            self.db.add_measurement(
+                hostinfo["addr"],
+                timestamp = timestamp // 3600 * 3600,
+                bucket    = int(math.log(hostinfo["latency"], 2) * 10)
+            )
+
+        else:
+            target_stats["lost"] += 1
+
+        self.db.update_statistics(hostinfo["addr"], target_stats)
+
 
 def main():
     if os.getuid() != 0:
@@ -158,21 +161,28 @@ def main():
         "MESHPING_PROMETHEUS_QUERY",
     )
 
+    deprecated_env_vars = (
+        "MESHPING_PROMETHEUS_URL",
+        "MESHPING_PROMETHEUS_QUERY",
+    )
+
     for key in os.environ:
         if key.startswith("MESHPING_") and key not in known_env_vars:
             print("env var %s is unknown" % key, file=sys.stderr)
             sys.exit(1)
+        if key.startswith("MESHPING_") and key in deprecated_env_vars:
+            print("env var %s is deprecated, ignored" % key, file=sys.stderr)
 
     app = QuartTrio(__name__, static_url_path="")
     #app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.secret_key = str(uuid4())
 
+    db_path = os.path.join(os.environ.get("MESHPING_DATABASE_PATH", "db"), "meshping.db")
     try:
-        db_path = os.path.join(os.environ.get("MESHPING_DATABASE_PATH", "db"), "meshping.db")
         db = Database(db_path)
     except OperationalError as err:
         print("Could not open database %s: %s" % (db_path, err), file=sys.stderr)
-        return
+        sys.exit(1)
 
     if "MESHPING_REDIS_HOST" in os.environ:
         redis = StrictRedis(host=os.environ["MESHPING_REDIS_HOST"])
