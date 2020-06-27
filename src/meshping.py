@@ -27,6 +27,12 @@ FAC_15m = math.exp(-INTERVAL / (     15 * 60.))
 FAC_6h  = math.exp(-INTERVAL / ( 6 * 60 * 60.))
 FAC_24h = math.exp(-INTERVAL / (24 * 60 * 60.))
 
+def exp_avg(current_avg, add_value, factor):
+    if current_avg is None:
+        return add_value
+    else:
+        return (current_avg * factor) + (add_value * (1 - factor))
+
 
 class MeshPing:
     def __init__(self, db, timeout=5, interval=30):
@@ -129,20 +135,9 @@ class MeshPing:
                     else:
                         target_stats["min"] = min(target_stats["min"], target_stats["last"])
 
-                    if "avg15m" not in target_stats:
-                        target_stats["avg15m"] = target_stats["last"]
-                    else:
-                        target_stats["avg15m"] = (target_stats["avg15m"] * FAC_15m) + (target_stats["last"] * (1 - FAC_15m))
-
-                    if "avg6h" not in target_stats:
-                        target_stats["avg6h"] = target_stats["last"]
-                    else:
-                        target_stats["avg6h"] = (target_stats["avg6h"] * FAC_6h) + (target_stats["last"] * (1 - FAC_6h))
-
-                    if "avg24h" not in target_stats:
-                        target_stats["avg24h"] = target_stats["last"]
-                    else:
-                        target_stats["avg24h"] = (target_stats["avg24h"] * FAC_24h) + (target_stats["last"] * (1 - FAC_24h))
+                    target_stats["avg15m"] = exp_avg(target_stats.get("avg15m"), target_stats["last"], FAC_15m)
+                    target_stats["avg6h" ] = exp_avg(target_stats.get("avg6h"),  target_stats["last"], FAC_6h )
+                    target_stats["avg24h"] = exp_avg(target_stats.get("avg24h"), target_stats["last"], FAC_24h)
 
                     self.db.add_measurement(
                         hostinfo["addr"],
