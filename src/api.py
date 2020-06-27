@@ -126,7 +126,7 @@ def add_api_views(app, mp):
 
             target_str = "%(name)s@%(addr)s" % target
             mp.add_target(target_str)
-            stats.append(mp.get_target_info(target["addr"], target["name"]))
+            stats.append(mp.get_target_stats(target["addr"]))
 
         return jsonify(success=True, targets=stats)
 
