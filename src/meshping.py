@@ -33,11 +33,12 @@ def exp_avg(current_avg, add_value, factor):
 
 
 class MeshPing:
-    def __init__(self, db, timeout=5, interval=30):
+    def __init__(self, db, timeout=5, interval=30, histogram_days=3):
         assert interval > timeout, "Interval must be larger than the timeout"
         self.db = db
         self.timeout  = timeout
         self.interval = interval
+        self.histogram_period = histogram_days * 86400
 
     def all_targets(self):
         return self.db.all_targets()
@@ -79,6 +80,9 @@ class MeshPing:
         while True:
             now = time()
             next_ping = now + self.interval
+
+            # Run DB housekeeping
+            self.db.prune_histograms(before_timestamp=(now - self.histogram_period))
 
             unseen_targets = current_targets.copy()
             for target in self.db.all_targets():
@@ -156,6 +160,7 @@ def main():
         "MESHPING_REDIS_HOST",
         "MESHPING_PING_TIMEOUT",
         "MESHPING_PING_INTERVAL",
+        "MESHPING_HISTOGRAM_DAYS",
         "MESHPING_PEERS",
         "MESHPING_PROMETHEUS_URL",
         "MESHPING_PROMETHEUS_QUERY",
@@ -196,7 +201,8 @@ def main():
     mp = MeshPing(
         db,
         int(os.environ.get("MESHPING_PING_TIMEOUT",   5)),
-        int(os.environ.get("MESHPING_PING_INTERVAL", 30))
+        int(os.environ.get("MESHPING_PING_INTERVAL", 30)),
+        int(os.environ.get("MESHPING_HISTOGRAM_DAYS", 3))
     )
 
     add_api_views(app, mp)
