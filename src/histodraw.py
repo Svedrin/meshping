@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 def render(target, histograms_df):
     # Normalize Buckets by transforming the number of actual pings sent
     # into a float [0..1] indicating the grayness of that bucket.
-    biggestbkt = histograms_df.columns.max()
+    biggestbkt = histograms_df.max().max()
     normalized_df = histograms_df.div(biggestbkt, axis="index")
     # prune outliers -> keep only values > 0.05%
     pruned_df = normalized_df[normalized_df > 0.05]
