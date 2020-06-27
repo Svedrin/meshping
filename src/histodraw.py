@@ -87,7 +87,7 @@ def render(prometheus_json):
     width  *= sqsz
     height *= sqsz
 
-    graph = graph.resize((width, height))
+    graph = graph.resize((width, height), Image.NEAREST)
 
     # position of the graph
     graph_x = 70
