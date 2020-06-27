@@ -127,6 +127,11 @@ and you will be able to retrieve statistics from both sides to see how your link
 Building locally for development is easiest by running the `./run-dev.sh` script. It will build the container and start up Meshping.
 
 
+# Known issues
+
+* If you're running meshping behind nginx, be sure to set `proxy_http_version 1.1;` or it'll be unbearably slow.
+
+
 # Who do I talk to?
 
 * First and foremost: Feel free to open an [issue](https://github.com/Svedrin/meshping/issues/new) in this repository. :)
