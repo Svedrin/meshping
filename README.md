@@ -20,6 +20,12 @@ Meshping can render heatmaps from the pings measured over the last few (by defau
 
 Here you can nicely see that, while most of the pings are between 11 and 16ms, a significant number take around 22ms. This indicates that under some conditions, packets may take a different route to the recipient, or the recipient may just take longer to send a reply.
 
+Here's the heatmap for a WiFi point-to-point link that spans a few kilometers:
+
+![wifiwifi](examples/heatmap5.png)
+
+Most pings are fine, but there does appear to be a fair bit of disturbance - maybe there's a tree in the way.
+
 The time span covered by these can be configured by setting the `MESHPING_HISTOGRAM_DAYS` environment variable to a value other than `3`.
 
 
