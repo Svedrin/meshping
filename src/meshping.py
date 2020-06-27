@@ -172,16 +172,20 @@ def main():
     app.secret_key = str(uuid4())
 
     # Transition period: Read all targets from redis and add them to our DB
-    redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
-    for target in redis.smembers("meshping:targets"):
-        target = target.decode("utf-8")
-        name, addr = target.split("@", 1)
-        Target.db.add(addr, name)
+    try:
+        redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
+        for target in redis.smembers("meshping:targets"):
+            target = target.decode("utf-8")
+            name, addr = target.split("@", 1)
+            Target.db.add(addr, name)
 
-    for target in redis.smembers("meshping:foreign_targets"):
-        target = target.decode("utf-8")
-        name, addr = target.split("@", 1)
-        Target.db.get(addr).set_is_foreign(True)
+        for target in redis.smembers("meshping:foreign_targets"):
+            target = target.decode("utf-8")
+            name, addr = target.split("@", 1)
+            Target.db.get(addr).set_is_foreign(True)
+    except:
+        # Probably no redis here, ignore
+        pass
 
     mp = MeshPing(
         int(os.environ.get("MESHPING_PING_TIMEOUT",   5)),
