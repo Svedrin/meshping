@@ -51,8 +51,6 @@ def add_api_views(app, mp):
             ]) % target_info)
 
             if target_info["recv"]:
-                # Amend the target_info with avg = sum / recv
-                target_info = dict(target_info, avg=(target_info["sum"] / target_info["recv"]))
                 respdata.append('\n'.join([
                     'meshping_max{name="%(name)s",target="%(addr)s"} %(max).2f',
 
