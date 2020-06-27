@@ -210,6 +210,9 @@ def add_api_views(app, mp):
             abort(404)
 
         histogram = mp.get_target_histogram(target.addr)
+        if histogram.empty:
+            abort(404)
+
         img = histodraw.render(target, histogram)
         img_io = BytesIO()
         img.save(img_io, 'png')
