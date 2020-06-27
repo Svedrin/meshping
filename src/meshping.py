@@ -66,8 +66,8 @@ class MeshPing:
     def get_target_histogram(self, addr):
         return self.db.get_histogram(addr)
 
-    def clear_stats(self):
-        raise NotImplementedError("clear_stats")
+    def clear_statistics(self):
+        self.db.clear_statistics()
 
     async def run(self):
         pingobj = PingObj()

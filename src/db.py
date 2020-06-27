@@ -161,10 +161,7 @@ class Database:
                 for field, value in stats.items()
             ])
 
-    def delete_statistic(self, addr, field):
-        target = self.get_target(addr)
+    def clear_statistics(self):
         with self.conn:
-            self.conn.execute(
-                "DELETE FROM statistics WHERE target_id = ? AND field = ?",
-                (target.id, field)
-            )
+            # sqlite doesn't have truncate
+            self.conn.execute("DELETE FROM statistics")

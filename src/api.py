@@ -198,8 +198,8 @@ def add_api_views(app, mp):
         return jsonify(success=False)
 
     @app.route("/api/stats", methods=["DELETE"])
-    async def clear_stats():
-        mp.clear_stats()
+    async def clear_statistics():
+        mp.clear_statistics()
         return jsonify(success=True)
 
     @app.route("/histogram/<node>/<target>.png")
