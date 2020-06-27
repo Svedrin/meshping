@@ -155,15 +155,17 @@ def add_api_views(app, mp):
 
             for target in mp.all_targets():
                 target_stats = mp.get_target_stats(target.addr)
+                succ = 0
                 loss = 0
-                if target_stats["sent"]:
+                if target_stats["sent"] > 0:
+                    succ = target_stats["recv"] / target_stats["sent"] * 100
                     loss = (target_stats["sent"] - target_stats["recv"]) / target_stats["sent"] * 100
                 targets.append(
                     dict(
                         target_stats,
                         addr=target.addr,
                         name=target.name,
-                        succ=100 - loss,
+                        succ=succ,
                         loss=loss,
                     )
                 )
