@@ -138,7 +138,7 @@ class Database:
             index="timestamp",      # "bucket" DB column into a separate column in
             columns="bucket",       # the DF, using the timestamp as the index
             values="count"          # and the count for the values.
-        )
+        ).fillna(0)                 # replace NaNs with zero
 
     def prune_histograms(self, before_timestamp):
         with self.conn:

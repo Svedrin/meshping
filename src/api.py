@@ -2,7 +2,6 @@
 
 # pylint: disable=unused-variable
 
-import math
 import socket
 import os
 import httpx
@@ -71,7 +70,7 @@ def add_api_views(app, mp):
             histogram = mp.get_target_histogram(target.addr).tail(1)
             count = 0
             for bucket in histogram.columns:
-                if math.isnan(histogram[bucket][0]):
+                if histogram[bucket][0] == 0:
                     continue
                 nextping = 2 ** ((bucket + 1) / 10.)
                 count += histogram[bucket][0]
