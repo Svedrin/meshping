@@ -57,7 +57,7 @@ class MeshPing:
 
     def get_target_stats(self, addr):
         stats = {
-            "sent": 0, "lost": 0, "recv": 0, "last": 0, "sum":  0, "min":  0, "max":  0
+            "sent": 0, "lost": 0, "recv": 0, "last": 0, "sum":  0
         }
         stats.update(self.db.get_statistics(addr))
         return stats
@@ -124,13 +124,8 @@ class MeshPing:
                     target_stats["recv"] += 1
                     target_stats["last"]  = hostinfo["latency"]
                     target_stats["sum"]  += target_stats["last"]
-                    target_stats["max"]   = max(target_stats["max"], target_stats["last"])
-
-                    if target_stats["min"] == 0:
-                        target_stats["min"] = target_stats["last"]
-                    else:
-                        target_stats["min"] = min(target_stats["min"], target_stats["last"])
-
+                    target_stats["max"]   = max(target_stats.get("max", 0),            target_stats["last"])
+                    target_stats["min"]   = min(target_stats.get("min", float('inf')), target_stats["last"])
                     target_stats["avg15m"] = exp_avg(target_stats.get("avg15m"), target_stats["last"], FAC_15m)
                     target_stats["avg6h" ] = exp_avg(target_stats.get("avg6h"),  target_stats["last"], FAC_6h )
                     target_stats["avg24h"] = exp_avg(target_stats.get("avg24h"), target_stats["last"], FAC_24h)
