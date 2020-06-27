@@ -171,14 +171,17 @@ def main():
     #app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.secret_key = str(uuid4())
 
-    if "MESHPING_REDIS_HOST" in os.environ:
-        redis = StrictRedis(host=os.environ["MESHPING_REDIS_HOST"])
+    # Transition period: Read all targets from redis and add them to our DB
+    redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
+    for target in redis.smembers("meshping:targets"):
+        target = target.decode("utf-8")
+        name, addr = target.split("@", 1)
+        Target.db.add(addr, name)
 
-        # Transition period: Read all targets from redis and add them to our DB
-        for target in redis.smembers("meshping:targets"):
-            target = target.decode("utf-8")
-            name, addr = target.split("@", 1)
-            Target.db.add(addr, name)
+    for target in redis.smembers("meshping:foreign_targets"):
+        target = target.decode("utf-8")
+        name, addr = target.split("@", 1)
+        Target.db.get(addr).set_is_foreign(True)
 
     mp = MeshPing(
         int(os.environ.get("MESHPING_PING_TIMEOUT",   5)),
