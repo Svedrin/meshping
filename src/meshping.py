@@ -17,7 +17,7 @@ import trio
 from oping import PingObj, PingError
 from api   import add_api_views
 from peers import run_peers
-from db    import Database, OperationalError
+from db    import Target
 
 INTERVAL = 30
 
@@ -33,47 +33,30 @@ def exp_avg(current_avg, add_value, factor):
 
 
 class MeshPing:
-    def __init__(self, db, timeout=5, interval=30, histogram_days=3):
+    def __init__(self, timeout=5, interval=30, histogram_days=3):
         assert interval > timeout, "Interval must be larger than the timeout"
-        self.db = db
         self.timeout  = timeout
         self.interval = interval
         self.histogram_period = histogram_days * 86400
 
     def all_targets(self):
-        return self.db.all_targets()
+        return Target.db.all()
 
     def add_target(self, target):
         assert "@" in target
         name, addr = target.split("@", 1)
-        self.db.add_target(addr, name)
+        Target.db.add(addr, name)
 
     def remove_target(self, target):
         assert "@" in target
         _, addr = target.split("@", 1)
-        self.db.delete_target(addr)
+        Target.db.get(addr).delete()
 
     def get_target(self, addr):
-        return self.db.get_target(addr)
-
-    def get_target_stats(self, addr):
-        stats = {
-            "sent": 0, "lost": 0, "recv": 0, "sum":  0
-        }
-        stats.update(self.db.get_statistics(addr))
-        return stats
-
-    def is_target_foreign(self, addr):
-        return self.db.get_target_meta(addr).get("foreign") is not None
-
-    def set_target_foreign(self, addr, peer):
-        self.db.get_target_meta(addr).update({"foreign": peer})
-
-    def get_target_histogram(self, addr):
-        return self.db.get_histogram(addr)
+        return Target.db.get(addr)
 
     def clear_statistics(self):
-        self.db.clear_statistics()
+        Target.db.clear_statistics()
 
     async def run(self):
         pingobj = PingObj()
@@ -88,10 +71,10 @@ class MeshPing:
             next_ping = now + self.interval
 
             # Run DB housekeeping
-            self.db.prune_histograms(before_timestamp=(now - self.histogram_period))
+            Target.db.prune_histograms(before_timestamp=(now - self.histogram_period))
 
             unseen_targets = current_targets.copy()
-            for target in self.db.all_targets():
+            for target in Target.db.all():
                 if target.addr not in current_targets:
                     current_targets.add(target.addr)
                     pingobj.add_host(target.addr.encode("utf-8"))
@@ -132,7 +115,8 @@ class MeshPing:
                 await trio.sleep(next_ping - time())
 
     def process_ping_result(self, timestamp, hostinfo):
-        target_stats = self.get_target_stats(hostinfo["addr"])
+        target = self.get_target(hostinfo["addr"])
+        target_stats = target.statistics
         target_stats["sent"] += 1
 
         if hostinfo["latency"] != -1:
@@ -145,8 +129,7 @@ class MeshPing:
             target_stats["avg6h" ] = exp_avg(target_stats.get("avg6h"),  target_stats["last"], FAC_6h )
             target_stats["avg24h"] = exp_avg(target_stats.get("avg24h"), target_stats["last"], FAC_24h)
 
-            self.db.add_measurement(
-                hostinfo["addr"],
+            target.add_measurement(
                 timestamp = timestamp // 3600 * 3600,
                 bucket    = int(math.log(hostinfo["latency"], 2) * 10)
             )
@@ -154,7 +137,7 @@ class MeshPing:
         else:
             target_stats["lost"] += 1
 
-        self.db.update_statistics(hostinfo["addr"], target_stats)
+        target.update_statistics(target_stats)
 
 
 def main():
@@ -188,13 +171,6 @@ def main():
     #app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.secret_key = str(uuid4())
 
-    db_path = os.path.join(os.environ.get("MESHPING_DATABASE_PATH", "db"), "meshping.db")
-    try:
-        db = Database(db_path)
-    except OperationalError as err:
-        print("Could not open database %s: %s" % (db_path, err), file=sys.stderr)
-        sys.exit(1)
-
     if "MESHPING_REDIS_HOST" in os.environ:
         redis = StrictRedis(host=os.environ["MESHPING_REDIS_HOST"])
 
@@ -202,10 +178,9 @@ def main():
         for target in redis.smembers("meshping:targets"):
             target = target.decode("utf-8")
             name, addr = target.split("@", 1)
-            db.add_target(addr, name)
+            Target.db.add(addr, name)
 
     mp = MeshPing(
-        db,
         int(os.environ.get("MESHPING_PING_TIMEOUT",   5)),
         int(os.environ.get("MESHPING_PING_INTERVAL", 30)),
         int(os.environ.get("MESHPING_HISTOGRAM_DAYS", 3))

@@ -1,4 +1,6 @@
+import os
 import sqlite3
+import sys
 
 from dataclasses        import dataclass
 from sqlite3            import OperationalError
@@ -103,12 +105,6 @@ INNER JOIN targets t ON t.id = m.target_id
 WHERE t.addr = ?
 """
 
-@dataclass(frozen=True)
-class Target:
-    id:   int
-    addr: str
-    name: str
-
 
 class Database:
     def __init__(self, path):
@@ -123,47 +119,35 @@ class Database:
             self.conn.execute(QRY_CREATE_TABLE_STATISTICS)
             self.conn.execute(QRY_CREATE_TABLE_META)
 
-    def add_target(self, addr, name):
-        with self.conn:
-            self.conn.execute(QRY_INSERT_TARGET, (addr, name))
+    def exec_read(self, query, args):
+        return self.conn.execute(query, args)
 
-    def rename_target(self, addr, name):
+    def exec_write(self, query, args):
         with self.conn:
-            self.conn.execute(QRY_RENAME_TARGET, (addr, name))
+            return self.conn.execute(query, args)
 
-    def get_target(self, addr):
+    def exec_write_many(self, query, list_of_args):
+        with self.conn:
+            self.conn.executemany(query, list_of_args)
+
+    def add(self, addr, name):
+        self.exec_write(QRY_INSERT_TARGET, (addr, name))
+
+    def get(self, addr):
         for row in self.conn.execute("SELECT id, addr, name FROM targets WHERE addr = ?", (addr, )):
             return Target(*row)
         raise LookupError("Target does not exist: %s" % addr)
 
-    def all_targets(self):
+    def all(self):
         for row in self.conn.execute('SELECT id, addr, name FROM targets'):
             yield Target(*row)
 
-    def delete_target(self, addr):
-        target = self.get_target(addr)
+    def delete(self, target_id):
         with self.conn:
-            self.conn.execute("DELETE FROM histograms WHERE target_id = ?", (target.id, ))
-            self.conn.execute("DELETE FROM statistics WHERE target_id = ?", (target.id, ))
-            self.conn.execute("DELETE FROM meta       WHERE target_id = ?", (target.id, ))
-            self.conn.execute("DELETE FROM targets    WHERE id        = ?", (target.id, ))
-
-    def add_measurement(self, addr, timestamp, bucket):
-        target = self.get_target(addr)
-        with self.conn:
-            self.conn.execute(QRY_INSERT_MEASUREMENT, (target.id, timestamp, bucket))
-
-    def get_histogram(self, addr):
-        return pandas.read_sql_query(
-            sql     = QRY_SELECT_MEASUREMENTS,
-            con     = self.conn,
-            params  = (addr, ),
-            parse_dates = {'timestamp': 's'}
-        ).pivot(                    # flip the dataframe: turn each value of the
-            index="timestamp",      # "bucket" DB column into a separate column in
-            columns="bucket",       # the DF, using the timestamp as the index
-            values="count"          # and the count for the values.
-        ).fillna(0)                 # replace NaNs with zero
+            self.conn.execute("DELETE FROM histograms WHERE target_id = ?", (target_id, ))
+            self.conn.execute("DELETE FROM statistics WHERE target_id = ?", (target_id, ))
+            self.conn.execute("DELETE FROM meta       WHERE target_id = ?", (target_id, ))
+            self.conn.execute("DELETE FROM targets    WHERE id        = ?", (target_id, ))
 
     def prune_histograms(self, before_timestamp):
         with self.conn:
@@ -172,29 +156,83 @@ class Database:
                 (before_timestamp, )
             )
 
-    def get_statistics(self, addr):
-        return dict(self.conn.execute(QRY_SELECT_STATS, (addr, )))
-
-    def update_statistics(self, addr, stats):
-        target = self.get_target(addr)
-        with self.conn:
-            self.conn.executemany(QRY_INSERT_STATS, [
-                (target.id, field, value)
-                for field, value in stats.items()
-            ])
-
     def clear_statistics(self):
         with self.conn:
             # sqlite doesn't have truncate
             self.conn.execute("DELETE FROM statistics")
 
-    def get_meta(self, addr):
-        return dict(self.conn.execute(QRY_SELECT_META, (addr, )))
 
-    def update_meta(self, addr, meta):
-        target = self.get_target(addr)
-        with self.conn:
-            self.conn.executemany(QRY_INSERT_META, [
-                (target.id, field, value)
-                for field, value in meta.items()
-            ])
+def open_database():
+    db_path = os.path.join(os.environ.get("MESHPING_DATABASE_PATH", "db"), "meshping.db")
+    try:
+        return Database(db_path)
+    except OperationalError as err:
+        print("Could not open database %s: %s" % (db_path, err), file=sys.stderr)
+        sys.exit(1)
+
+
+@dataclass(frozen=True)
+class Target:
+    id:   int
+    addr: str
+    name: str
+
+    db = open_database()
+
+    def rename(self, name):
+        self.db.exec_write(QRY_RENAME_TARGET, (self.addr, name))
+
+    def delete(self):
+        self.db.delete(self.id)
+
+    @property
+    def histogram(self):
+        return pandas.read_sql_query(
+            sql     = QRY_SELECT_MEASUREMENTS,
+            con     = self.db.conn,
+            params  = (self.addr, ),
+            parse_dates = {'timestamp': 's'}
+        ).pivot(                    # flip the dataframe: turn each value of the
+            index="timestamp",      # "bucket" DB column into a separate column in
+            columns="bucket",       # the DF, using the timestamp as the index
+            values="count"          # and the count for the values.
+        ).fillna(0)                 # replace NaNs with zero
+
+    def add_measurement(self, timestamp, bucket):
+        self.db.exec_write(QRY_INSERT_MEASUREMENT, (self.id, timestamp, bucket))
+
+    @property
+    def statistics(self):
+        stats = {
+            "sent": 0, "lost": 0, "recv": 0, "sum":  0
+        }
+        stats.update(self.db.exec_read(QRY_SELECT_STATS, (self.addr, )))
+        return stats
+
+    @property
+    def meta(self):
+        return dict(self.db.exec_read(QRY_SELECT_STATS, (self.addr, )))
+
+    def update_statistics(self, stats):
+        self.db.exec_write_many(QRY_INSERT_STATS, [
+            (self.id, field, value)
+            for field, value in stats.items()
+        ])
+
+    def update_meta(self, meta):
+        self.db.exec_write_many(QRY_INSERT_META, [
+            (self.id, field, value)
+            for field, value in meta.items()
+        ])
+
+    @property
+    def is_foreign(self):
+        return self.meta.get("foreign") is not None
+
+    @property
+    def from_peer(self):
+        return self.meta.get("foreign")
+
+    @from_peer.setter
+    def from_peer(self, peer):
+        self.update_meta({"foreign": peer})

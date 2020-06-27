@@ -38,7 +38,7 @@ def add_api_views(app, mp):
 
         for target in mp.all_targets():
             target_info = dict(
-                mp.get_target_stats(target.addr),
+                target.stats,
                 addr = target.addr,
                 name = target.name
             )
@@ -62,7 +62,7 @@ def add_api_views(app, mp):
                 'meshping_pings_count{name="%(name)s",target="%(addr)s"} %(recv)d',
             ]) % target_info)
 
-            histogram = mp.get_target_histogram(target.addr).tail(1)
+            histogram = target.histogram.tail(1)
             count = 0
             for bucket in histogram.columns:
                 if histogram[bucket][0] == 0:
@@ -124,7 +124,7 @@ def add_api_views(app, mp):
 
             target_str = "%(name)s@%(addr)s" % target
             mp.add_target(target_str)
-            stats.append(mp.get_target_stats(target["addr"]))
+            stats.append(mp.get_target(target["addr"]).statistics)
 
         return jsonify(success=True, targets=stats)
 
@@ -154,7 +154,7 @@ def add_api_views(app, mp):
             targets = []
 
             for target in mp.all_targets():
-                target_stats = mp.get_target_stats(target.addr)
+                target_stats = target.statistics
                 succ = 0
                 loss = 0
                 if target_stats["sent"] > 0:
@@ -211,7 +211,7 @@ def add_api_views(app, mp):
         except LookupError:
             abort(404)
 
-        histogram = mp.get_target_histogram(target.addr)
+        histogram = target.histogram
         if histogram.empty:
             abort(404)
 
