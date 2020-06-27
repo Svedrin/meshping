@@ -38,7 +38,7 @@ def add_api_views(app, mp):
 
         for target in mp.all_targets():
             target_info = dict(
-                target.stats,
+                target.statistics,
                 addr = target.addr,
                 name = target.name
             )
