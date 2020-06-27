@@ -211,7 +211,7 @@ class Target:
 
     @property
     def meta(self):
-        return dict(self.db.exec_read(QRY_SELECT_STATS, (self.addr, )))
+        return dict(self.db.exec_read(QRY_SELECT_META, (self.addr, )))
 
     def update_statistics(self, stats):
         self.db.exec_write_many(QRY_INSERT_STATS, [
