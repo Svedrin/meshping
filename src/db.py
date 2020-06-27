@@ -42,6 +42,16 @@ CREATE TABLE IF NOT EXISTS statistics (
 )
 """
 
+QRY_CREATE_TABLE_META = """
+CREATE TABLE IF NOT EXISTS meta (
+    target_id INTEGER,
+    field     TEXT,
+    value     TEXT,
+    FOREIGN KEY (target_id) REFERENCES targets(id),
+    UNIQUE (target_id, field)
+)
+"""
+
 QRY_INSERT_TARGET = """
 INSERT INTO targets (addr, name) VALUES (?, ?)
 ON CONFLICT (addr) DO NOTHING;
@@ -73,6 +83,12 @@ ON CONFLICT (target_id, field) DO UPDATE
 SET value = excluded.value;
 """
 
+QRY_INSERT_META = """
+INSERT INTO meta (target_id, field, value) VALUES(?, ?, ?)
+ON CONFLICT (target_id, field) DO UPDATE
+SET value = excluded.value;
+"""
+
 QRY_SELECT_STATS = """
 SELECT s.field, s.value
 FROM   statistics s
@@ -80,7 +96,14 @@ INNER JOIN targets t ON t.id = s.target_id
 WHERE t.addr = ?
 """
 
-@dataclass
+QRY_SELECT_META = """
+SELECT s.field, s.value
+FROM   meta m
+INNER JOIN targets t ON t.id = m.target_id
+WHERE t.addr = ?
+"""
+
+@dataclass(frozen=True)
 class Target:
     id:   int
     addr: str
@@ -98,6 +121,7 @@ class Database:
             self.conn.execute(QRY_CREATE_TABLE_TARGETS)
             self.conn.execute(QRY_CREATE_TABLE_HISTOGRAMS)
             self.conn.execute(QRY_CREATE_TABLE_STATISTICS)
+            self.conn.execute(QRY_CREATE_TABLE_META)
 
     def add_target(self, addr, name):
         with self.conn:
@@ -121,6 +145,7 @@ class Database:
         with self.conn:
             self.conn.execute("DELETE FROM histograms WHERE target_id = ?", (target.id, ))
             self.conn.execute("DELETE FROM statistics WHERE target_id = ?", (target.id, ))
+            self.conn.execute("DELETE FROM meta       WHERE target_id = ?", (target.id, ))
             self.conn.execute("DELETE FROM targets    WHERE id        = ?", (target.id, ))
 
     def add_measurement(self, addr, timestamp, bucket):
@@ -148,10 +173,7 @@ class Database:
             )
 
     def get_statistics(self, addr):
-        return {
-            field: value
-            for (field, value) in self.conn.execute(QRY_SELECT_STATS, (addr, ))
-        }
+        return dict(self.conn.execute(QRY_SELECT_STATS, (addr, )))
 
     def update_statistics(self, addr, stats):
         target = self.get_target(addr)
@@ -165,3 +187,14 @@ class Database:
         with self.conn:
             # sqlite doesn't have truncate
             self.conn.execute("DELETE FROM statistics")
+
+    def get_meta(self, addr):
+        return dict(self.conn.execute(QRY_SELECT_META, (addr, )))
+
+    def update_meta(self, addr, meta):
+        target = self.get_target(addr)
+        with self.conn:
+            self.conn.executemany(QRY_INSERT_META, [
+                (target.id, field, value)
+                for field, value in meta.items()
+            ])

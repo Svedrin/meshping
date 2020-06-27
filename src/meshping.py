@@ -63,6 +63,12 @@ class MeshPing:
         stats.update(self.db.get_statistics(addr))
         return stats
 
+    def is_target_foreign(self, addr):
+        return self.db.get_target_meta(addr).get("foreign") is not None
+
+    def set_target_foreign(self, addr, peer):
+        self.db.get_target_meta(addr).update({"foreign": peer})
+
     def get_target_histogram(self, addr):
         return self.db.get_histogram(addr)
 
