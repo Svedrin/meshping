@@ -227,12 +227,7 @@ class Target:
 
     @property
     def is_foreign(self):
-        return self.meta.get("foreign") is not None
+        return self.meta.get("is_foreign", "false") == "true"
 
-    @property
-    def from_peer(self):
-        return self.meta.get("foreign")
-
-    @from_peer.setter
-    def from_peer(self, peer):
-        self.update_meta({"foreign": peer})
+    def set_is_foreign(self, is_foreign):
+        self.update_meta({"is_foreign": str(is_foreign).lower()})

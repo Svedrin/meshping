@@ -15,18 +15,14 @@ async def run_peers(mp):
 
     while True:
         if4 = Ifaces4()
-        forn_targets = [
-            target.decode("utf-8")
-            for target in mp.redis.smembers("meshping:foreign_targets")
-        ]
         peer_targets = [
             dict(
-                name  = target["name"],
-                addr  = target["addr"],
-                local = if4.is_local(target["addr"])
+                name  = target.name,
+                addr  = target.addr,
+                local = if4.is_local(target.addr)
             )
-            for target in mp.targets.values()
-            if ("%(name)s@%(addr)s" % target) not in forn_targets # ENOFORN
+            for target in mp.all_targets()
+            if not target.is_foreign # ENOFORN
         ]
 
         async with httpx.AsyncClient() as client:

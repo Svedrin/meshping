@@ -122,9 +122,15 @@ def add_api_views(app, mp):
             if target["local"] and not if4.is_local(target["addr"]):
                 continue
 
-            target_str = "%(name)s@%(addr)s" % target
-            mp.add_target(target_str)
-            stats.append(mp.get_target(target["addr"]).statistics)
+            # See if we know this target already, otherwise create it.
+            try:
+                target = mp.get_target(target["addr"])
+            except LookupError:
+                target_str = "%(name)s@%(addr)s" % target
+                mp.add_target(target_str)
+                target = mp.get_target(target["addr"])
+                target.set_is_foreign(True)
+            stats.append(target.statistics)
 
         return jsonify(success=True, targets=stats)
 
