@@ -12,7 +12,11 @@ class Ifaces4:
             try:
                 ifaddrs = netifaces.ifaddresses(iface)
             except ValueError:
-                logging.warning("Could not retrieve addresses of interface %s, ignoring interface", iface, exc_info=True)
+                logging.warning(
+                    "Could not retrieve addresses of interface %s, ignoring interface",
+                    iface,
+                    exc_info=True
+                )
                 continue
 
             for family, addresses in ifaddrs.items():
@@ -51,7 +55,11 @@ class Ifaces6:
             try:
                 ifaddrs = netifaces.ifaddresses(iface)
             except ValueError:
-                logging.warning("Could not retrieve addresses of interface %s, ignoring interface", iface, exc_info=True)
+                logging.warning(
+                    "Could not retrieve addresses of interface %s, ignoring interface",
+                    iface,
+                    exc_info=True
+                )
                 continue
 
             for family, addresses in ifaddrs.items():

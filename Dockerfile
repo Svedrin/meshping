@@ -33,8 +33,10 @@ COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/trash.svg     
 COPY --from=0 /opt/meshping/ui/node_modules/vue/dist/vue.min.js                       /opt/meshping/ui/node_modules/vue/dist/
 COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/dist/vue-resource.min.js     /opt/meshping/ui/node_modules/vue-resource/dist/
 COPY --from=0 /usr/lib/python3.8/site-packages/oping.*.so /usr/lib/python3.8/site-packages
-COPY cli.py /usr/local/bin/mpcli
 COPY src    /opt/meshping/src
 COPY ui/src /opt/meshping/ui/src
+
+VOLUME /opt/meshping/db
+
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["/usr/bin/python3", "--", "/opt/meshping/src/meshping.py"]

@@ -3,15 +3,13 @@
 # pylint: disable=unused-variable
 
 import socket
-import os
-import httpx
 
-from time   import time
 from io     import BytesIO
 from quart  import Response, render_template, request, jsonify, send_from_directory, send_file, abort
 
+import histodraw
+
 from ifaces import Ifaces4
-from histodraw import render
 
 def add_api_views(app, mp):
     @app.route("/")
@@ -19,7 +17,6 @@ def add_api_views(app, mp):
         return await render_template(
             "index.html",
             Hostname=socket.gethostname(),
-            HaveProm=("true" if "MESHPING_PROMETHEUS_URL" in os.environ else "false"),
         )
 
     @app.route("/metrics")
@@ -39,41 +36,45 @@ def add_api_views(app, mp):
             '# TYPE meshping_pings histogram',
         ])]
 
-        for _, name, addr in mp.iter_targets():
-            target = mp.get_target_info(addr, name)
+        for target in mp.all_targets():
+            target_info = dict(
+                target.stats,
+                addr = target.addr,
+                name = target.name
+            )
             respdata.append('\n'.join([
                 'meshping_sent{name="%(name)s",target="%(addr)s"} %(sent)d',
 
                 'meshping_recv{name="%(name)s",target="%(addr)s"} %(recv)d',
 
                 'meshping_lost{name="%(name)s",target="%(addr)s"} %(lost)d',
-            ]) % target)
+            ]) % target_info)
 
-            if target["recv"]:
-                target = dict(target, avg=(target["sum"] / target["recv"]))
+            if target_info["recv"]:
                 respdata.append('\n'.join([
                     'meshping_max{name="%(name)s",target="%(addr)s"} %(max).2f',
 
                     'meshping_min{name="%(name)s",target="%(addr)s"} %(min).2f',
-                ]) % target)
+                ]) % target_info)
 
             respdata.append('\n'.join([
                 'meshping_pings_sum{name="%(name)s",target="%(addr)s"} %(sum)f',
                 'meshping_pings_count{name="%(name)s",target="%(addr)s"} %(recv)d',
-            ]) % target)
+            ]) % target_info)
 
-            histogram = mp.get_target_histogram(addr)
-            buckets = sorted(histogram.keys(), key=float)
+            histogram = target.histogram.tail(1)
             count = 0
-            for bucket in buckets:
+            for bucket in histogram.columns:
+                if histogram[bucket][0] == 0:
+                    continue
                 nextping = 2 ** ((bucket + 1) / 10.)
-                count += histogram[bucket]
+                count += histogram[bucket][0]
                 respdata.append(
                     'meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="%(le).2f"} %(count)d' % dict(
-                        addr  = addr,
+                        addr  = target.addr,
                         count = count,
                         le    = nextping,
-                        name  = target['name'],
+                        name  = target.name,
                     )
                 )
 
@@ -121,9 +122,15 @@ def add_api_views(app, mp):
             if target["local"] and not if4.is_local(target["addr"]):
                 continue
 
-            target_str = "%(name)s@%(addr)s" % target
-            mp.add_target(target_str)
-            stats.append(mp.get_target_info(target["addr"], target["name"]))
+            # See if we know this target already, otherwise create it.
+            try:
+                target = mp.get_target(target["addr"])
+            except LookupError:
+                target_str = "%(name)s@%(addr)s" % target
+                mp.add_target(target_str)
+                target = mp.get_target(target["addr"])
+                target.set_is_foreign(True)
+            stats.append(target.statistics)
 
         return jsonify(success=True, targets=stats)
 
@@ -152,20 +159,20 @@ def add_api_views(app, mp):
         if request.method == "GET":
             targets = []
 
-            for _, name, addr in mp.iter_targets():
-                targetinfo = mp.get_target_info(addr, name)
+            for target in mp.all_targets():
+                target_stats = target.statistics
+                succ = 0
                 loss = 0
-                if targetinfo["sent"]:
-                    loss = (targetinfo["sent"] - targetinfo["recv"]) / targetinfo["sent"] * 100
+                if target_stats["sent"] > 0:
+                    succ = target_stats["recv"] / target_stats["sent"] * 100
+                    loss = (target_stats["sent"] - target_stats["recv"]) / target_stats["sent"] * 100
                 targets.append(
                     dict(
-                        targetinfo,
-                        name=targetinfo["name"][:24],
-                        succ=100 - loss,
+                        target_stats,
+                        addr=target.addr,
+                        name=target.name,
+                        succ=succ,
                         loss=loss,
-                        avg15m=targetinfo.get("avg15m", 0),
-                        avg6h =targetinfo.get("avg6h",  0),
-                        avg24h=targetinfo.get("avg24h", 0),
                     )
                 )
 
@@ -199,44 +206,22 @@ def add_api_views(app, mp):
         return jsonify(success=False)
 
     @app.route("/api/stats", methods=["DELETE"])
-    async def clear_stats():
-        mp.clear_stats()
+    async def clear_statistics():
+        mp.clear_statistics()
         return jsonify(success=True)
 
     @app.route("/histogram/<node>/<target>.png")
     async def histogram(node, target):
-        prom_url = os.environ.get("MESHPING_PROMETHEUS_URL")
-        if prom_url is None:
-            abort(503)
-
-        prom_query = os.environ.get(
-            "MESHPING_PROMETHEUS_QUERY",
-            'increase(meshping_pings_bucket{instance="%(pingnode)s",name="%(name)s",target="%(addr)s"}[1h])'
-        )
-
-        if "@" in target:
-            name, addr = target.split("@")
-        else:
-            for _, name, addr in mp.iter_targets():
-                if name == target or addr == target:
-                    break
-            else:
-                abort(400)
-
-        async with httpx.AsyncClient() as client:
-            response = (await client.get(prom_url + "/api/v1/query_range", timeout=2, params={
-                "query": prom_query % dict(pingnode=node, name=name, addr=addr),
-                "start": time() - 3 * 24 * 60 * 60,
-                "end":   time(),
-                "step":  3600,
-            })).json()
-
-        if response["status"] != "success":
-            abort(500)
-        if not response["data"]["result"]:
+        try:
+            target = mp.get_target(target)
+        except LookupError:
             abort(404)
 
-        img = render(response)
+        histogram = target.histogram
+        if histogram.empty:
+            abort(404)
+
+        img = histodraw.render(target, histogram)
         img_io = BytesIO()
         img.save(img_io, 'png')
         img_io.seek(0)

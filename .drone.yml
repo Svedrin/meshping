@@ -10,9 +10,11 @@ steps:
 - name: pylint
   image: alpine:latest
   commands:
-  - apk add --no-cache python3 py3-pip py3-netifaces
+  - apk add --no-cache python3 py3-pip py3-netifaces py3-pillow
   - pip3 install pylint pylint-fail-under
   - pip3 install -r requirements.txt
+  - echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+  - apk add --no-cache py3-pandas
   - pylint-fail-under --fail_under 9 src/
 
 - name: set "latest" tag
@@ -103,6 +105,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 91e713b7d2fbddb1a880a8f98fe7f6db69869483cb8f596dbed66baff1e90759
+hmac: 7bbe5c41c38f127d2f75c01f3e88849820855ae3b009cdad4854a59fef782db9
 
 ...
