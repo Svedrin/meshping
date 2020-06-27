@@ -2,13 +2,7 @@
 # -*- coding: utf-8 -*-
 # kate: space-indent on; indent-width 4; replace-tabs on;
 
-import sys
 import socket
-
-from time import time
-from datetime import datetime
-
-import pandas
 
 from PIL import Image, ImageDraw, ImageFont
 

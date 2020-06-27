@@ -2,11 +2,9 @@
 # -*- coding: utf-8 -*-
 # kate: space-indent on; indent-width 4; replace-tabs on;
 
-import json
 import os
 import os.path
 import math
-import socket
 import sys
 
 from uuid       import uuid4
@@ -120,8 +118,6 @@ class MeshPing:
                     if hostinfo["addr"] in current_targets:
                         current_targets.remove(hostinfo["addr"])
 
-                histogram = self.get_target_histogram(hostinfo["addr"])
-
                 target_stats["sent"] += 1
 
                 if hostinfo["latency"] != -1:
@@ -167,7 +163,7 @@ def main():
         "MESHPING_PROMETHEUS_QUERY",
     )
 
-    for key in os.environ.keys():
+    for key in os.environ:
         if key.startswith("MESHPING_") and key not in known_env_vars:
             print("env var %s is unknown" % key, file=sys.stderr)
             sys.exit(1)
@@ -181,7 +177,7 @@ def main():
         db = Database(db_path)
     except OperationalError as err:
         print("Could not open database %s: %s" % (db_path, err), file=sys.stderr)
-        return 2
+        return
 
     if "MESHPING_REDIS_HOST" in os.environ:
         redis = StrictRedis(host=os.environ["MESHPING_REDIS_HOST"])
@@ -201,7 +197,7 @@ def main():
     add_api_views(app, mp)
 
     @app.before_serving
-    async def startup():
+    async def _():
         app.nursery.start_soon(mp.run)
         app.nursery.start_soon(run_peers, mp)
 

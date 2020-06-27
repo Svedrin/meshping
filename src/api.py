@@ -3,10 +3,7 @@
 # pylint: disable=unused-variable
 
 import socket
-import os
-import httpx
 
-from time   import time
 from io     import BytesIO
 from quart  import Response, render_template, request, jsonify, send_from_directory, send_file, abort
 
@@ -20,7 +17,6 @@ def add_api_views(app, mp):
         return await render_template(
             "index.html",
             Hostname=socket.gethostname(),
-            HaveProm=("true" if "MESHPING_PROMETHEUS_URL" in os.environ else "false"),
         )
 
     @app.route("/metrics")
