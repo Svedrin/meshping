@@ -10,8 +10,9 @@ from time   import time
 from io     import BytesIO
 from quart  import Response, render_template, request, jsonify, send_from_directory, send_file, abort
 
+import histodraw
+
 from ifaces import Ifaces4
-from histodraw import render
 
 def add_api_views(app, mp):
     @app.route("/")
@@ -212,38 +213,13 @@ def add_api_views(app, mp):
 
     @app.route("/histogram/<node>/<target>.png")
     async def histogram(node, target):
-        prom_url = os.environ.get("MESHPING_PROMETHEUS_URL")
-        if prom_url is None:
-            abort(503)
-
-        prom_query = os.environ.get(
-            "MESHPING_PROMETHEUS_QUERY",
-            'increase(meshping_pings_bucket{instance="%(pingnode)s",name="%(name)s",target="%(addr)s"}[1h])'
-        )
-
-        if "@" in target:
-            name, addr = target.split("@")
-        else:
-            for _, name, addr in mp.iter_targets():
-                if name == target or addr == target:
-                    break
-            else:
-                abort(400)
-
-        async with httpx.AsyncClient() as client:
-            response = (await client.get(prom_url + "/api/v1/query_range", timeout=2, params={
-                "query": prom_query % dict(pingnode=node, name=name, addr=addr),
-                "start": time() - 3 * 24 * 60 * 60,
-                "end":   time(),
-                "step":  3600,
-            })).json()
-
-        if response["status"] != "success":
-            abort(500)
-        if not response["data"]["result"]:
+        try:
+            target = mp.get_target(target)
+        except LookupError:
             abort(404)
 
-        img = render(response)
+        histogram = mp.get_target_histogram(target.addr)
+        img = histodraw.render(target, histogram)
         img_io = BytesIO()
         img.save(img_io, 'png')
         img_io.seek(0)

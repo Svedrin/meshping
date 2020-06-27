@@ -9,7 +9,6 @@
     <script type="text/javascript" src="/ui/node_modules/vue-resource/dist/vue-resource.min.js"></script>
     <script type="text/javascript">
       window.meshping_hostname = "{{ Hostname }}";
-      window.meshping_haveprom = {{ HaveProm }};
     </script>
   </head>
   <body>
@@ -72,7 +71,7 @@
             <td class="text-right">{{ target.max.toFixed(2)    }}</td>
             <td class="text-right">{{ target.last.toFixed(2)   }}</td>
             <td style="white-space: nowrap">
-              <a v-if="haveprom" v-bind:href="'/histogram/' + hostname + '/' + target.name + '%40' + target.addr + '.png'" target="_blank">
+              <a v-bind:href="'/histogram/' + hostname + '/' + target.addr + '.png'" target="_blank">
                 <img class="border" src="/ui/node_modules/bootstrap-icons/icons/graph-up.svg" alt="graph" title="Graph" />
               </a>
               <img class="border" src="/ui/node_modules/bootstrap-icons/icons/trash.svg" alt="del" title="Delete Target" v-on:click="delete_target(target)" />
