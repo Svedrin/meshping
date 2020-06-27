@@ -167,9 +167,6 @@ def add_api_views(app, mp):
                         name=target.name,
                         succ=100 - loss,
                         loss=loss,
-                        avg15m=target_stats.get("avg15m", 0),
-                        avg6h =target_stats.get("avg6h",  0),
-                        avg24h=target_stats.get("avg24h", 0),
                     )
                 )
 

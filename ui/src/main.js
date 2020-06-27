@@ -124,5 +124,13 @@ window.app = new Vue({
         targets_all: function() {
             this.reapply_filters();
         }
+    },
+    filters: {
+        prettyFloat: function(value) {
+            if (value === undefined || typeof value.toFixed !== 'function') {
+                return '—';
+            }
+            return value.toFixed(2);
+        }
     }
 });

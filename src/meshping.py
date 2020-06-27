@@ -57,7 +57,7 @@ class MeshPing:
 
     def get_target_stats(self, addr):
         stats = {
-            "sent": 0, "lost": 0, "recv": 0, "last": 0, "sum":  0
+            "sent": 0, "lost": 0, "recv": 0, "sum":  0
         }
         stats.update(self.db.get_statistics(addr))
         return stats
