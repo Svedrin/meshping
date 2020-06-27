@@ -44,16 +44,13 @@ def add_api_views(app, mp):
             )
             respdata.append('\n'.join([
                 'meshping_sent{name="%(name)s",target="%(addr)s"} %(sent)d',
-
                 'meshping_recv{name="%(name)s",target="%(addr)s"} %(recv)d',
-
                 'meshping_lost{name="%(name)s",target="%(addr)s"} %(lost)d',
             ]) % target_info)
 
             if target_info["recv"]:
                 respdata.append('\n'.join([
                     'meshping_max{name="%(name)s",target="%(addr)s"} %(max).2f',
-
                     'meshping_min{name="%(name)s",target="%(addr)s"} %(min).2f',
                 ]) % target_info)
 
