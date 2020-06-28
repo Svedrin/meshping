@@ -99,7 +99,7 @@ WHERE t.addr = ?
 """
 
 QRY_SELECT_META = """
-SELECT s.field, s.value
+SELECT m.field, m.value
 FROM   meta m
 INNER JOIN targets t ON t.id = m.target_id
 WHERE t.addr = ?
