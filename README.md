@@ -68,39 +68,14 @@ In the examples directory, there's also a [json dashboard definition](examples/g
 
 # Deploying
 
-Deploying meshping is easiest using `docker-compose`:
-
-```yaml
-version: '2'
-
-services:
-  meshping:
-    # for x86_64 and amd64:
-    # image: "svedrin/meshping:latest"
-    # for raspberry Pi 3 or other ARMv7-based things (see `uname -m`):
-    image: "svedrin/meshping:latest-armv7l"
-    network_mode: "host"
-    restart: always
-    labels:
-      "com.centurylinklabs.watchtower.enable": "true"
-    # If you want to add other Meshping instances to peer with, uncomment this:
-    #environment:
-    #  MESHPING_PEERS: 10.10.10.1:9922,10.10.20.1:9922
-
-  watchtower:
-    image: "containrrr/watchtower:latest"
-    command: "--label-enable --cleanup --debug --interval 60"
-    restart: always
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-```
-
-This will deploy meshping and redis, along with a [Watchtower](https://hub.docker.com/r/containrrr/watchtower) instance that keeps Meshping up-to-date. It can be deployed as-is by adding a Stack through Portainer, or using `docker-compose`:
+Deploying meshping is easiest using [`docker-compose`](https://docs.docker.com/compose/), with the
+[docker-compose.yaml](https://github.com/Svedrin/meshping/blob/master/examples/docker-compose.yaml) file from this repo.
+This will deploy meshping, along with a [Watchtower](https://hub.docker.com/r/containrrr/watchtower) instance that keeps
+Meshping up-to-date. It can be deployed as-is by adding a Stack through Portainer, or using `docker-compose`:
 
     mkdir meshping
     cd meshping
-    $EDITOR docker-compose.yml
-    (paste in the file)
+    wget https://github.com/Svedrin/meshping/raw/master/examples/docker-compose.yml
     docker-compose up --detach
 
 Meshping should now be reachable at `http://<your-ip>:9922`.
