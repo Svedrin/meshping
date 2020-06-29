@@ -1,5 +1,41 @@
 ---
 kind: pipeline
+name: tests
+
+platform:
+  arch: amd64
+  os: linux
+
+steps:
+- name: meshping
+  image: alpine:latest
+  environment:
+    MESHPING_DATABASE_PATH: /tmp
+  commands:
+  - apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash dumb-init py3-netifaces py3-pillow
+  - pip3 install Cython
+  - pip3 install -r requirements.txt
+  - echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+  - apk add --no-cache py3-pandas
+  - cd /drone/src/oping-py && python3 setup.py build && python3 setup.py install
+  - cd /drone/src && dumb-init -- python3 src/meshping.py
+  detach: true
+
+- name: pylint
+  image: alpine:latest
+  commands:
+  - apk add --no-cache python3 py3-pip py3-netifaces py3-pillow bash
+  - pip3 install pylint pylint-fail-under
+  - pip3 install -r requirements.txt
+  - pip3 install -r features/requirements.txt
+  - echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+  - apk add --no-cache py3-pandas
+  - bash -c "while ! nc -z meshping 9922; do sleep 1; done"
+  - pylint-fail-under --fail_under 9 src/
+  - python3 -m behave
+
+---
+kind: pipeline
 name: linux-amd64
 
 platform:
@@ -7,16 +43,6 @@ platform:
   os: linux
 
 steps:
-- name: pylint
-  image: alpine:latest
-  commands:
-  - apk add --no-cache python3 py3-pip py3-netifaces py3-pillow
-  - pip3 install pylint pylint-fail-under
-  - pip3 install -r requirements.txt
-  - echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-  - apk add --no-cache py3-pandas
-  - pylint-fail-under --fail_under 9 src/
-
 - name: set "latest" tag
   image: alpine:latest
   commands:
@@ -54,6 +80,9 @@ steps:
     event:
       exclude:
       - pull_request
+
+depends_on:
+- tests
 
 ---
 kind: pipeline
@@ -103,8 +132,11 @@ trigger:
     exclude:
     - pull_request
 
+depends_on:
+- tests
+
 ---
 kind: signature
-hmac: 7bbe5c41c38f127d2f75c01f3e88849820855ae3b009cdad4854a59fef782db9
+hmac: ddc492cdba9fc952018bcccd293090f192baa22d832bf459a09d8d3fcb8ab90c
 
 ...
