@@ -29,6 +29,30 @@ Most pings are fine, but there does appear to be a fair bit of disturbance - may
 The time span covered by these can be configured by setting the `MESHPING_HISTOGRAM_DAYS` environment variable to a value other than `3`.
 
 
+# Latency Analysis
+
+When doing mathematical analyses on measurements, monitoring tools usually apply calculations based on averages and standard deviations.
+With latency data however, these methods yield unsatisfactory results.
+
+If you look at the first heatmap from above, you'll see that most of the pings are between 11 and 16ms, a significant number take around 22ms.
+The average as calculated by meshping is 16ms, and the standard deviation is probably somewhere around 2ms.
+
+Now suppose you're trying to formulate an alerting rule based on those numbers. Say you'd want to be alerted whenever ping results differ
+from the average for more than two standard deviations. This means that data points smaller than 12ms or greater than 20ms would potentially
+trigger an alert. Since this would probably be a bit noisy, let's assume you'll only alert after a bunch of those arrive over a given time span.
+
+But as you can see from the graph, there's a significant number of pings that just take 22ms, for whatever reason. Since this is a WAN link
+that we don't have control over, we won't be able to fix it - we just have to take it for what it is. Now how do you express that in terms
+of averages and standard deviations? The answer is: you can't, because the data does not follow a
+[Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution). Instead, this signal consists of _two separate_ signals (because
+it seems that these packets can take two different routes, resulting in a small difference in latency), each of which _can_ be described using
+those terms: one lives at 13±3ms, the other one at 22±2ms. To conduct a meaningful analysis of this data, you have to approach it differently.
+
+I'd like to start looking for a solution to this. At the moment I'm focusing on getting the graphs to a point that they visualize this. Once
+I have that, I'll probably look into modality detection and finding ways to extract patterns out of the data that I can then use to draw
+conclusions from.
+
+
 # Prometheus
 
 Meshping provides a `/metrics` endpoint that is meant to be scraped by Prometheus. You can run queries on the data for things such as:
