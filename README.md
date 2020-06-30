@@ -29,6 +29,13 @@ Most pings are fine, but there does appear to be a fair bit of disturbance - may
 The time span covered by these can be configured by setting the `MESHPING_HISTOGRAM_DAYS` environment variable to a value other than `3`.
 
 
+# Distributed Meshping
+
+If you have set up multiple Meshping instances, you can have them exchange targets via peering. To do this, set the
+`MESHPING_PEERS` env var in each instance to point to each other. That way, they will exchange target lists regularly,
+and you will be able to retrieve statistics from both sides to see how your links are doing.
+
+
 # Latency Analysis
 
 When doing mathematical analyses on measurements, monitoring tools usually apply calculations based on averages and standard deviations.
@@ -112,13 +119,6 @@ Meshping is configured through environment variables. These exist:
 * `MESHPING_TIMEOUT`: Ping timeout (default: 5s).
 * `MESHPING_PEERS`: Comma-separated list of other Meshping instances to peer with (only `ip:port`, no URLs).
 * `MESHPING_HISTOGRAM_DAYS`: How many days of data to keep in the histograms (default: 3).
-
-
-# Distributed Meshping
-
-If you have set up multiple Meshping instances, you can have them exchange targets via peering. To do this, set the
-`MESHPING_PEERS` env var in each instance to point to each other. That way, they will exchange target lists regularly,
-and you will be able to retrieve statistics from both sides to see how your links are doing.
 
 
 # Dev build
