@@ -14,6 +14,14 @@ Feature: Basic stuff.
 
   Scenario: Same thing through the peering endpoints.
 
+     when we request a histogram for target "1.1.1.1"
+     then we get a response with status code 404
+     when a peer sends us a target of "1.1.1.1" named "cloudflare.com"
+     then there exists a target of "1.1.1.1" named "cloudflare.com"
+     when we wait 2 seconds
+     when we request a histogram for target "1.1.1.1"
+     then we get a response with status code 200
+
   Scenario: Add a target through the UI endpoints and see that it gets dist'ed to peers.
 
     These targets are NOT foreign, thus shall be distributed.

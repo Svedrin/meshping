@@ -57,3 +57,21 @@ def step(context, address):
 @then('we get a response with status code {status:d}')
 def step(context, status):
     assert context.resp.status_code, status
+
+@when('a peer sends us a target of "{address}" named "{name}"')
+def step(context, address, name):
+    resp = requests.post(
+        "http://meshping:9922/peer",
+        data=json.dumps({
+            "targets": [{
+                "addr":  address,
+                "name":  name,
+                "local": False,
+            }]
+        }),
+        headers = {
+            "Content-Type": "application/json"
+        }
+    )
+    resp.raise_for_status()
+    assert resp.json()["success"] == True
