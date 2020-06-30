@@ -41,7 +41,11 @@ and you will be able to retrieve statistics from both sides to see how your link
 When doing mathematical analyses on measurements, monitoring tools usually apply calculations based on averages and standard deviations.
 With latency data however, these methods yield unsatisfactory results.
 
-If you look at the first heatmap from above, you'll see that most of the pings are between 11 and 16ms, a significant number take around 22ms.
+Let's take another look at this heatmap:
+
+![built-in heatmap](examples/heatmap4.png)
+
+You'll see that most of the pings are between 11 and 16ms, a significant number take around 22ms.
 The average as calculated by meshping is 16ms, and the standard deviation is probably somewhere around 2ms.
 
 Now suppose you're trying to formulate an alerting rule based on those numbers. Say you'd want to be alerted whenever ping results differ
@@ -53,11 +57,12 @@ that we don't have control over, we won't be able to fix it - we just have to ta
 of averages and standard deviations? The answer is: you can't, because the data does not follow a
 [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution). Instead, this signal consists of _two separate_ signals (because
 it seems that these packets can take two different routes, resulting in a small difference in latency), each of which _can_ be described using
-those terms: one lives at 13±3ms, the other one at 22±2ms. To conduct a meaningful analysis of this data, you have to approach it differently.
+those terms: one lives at 13±3ms, the other one at 22±2ms. To conduct a meaningful analysis of this data, you can't just approach it as if
+it consisted of one single signal.
 
-I'd like to start looking for a solution to this. At the moment I'm focusing on getting the graphs to a point that they visualize this. Once
-I have that, I'll probably look into modality detection and finding ways to extract patterns out of the data that I can then use to draw
-conclusions from.
+I'd like to start looking for a solution to this. At the moment I'm focusing on getting the graphs to a point that they visualize this, and I'm
+pretty satisfied with the heatmaps as they are currently. Next, I'll probably look into modality detection and finding ways to extract patterns
+out of the data that I can then use to draw conclusions from.
 
 
 # Prometheus
