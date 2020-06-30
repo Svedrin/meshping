@@ -47,9 +47,7 @@ class MeshPing:
         name, addr = target.split("@", 1)
         Target.db.add(addr, name)
 
-    def remove_target(self, target):
-        assert "@" in target
-        _, addr = target.split("@", 1)
+    def remove_target(self, addr):
         Target.db.get(addr).delete()
 
     def get_target(self, addr):

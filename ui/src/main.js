@@ -52,16 +52,12 @@ window.app = new Vue({
             });
         },
         delete_target: async function(target) {
-            var target_str = target.name + "@" + target.addr;
-            var message = (
-                "Delete target <target>?"
-                    .replace("<target>", target_str)
-            );
+            var message = `Delete target ${target.name} (${target.addr})?`;
             if (confirm(message)) {
-                var response = await this.$http.delete('/api/targets/' + target_str);
+                var response = await this.$http.delete(`/api/targets/${target.addr}`);
                 var json = await response.json();
                 if (json.success) {
-                    this.show_success("<strong>Success!</strong> Deleted target " + target_str + ". ");
+                    this.show_success(`<strong>Success!</strong> Deleted target ${target.name} (${target.addr}).`);
                     this.update_targets();
                 }
             }
@@ -80,7 +76,7 @@ window.app = new Vue({
                 this.add_tgt_addr = "";
                 this.show_success(
                     "<strong>Success!</strong> Added targets: <ul>" +
-                      json.targets.map(tgt => "<li>" + tgt + "</li>").join("") +
+                      json.targets.map(tgt => `<li>${tgt}</li>`).join("") +
                     "</ul>"
                 );
                 this.update_targets();

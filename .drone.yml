@@ -11,8 +11,10 @@ steps:
   image: alpine:latest
   environment:
     MESHPING_DATABASE_PATH: /tmp
+    MESHPING_PING_TIMEOUT:  1
+    MESHPING_PING_INTERVAL: 2
   commands:
-  - apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash dumb-init py3-netifaces py3-pillow
+  - apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash dumb-init py3-netifaces py3-pillow ttf-dejavu
   - pip3 install Cython
   - pip3 install -r requirements.txt
   - echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
@@ -21,7 +23,7 @@ steps:
   - cd /drone/src && dumb-init -- python3 src/meshping.py
   detach: true
 
-- name: pylint
+- name: pylint-and-test
   image: alpine:latest
   commands:
   - apk add --no-cache python3 py3-pip py3-netifaces py3-pillow bash
@@ -137,6 +139,6 @@ depends_on:
 
 ---
 kind: signature
-hmac: ddc492cdba9fc952018bcccd293090f192baa22d832bf459a09d8d3fcb8ab90c
+hmac: a02d03f84ff563ae5911b25088d38bf73853b5376992bda15b55e47a9c8cc7b5
 
 ...
