@@ -38,4 +38,6 @@ async def run_peers(mp):
                 except Exception as err:
                     logging.warning("Could not connect to peer %s: %s", peer, err)
 
-        await trio.sleep(30)
+        await trio.sleep(
+            int(os.environ.get("MESHPING_PEERING_INTERVAL", 30))
+        )

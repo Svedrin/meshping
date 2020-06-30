@@ -13,6 +13,8 @@ steps:
     MESHPING_DATABASE_PATH: /tmp
     MESHPING_PING_TIMEOUT:  1
     MESHPING_PING_INTERVAL: 2
+    MESHPING_PEERING_INTERVAL: 10
+    MESHPING_PEERS: "pylint-and-test:31337"
   commands:
   - apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash dumb-init py3-netifaces py3-pillow ttf-dejavu
   - pip3 install Cython
@@ -139,6 +141,6 @@ depends_on:
 
 ---
 kind: signature
-hmac: a02d03f84ff563ae5911b25088d38bf73853b5376992bda15b55e47a9c8cc7b5
+hmac: 6652456cb133f757a5d0d28a93699dc0b4a335b822128a2afb9be5aa6f067653
 
 ...

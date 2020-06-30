@@ -26,6 +26,18 @@ Feature: Basic stuff.
 
     These targets are NOT foreign, thus shall be distributed.
 
+     when we request a histogram for target "1.2.3.4"
+     then we get a response with status code 404
+     when we add a target of "1.2.3.4" named "dummycorp.com"
+     then there exists a target of "1.2.3.4" named "dummycorp.com"
+      and we send a target of "1.2.3.4" named "dummycorp.com" to our peers
+
   Scenario: Add a target through the peering endpoints and see that it does NOT get dist'ed to peers.
 
     These targets are foreign, thus shall NOT be distributed.
+
+     when we request a histogram for target "4.3.2.1"
+     then we get a response with status code 404
+     when a peer sends us a target of "4.3.2.1" named "othercorp.com"
+     then there exists a target of "4.3.2.1" named "othercorp.com"
+      and we do not send a target of "4.3.2.1" to our peers

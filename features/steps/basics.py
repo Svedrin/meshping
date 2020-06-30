@@ -3,7 +3,8 @@
 import json
 import requests
 
-from time import sleep
+from queue  import Queue
+from time   import sleep
 from behave import given, when, then
 
 @when('we wait {n:d} seconds')
@@ -75,3 +76,23 @@ def step(context, address, name):
     )
     resp.raise_for_status()
     assert resp.json()["success"] == True
+
+@then('we send a target of "{address}" named "{name}" to our peers')
+def step(context, address, name):
+    context.peer_queue = Queue()
+    from_peer = context.peer_queue.get()
+    context.peer_queue = None
+    for target in from_peer["targets"]:
+        if target["addr"] == address and target["name"] == name:
+            break
+    else:
+        assert False, "target does not exist"
+
+@then('we do not send a target of "{address}" to our peers')
+def step(context, address):
+    context.peer_queue = Queue()
+    from_peer = context.peer_queue.get()
+    context.peer_queue = None
+    for target in from_peer["targets"]:
+        if target["addr"] == address:
+            assert False, "target exists (it shouldn't)"
