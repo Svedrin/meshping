@@ -10,15 +10,15 @@ def render(target, histograms_df):
     # Normalize Buckets by transforming the number of actual pings sent
     # into a float [0..1] indicating the grayness of that bucket.
     biggestbkt = histograms_df.max().max()
-    normalized_df = histograms_df.div(biggestbkt, axis="index")
+    histograms_df = histograms_df.div(biggestbkt, axis="index")
     # prune outliers -> keep only values > 5%
-    pruned_df = normalized_df[normalized_df > 0.05]
+    histograms_df = histograms_df[histograms_df > 0.05]
     # drop columns that contain only NaNs now
-    dropped_df = pruned_df.dropna(axis="columns", how="all")
+    histograms_df = histograms_df.dropna(axis="columns", how="all")
     # fill missing _rows_ (aka, hours) with rows of just NaN
-    consecutive_df = dropped_df.asfreq("1h")
+    histograms_df = histograms_df.asfreq("1h")
     # replace all the NaNs with 0
-    histograms_df = consecutive_df.fillna(0)
+    histograms_df = histograms_df.fillna(0)
 
     # detect dynamic range, and round to the nearest multiple of 10.
     # this ensures that the ticks are drawn at powers of 2, which makes
