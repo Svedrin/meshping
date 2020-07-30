@@ -19,7 +19,7 @@ steps:
   - apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash dumb-init py3-netifaces py3-pillow ttf-dejavu
   - pip3 install Cython
   - pip3 install -r requirements.txt
-  - echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+  - echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
   - apk add --no-cache py3-pandas
   - cd /drone/src/oping-py && python3 setup.py build && python3 setup.py install
   - cd /drone/src && dumb-init -- python3 src/meshping.py
@@ -32,7 +32,7 @@ steps:
   - pip3 install pylint pylint-fail-under
   - pip3 install -r requirements.txt
   - pip3 install -r features/requirements.txt
-  - echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+  - echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
   - apk add --no-cache py3-pandas
   - bash -c "while ! nc -z meshping 9922; do sleep 1; done"
   - pylint-fail-under --fail_under 9 src/
@@ -141,6 +141,6 @@ depends_on:
 
 ---
 kind: signature
-hmac: 6652456cb133f757a5d0d28a93699dc0b4a335b822128a2afb9be5aa6f067653
+hmac: ec27be66f8749dce91460077a7aac3c48bb5de938f950c00e5028ead426fcc3d
 
 ...
