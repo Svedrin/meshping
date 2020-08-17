@@ -48,8 +48,11 @@
             <th class="text-right">Last</th>
             <th>&nbsp;</th>
           </tr>
-          <tr v-if="targets_all.length == 0">
+          <tr v-if="targets_all.length == 0 &amp;&amp; last_update == 0">
             <td colspan="13"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading</td>
+          </tr>
+          <tr v-if="targets_all.length == 0 &amp;&amp; last_update != 0">
+            <td colspan="13">No targets configured</td>
           </tr>
           <tr v-if="targets_filtered.length == 0 &amp;&amp; targets_all.length > 0">
             <td colspan="13">No targets match your search</td>
