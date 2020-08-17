@@ -18,8 +18,12 @@ FROM alpine:latest
 
 RUN apk add --no-cache python3 py3-pip liboping bash py3-netifaces~=0.10.9 py3-pillow dumb-init ttf-dejavu
 
-RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
-RUN apk add --no-cache py3-pandas
+# With alpine:edge, we can just apk add py3-pandas and not build it ourselves.
+# Unfortunately edge is currently broken on arm due to an ongoing migration to make 32-bit Alpine year-2038-safe.
+# The py3-pandas package that is currently in edge needs at least musl 1.2, the docker-hub version of edge doesn't
+# have that, and upgrading is currently not possible because see above.
+RUN apk add --no-cache musl-dev gcc g++ make py3-tz py3-dateutil linux-headers py3-numpy-dev python3-dev py3-setuptools cython
+RUN pip3 install pandas
 
 COPY requirements.txt /opt/meshping/requirements.txt
 RUN pip3 install --no-cache-dir -r /opt/meshping/requirements.txt
