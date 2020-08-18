@@ -1,4 +1,4 @@
-{{#if build.branch == "master"}}
+{{#equal build.branch "master"}}
 
 image: svedrin/meshping:{{#if build.tag}}{{build.tag}}{{else}}latest{{/if}}
 
@@ -22,7 +22,8 @@ manifests:
       os: linux
       variant: v7
 
-{{else}}
+{{/equal}}
+{{#equal build.branch "staging"}}
 
 image: svedrin/meshping:{{build.branch}}
 
@@ -39,4 +40,4 @@ manifests:
       os: linux
       variant: v7
 
-{{/if}}
+{{/equal}}
