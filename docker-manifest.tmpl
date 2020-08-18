@@ -1,0 +1,42 @@
+{{#if build.branch == "master"}}
+
+image: svedrin/meshping:{{#if build.tag}}{{build.tag}}{{else}}latest{{/if}}
+
+{{#if build.tags}}
+tags:
+{{#each build.tags}}
+  - {{this}}
+{{/each}}
+{{/if}}
+
+manifests:
+
+  - image: svedrin/meshping:{{#if build.tag}}{{build.tag}}{{else}}latest{{/if}}-amd64
+    platform:
+      architecture: amd64
+      os: linux
+
+  - image: svedrin/meshping:{{#if build.tag}}{{build.tag}}{{else}}latest{{/if}}-armv7l
+    platform:
+      architecture: arm
+      os: linux
+      variant: v7
+
+{{else}}
+
+image: svedrin/meshping:{{build.branch}}
+
+manifests:
+
+  - image: svedrin/meshping:{{build.branch}}-amd64
+    platform:
+      architecture: amd64
+      os: linux
+
+  - image: svedrin/meshping:{{build.branch}}-armv7l
+    platform:
+      architecture: arm
+      os: linux
+      variant: v7
+
+{{/if}}
