@@ -50,21 +50,21 @@ steps:
 - name: set "latest" tag
   image: alpine:latest
   commands:
-  - echo -n "latest" > .tags
+  - echo -n "latest-amd64" > .tags
   when:
     branch: master
 
 - name: set "staging" tag
   image: alpine:latest
   commands:
-  - echo -n "staging" > .tags
+  - echo -n "staging-amd64" > .tags
   when:
     branch: staging
 
 - name: set version tag
   image: alpine:latest
   commands:
-  - echo -n ",${DRONE_TAG}" >> .tags
+  - echo -n ",${DRONE_TAG}-amd64" >> .tags
   when:
     branch: master
     event: tag
@@ -76,7 +76,7 @@ steps:
     username: svedrin
     password:
       from_secret: docker-registry-pw
-    cache_from: "svedrin/meshping:latest"
+    cache_from: "svedrin/meshping:latest-amd64"
   when:
     branch:
     - master
@@ -90,7 +90,7 @@ depends_on:
 
 ---
 kind: pipeline
-name: linux-arm
+name: linux-armv7l
 
 platform:
   arch: arm
@@ -139,8 +139,37 @@ trigger:
 depends_on:
 - tests
 
+
+---
+kind: pipeline
+type: docker
+name: manifest
+
+steps:
+- name: publish
+  image: plugins/manifest:1.2
+  settings:
+    ignore_missing: true
+    spec: docker-manifest.tmpl
+    username: svedrin
+    password:
+      from_secret: docker-registry-pw
+
+trigger:
+  branch:
+  - master
+  - staging
+  event:
+    exclude:
+    - pull_request
+
+depends_on:
+- linux-amd64
+- linux-armv7l
+
+
 ---
 kind: signature
-hmac: ec27be66f8749dce91460077a7aac3c48bb5de938f950c00e5028ead426fcc3d
+hmac: 024d01c51184a3de7372fd5302edd30e4b100267e5839aafaf465fc14eb2fdb8
 
 ...
