@@ -2,10 +2,7 @@ version: '2'
 
 services:
   meshping:
-    # for x86_64 and amd64:
-    # image: "svedrin/meshping:latest"
-    # for raspberry Pi 3 or other ARMv7-based things (see `uname -m`):
-    image: "svedrin/meshping:latest-armv7l"
+    image: "svedrin/meshping:latest"
     network_mode: "host"
     restart: always
     volumes:
