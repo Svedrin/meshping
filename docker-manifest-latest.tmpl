@@ -1,22 +1,15 @@
 {{#equal build.branch "master"}}
 
-image: svedrin/meshping:{{#if build.tag}}{{build.tag}}{{else}}latest{{/if}}
-
-{{#if build.tags}}
-tags:
-{{#each build.tags}}
-  - {{this}}
-{{/each}}
-{{/if}}
+image: svedrin/meshping:latest
 
 manifests:
 
-  - image: svedrin/meshping:{{#if build.tag}}{{build.tag}}{{else}}latest{{/if}}-amd64
+  - image: svedrin/meshping:latest-amd64
     platform:
       architecture: amd64
       os: linux
 
-  - image: svedrin/meshping:{{#if build.tag}}{{build.tag}}{{else}}latest{{/if}}-armv7l
+  - image: svedrin/meshping:latest-armv7l
     platform:
       architecture: arm
       os: linux

@@ -40,7 +40,7 @@ steps:
 
 ---
 kind: pipeline
-name: linux-amd64
+name: linux-amd64-latest
 
 platform:
   arch: amd64
@@ -77,20 +77,21 @@ steps:
     password:
       from_secret: docker-registry-pw
     cache_from: "svedrin/meshping:latest-amd64"
-  when:
-    branch:
-    - master
-    - staging
-    event:
-      exclude:
-      - pull_request
+
+trigger:
+  branch:
+  - master
+  - staging
+  event:
+    exclude:
+    - pull_request
 
 depends_on:
 - tests
 
 ---
 kind: pipeline
-name: linux-armv7l
+name: linux-armv7l-latest
 
 platform:
   arch: arm
@@ -150,7 +151,7 @@ steps:
   image: plugins/manifest:1.2
   settings:
     ignore_missing: true
-    spec: docker-manifest.tmpl
+    spec: docker-manifest-latest.tmpl
     username: svedrin
     password:
       from_secret: docker-registry-pw
@@ -164,12 +165,12 @@ trigger:
     - pull_request
 
 depends_on:
-- linux-amd64
-- linux-armv7l
+- linux-amd64-latest
+- linux-armv7l-latest
 
 
 ---
 kind: signature
-hmac: 024d01c51184a3de7372fd5302edd30e4b100267e5839aafaf465fc14eb2fdb8
+hmac: 4b1de4f46660dbb0e63e5e5aecdf28a1a7b6d4a973118c9d87047d35f8d2faa5
 
 ...
