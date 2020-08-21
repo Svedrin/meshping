@@ -1,0 +1,21 @@
+image: svedrin/meshping:{{build.tag}}
+
+{{#if build.tags}}
+tags:
+{{#each build.tags}}
+  - {{this}}
+{{/each}}
+{{/if}}
+
+manifests:
+
+  - image: svedrin/meshping:{{build.tag}}-amd64
+    platform:
+      architecture: amd64
+      os: linux
+
+  - image: svedrin/meshping:{{build.tag}}-armv7l
+    platform:
+      architecture: arm
+      os: linux
+      variant: v7

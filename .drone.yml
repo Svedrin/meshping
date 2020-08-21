@@ -61,14 +61,6 @@ steps:
   when:
     branch: staging
 
-- name: set version tag
-  image: alpine:latest
-  commands:
-  - echo -n ",${DRONE_TAG}-amd64" >> .tags
-  when:
-    branch: master
-    event: tag
-
 - name: build docker image
   image: plugins/docker
   settings:
@@ -112,14 +104,6 @@ steps:
   when:
     branch: staging
 
-- name: set version tag
-  image: alpine:latest
-  commands:
-  - echo -n ",${DRONE_TAG}-armv7l" >> .tags
-  when:
-    branch: master
-    event: tag
-
 - name: build docker image
   image: plugins/docker
   settings:
@@ -144,7 +128,7 @@ depends_on:
 ---
 kind: pipeline
 type: docker
-name: manifest
+name: manifest-latest
 
 steps:
 - name: publish
@@ -169,8 +153,91 @@ depends_on:
 - linux-armv7l-latest
 
 
+
+---
+kind: pipeline
+name: linux-amd64-tagged
+
+platform:
+  arch: amd64
+  os: linux
+
+steps:
+- name: set version tag
+  image: alpine:latest
+  commands:
+  - echo -n "${DRONE_TAG}-amd64" > .tags
+
+- name: build docker image
+  image: plugins/docker
+  settings:
+    repo: svedrin/meshping
+    username: svedrin
+    password:
+      from_secret: docker-registry-pw
+    cache_from: "svedrin/meshping:latest-amd64"
+
+trigger:
+  event: tag
+
+depends_on:
+- tests
+
+---
+kind: pipeline
+name: linux-armv7l-tagged
+
+platform:
+  arch: arm
+  os: linux
+
+steps:
+- name: set version tag
+  image: alpine:latest
+  commands:
+  - echo -n "${DRONE_TAG}-armv7l" > .tags
+
+- name: build docker image
+  image: plugins/docker
+  settings:
+    repo: svedrin/meshping
+    username: svedrin
+    password:
+      from_secret: docker-registry-pw
+    cache_from: "svedrin/meshping:latest-armv7l"
+
+trigger:
+  event: tag
+
+depends_on:
+- tests
+
+
+---
+kind: pipeline
+type: docker
+name: manifest-tagged
+
+steps:
+- name: publish
+  image: plugins/manifest:1.2
+  settings:
+    ignore_missing: true
+    spec: docker-manifest-tagged.tmpl
+    username: svedrin
+    password:
+      from_secret: docker-registry-pw
+
+trigger:
+  event: tag
+
+depends_on:
+- linux-amd64-tagged
+- linux-armv7l-tagged
+
+
 ---
 kind: signature
-hmac: 73ff8b5333960c0bb3cd35af1942c86e6b894e70069f36922ab0f8582e41c29f
+hmac: e72cf4ce8d74766ffe68a079637760e4ba5fdb4e6164b4fc9033eb4590892d17
 
 ...
