@@ -34,6 +34,7 @@
         </div>
         <table class="table">
           <tr>
+            <th>&nbsp;</th>
             <th>Target</th>
             <th>Address</th>
             <th class="text-right">Sent</th>
@@ -49,18 +50,42 @@
             <th>&nbsp;</th>
           </tr>
           <tr v-if="targets_all.length == 0 &amp;&amp; last_update == 0">
-            <td colspan="13"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading</td>
+            <td colspan="14"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading</td>
           </tr>
           <tr v-if="targets_all.length == 0 &amp;&amp; last_update != 0">
-            <td colspan="13">No targets configured</td>
+            <td colspan="14">No targets configured</td>
           </tr>
           <tr v-if="targets_filtered.length == 0 &amp;&amp; targets_all.length > 0">
-            <td colspan="13">No targets match your search</td>
+            <td colspan="14">No targets match your search</td>
           </tr>
           <tr
             v-show="targets_filtered.length > 0" style="display: none"
             v-for="target in targets_filtered" v-bind:key="target.addr"
           >
+            <td>
+              <img
+                v-if="target.state == 'up' &amp;&amp; target.avg15m &lt;= target.avg24h * 1.05"
+                src="/ui/node_modules/bootstrap-icons/icons/check-circle.svg"
+                title="Target is up and well" alt="up and well"
+              /></span>
+              <img
+                v-if="target.state == 'up' &amp;&amp; target.avg15m &gt;  target.avg24h * 1.05"
+                src="/ui/node_modules/bootstrap-icons/icons/arrow-up-right-circle.svg"
+                title="Target is up but latency is increasing" alt="up with high ping"
+              />
+              <img
+                v-if="target.state == 'down'"
+                src="/ui/node_modules/bootstrap-icons/icons/x-circle.svg"
+                title="Target is down" alt="down"
+                class="text-danger"
+              />
+              <img
+                v-if="target.state == 'unknown'"
+                src="/ui/node_modules/bootstrap-icons/icons/question-circle.svg"
+                title="Target state is unknown" alt="unknown"
+                class="text-secondary"
+              />
+            </td>
             <td>{{ target.name }}</td>
             <td>{{ target.addr }}</td>
             <td class="text-right">{{ target.sent }}</td>
