@@ -168,6 +168,7 @@ def add_api_views(app, mp):
                         target_stats,
                         addr=target.addr,
                         name=target.name,
+                        state=target.state,
                         succ=succ,
                         loss=loss,
                     )

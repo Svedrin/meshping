@@ -118,6 +118,7 @@ class MeshPing:
         target_stats["sent"] += 1
 
         if hostinfo["latency"] != -1:
+            target.set_state("up")
             target_stats["recv"] += 1
             target_stats["last"]  = hostinfo["latency"]
             target_stats["sum"]  += target_stats["last"]
@@ -133,6 +134,7 @@ class MeshPing:
             )
 
         else:
+            target.set_state("down")
             target_stats["lost"] += 1
 
         target.update_statistics(target_stats)

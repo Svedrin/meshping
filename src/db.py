@@ -160,6 +160,7 @@ class Database:
         with self.conn:
             # sqlite doesn't have truncate
             self.conn.execute("DELETE FROM statistics")
+            self.conn.execute("DELETE FROM meta WHERE field = 'state'")
 
 
 def open_database():
@@ -231,3 +232,12 @@ class Target:
 
     def set_is_foreign(self, is_foreign):
         self.update_meta({"is_foreign": str(is_foreign).lower()})
+
+    @property
+    def state(self):
+        return self.meta.get("state", "unknown")
+
+    def set_state(self, state):
+        if state not in ("up", "down", "unknown"):
+            raise ValueError('state must be one of ("up", "down", "unknown"), not %s' % state)
+        self.update_meta({"state": str(state)})
