@@ -30,17 +30,22 @@ RUN pip3 install --no-cache-dir -r /opt/meshping/requirements.txt
 
 
 WORKDIR /opt/meshping
-COPY --from=0 /opt/meshping/ui/node_modules/jquery/dist/jquery.slim.min.js            /opt/meshping/ui/node_modules/jquery/dist/
-COPY --from=0 /opt/meshping/ui/node_modules/bootstrap/dist/css/bootstrap.min.css      /opt/meshping/ui/node_modules/bootstrap/dist/css/
-COPY --from=0 /opt/meshping/ui/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js /opt/meshping/ui/node_modules/bootstrap/dist/js/
-COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/graph-up.svg        /opt/meshping/ui/node_modules/bootstrap-icons/icons/
-COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/trash.svg           /opt/meshping/ui/node_modules/bootstrap-icons/icons/
+COPY --from=0 /opt/meshping/ui/node_modules/jquery/LICENSE.txt                              /opt/meshping/ui/node_modules/jquery/
+COPY --from=0 /opt/meshping/ui/node_modules/jquery/dist/jquery.slim.min.js                  /opt/meshping/ui/node_modules/jquery/dist/
+COPY --from=0 /opt/meshping/ui/node_modules/bootstrap/LICENSE                               /opt/meshping/ui/node_modules/bootstrap/
+COPY --from=0 /opt/meshping/ui/node_modules/bootstrap/dist/css/bootstrap.min.css            /opt/meshping/ui/node_modules/bootstrap/dist/css/
+COPY --from=0 /opt/meshping/ui/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js       /opt/meshping/ui/node_modules/bootstrap/dist/js/
+COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/LICENSE.md                      /opt/meshping/ui/node_modules/bootstrap-icons/
+COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/graph-up.svg              /opt/meshping/ui/node_modules/bootstrap-icons/icons/
+COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/trash.svg                 /opt/meshping/ui/node_modules/bootstrap-icons/icons/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/arrow-up-right-circle.svg /opt/meshping/ui/node_modules/bootstrap-icons/icons/
-COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/check-circle.svg    /opt/meshping/ui/node_modules/bootstrap-icons/icons/
-COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/question-circle.svg /opt/meshping/ui/node_modules/bootstrap-icons/icons/
-COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/x-circle.svg        /opt/meshping/ui/node_modules/bootstrap-icons/icons/
-COPY --from=0 /opt/meshping/ui/node_modules/vue/dist/vue.min.js                       /opt/meshping/ui/node_modules/vue/dist/
-COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/dist/vue-resource.min.js     /opt/meshping/ui/node_modules/vue-resource/dist/
+COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/check-circle.svg          /opt/meshping/ui/node_modules/bootstrap-icons/icons/
+COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/question-circle.svg       /opt/meshping/ui/node_modules/bootstrap-icons/icons/
+COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/x-circle.svg              /opt/meshping/ui/node_modules/bootstrap-icons/icons/
+COPY --from=0 /opt/meshping/ui/node_modules/vue/LICENSE                                     /opt/meshping/ui/node_modules/vue/
+COPY --from=0 /opt/meshping/ui/node_modules/vue/dist/vue.min.js                             /opt/meshping/ui/node_modules/vue/dist/
+COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/LICENSE                            /opt/meshping/ui/node_modules/vue-resource/
+COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/dist/vue-resource.min.js           /opt/meshping/ui/node_modules/vue-resource/dist/
 COPY --from=0 /usr/lib/python3.8/site-packages/oping.*.so /usr/lib/python3.8/site-packages
 COPY src    /opt/meshping/src
 COPY ui/src /opt/meshping/ui/src
