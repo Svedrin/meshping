@@ -241,3 +241,10 @@ class Target:
         if state not in ("up", "down", "unknown"):
             raise ValueError('state must be one of ("up", "down", "unknown"), not %s' % state)
         self.update_meta({"state": str(state)})
+
+    @property
+    def error(self):
+        return self.meta.get("error")
+
+    def set_error(self, error):
+        self.update_meta({"state": "error", "error": error})

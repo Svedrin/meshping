@@ -75,7 +75,10 @@ class MeshPing:
             for target in Target.db.all():
                 if target.addr not in current_targets:
                     current_targets.add(target.addr)
-                    pingobj.add_host(target.addr.encode("utf-8"))
+                    try:
+                        pingobj.add_host(target.addr.encode("utf-8"))
+                    except PingError as err:
+                        target.set_error(err.args[0].decode("utf-8"))
                 if target.addr in unseen_targets:
                     unseen_targets.remove(target.addr)
 
