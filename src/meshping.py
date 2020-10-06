@@ -9,6 +9,7 @@ import sys
 
 from uuid       import uuid4
 from time       import time
+from jinja2     import Markup
 from quart_trio import QuartTrio
 from redis      import StrictRedis
 
@@ -178,6 +179,17 @@ def main():
         variable_start_string = '{[',
         variable_end_string   = ']}'
     )
+
+    @app.context_processor
+    def _inject_icons():
+        # I'm not happy about hardcoding this path here, but I'm also not sure what else to do
+        icons_dir = "/opt/meshping/ui/node_modules/bootstrap-icons/icons/"
+        return dict(
+            icons={
+                filename: Markup(open(os.path.join(icons_dir, filename), "r").read())
+                for filename in os.listdir(icons_dir)
+            }
+        )
 
     # Transition period: Read all targets from redis and add them to our DB
     try:
