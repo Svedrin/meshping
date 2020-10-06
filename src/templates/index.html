@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>{{ Hostname }} &mdash; Meshping</title>
+    <title>{[ Hostname ]} &mdash; Meshping</title>
     <link rel="stylesheet"        href="/ui/node_modules/bootstrap/dist/css/bootstrap.min.css"></script>
     <script type="text/javascript" src="/ui/node_modules/jquery/dist/jquery.slim.min.js"></script>
     <script type="text/javascript" src="/ui/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script type="text/javascript" src="/ui/node_modules/vue/dist/vue.min.js"></script>
     <script type="text/javascript" src="/ui/node_modules/vue-resource/dist/vue-resource.min.js"></script>
     <script type="text/javascript">
-      window.meshping_hostname = "{{ Hostname }}";
+      window.meshping_hostname = "{[ Hostname ]}";
     </script>
   </head>
   <body>
     <div class="container mx-0 mx-lg-auto mt-md-3">
-      <h1>Meshping: {{ Hostname }}</h1>
-      {% raw %}
+      <h1>Meshping: {[ Hostname ]}</h1>
       <div id="app">
         <div class="btn-toolbar justify-content-between py-sm-3" role="toolbar" aria-label="Toolbar with button groups">
           <div class="btn-group" role="group" aria-label="Links">
@@ -121,7 +120,6 @@
           </tr>
         </table>
       </div>
-      {% endraw %}
     </div>
     <script type="text/javascript" src="/ui/src/main.js"></script>
   </body>

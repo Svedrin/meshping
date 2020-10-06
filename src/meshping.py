@@ -174,6 +174,10 @@ def main():
     app = QuartTrio(__name__, static_url_path="")
     #app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.secret_key = str(uuid4())
+    app.jinja_options = dict(
+        variable_start_string = '{[',
+        variable_end_string   = ']}'
+    )
 
     # Transition period: Read all targets from redis and add them to our DB
     try:
