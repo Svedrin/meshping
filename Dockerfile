@@ -16,7 +16,7 @@ RUN cd /opt/meshping/oping-py && python3 setup.py build && python3 setup.py inst
 
 FROM alpine:latest
 
-RUN apk add --no-cache python3 py3-pip liboping bash py3-netifaces~=0.10.9 py3-pillow dumb-init ttf-dejavu
+RUN apk add --no-cache python3 py3-pip liboping bash py3-netifaces py3-pillow dumb-init ttf-dejavu
 
 # With alpine:edge, we can just apk add py3-pandas and not build it ourselves.
 # Unfortunately edge is currently broken on arm due to an ongoing migration to make 32-bit Alpine year-2038-safe.
