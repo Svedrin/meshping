@@ -1,5 +1,8 @@
 version: '2'
 
+volumes:
+  meshping-data: {}
+  
 services:
   meshping:
     image: "svedrin/meshping:latest"
