@@ -1,6 +1,6 @@
 # Build oping-py
 
-FROM alpine:latest
+FROM alpine:3.12
 
 RUN apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash nodejs npm
 RUN pip3 install Cython
@@ -14,7 +14,7 @@ RUN cd /opt/meshping/oping-py && python3 setup.py build && python3 setup.py inst
 
 # Build meshping
 
-FROM alpine:latest
+FROM alpine:3.12
 
 RUN apk add --no-cache python3 py3-pip liboping bash py3-netifaces py3-pillow dumb-init ttf-dejavu
 
