@@ -116,6 +116,14 @@ Meshping up-to-date. It can be deployed as-is by adding a Stack through Portaine
 
 Meshping should now be reachable at `http://<your-ip>:9922`.
 
+## Running on a Raspberry Pi
+
+A Docker image for the Raspberry Pi 4 is also available. To use it, you need to have:
+
+* Docker version 19.03.9 or newer, and
+* libseccomp version 2.4.2 or newer.
+
+See [issue #30](https://github.com/Svedrin/meshping/issues/30#issuecomment-872066856) for details and instructions on how you can check if you have them, and provide them if not.
 
 # Configuration options
 
