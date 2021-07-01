@@ -223,8 +223,10 @@ def add_api_views(app, mp):
         img = histodraw.render(target, histogram)
         img_io = BytesIO()
         img.save(img_io, 'png')
+        length = img_io.tell()
         img_io.seek(0)
 
         resp = await send_file(img_io, mimetype='image/png')
+        resp.headers["content-length"] = length
         resp.headers["refresh"] = "300"
         return resp
