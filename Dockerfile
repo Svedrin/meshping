@@ -39,7 +39,7 @@ COPY --from=0 /opt/meshping/ui/node_modules/vue/LICENSE                         
 COPY --from=0 /opt/meshping/ui/node_modules/vue/dist/vue.min.js                             /opt/meshping/ui/node_modules/vue/dist/
 COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/LICENSE                            /opt/meshping/ui/node_modules/vue-resource/
 COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/dist/vue-resource.min.js           /opt/meshping/ui/node_modules/vue-resource/dist/
-COPY --from=0 /usr/lib/python3.8/site-packages/oping.*.so /usr/lib/python3.8/site-packages
+COPY --from=0 /usr/lib/python3.9/site-packages/oping.*.so /usr/lib/python3.9/site-packages
 COPY src    /opt/meshping/src
 COPY ui/src /opt/meshping/ui/src
 
