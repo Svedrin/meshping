@@ -11,7 +11,6 @@ from uuid       import uuid4
 from time       import time
 from markupsafe import Markup
 from quart_trio import QuartTrio
-from redis      import StrictRedis
 
 import trio
 
@@ -150,7 +149,6 @@ def main():
 
     known_env_vars = (
         "MESHPING_DATABASE_PATH",
-        "MESHPING_REDIS_HOST",
         "MESHPING_PING_TIMEOUT",
         "MESHPING_PING_INTERVAL",
         "MESHPING_HISTOGRAM_DAYS",
@@ -158,11 +156,13 @@ def main():
         "MESHPING_PEERING_INTERVAL",
         "MESHPING_PROMETHEUS_URL",
         "MESHPING_PROMETHEUS_QUERY",
+        "MESHPING_REDIS_HOST",
     )
 
     deprecated_env_vars = (
         "MESHPING_PROMETHEUS_URL",
         "MESHPING_PROMETHEUS_QUERY",
+        "MESHPING_REDIS_HOST",
     )
 
     for key in os.environ:
@@ -190,22 +190,6 @@ def main():
                 for filename in os.listdir(icons_dir)
             }
         )
-
-    # Transition period: Read all targets from redis and add them to our DB
-    try:
-        redis = StrictRedis(host=os.environ.get("MESHPING_REDIS_HOST", "127.0.0.1"))
-        for target in redis.smembers("meshping:targets"):
-            target = target.decode("utf-8")
-            name, addr = target.split("@", 1)
-            Target.db.add(addr, name)
-
-        for target in redis.smembers("meshping:foreign_targets"):
-            target = target.decode("utf-8")
-            name, addr = target.split("@", 1)
-            Target.db.get(addr).set_is_foreign(True)
-    except:
-        # Probably no redis here, ignore
-        pass
 
     mp = MeshPing(
         int(os.environ.get("MESHPING_PING_TIMEOUT",   5)),
