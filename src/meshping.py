@@ -9,7 +9,7 @@ import sys
 
 from uuid       import uuid4
 from time       import time
-from jinja2     import Markup
+from markupsafe import Markup
 from quart_trio import QuartTrio
 from redis      import StrictRedis
 
