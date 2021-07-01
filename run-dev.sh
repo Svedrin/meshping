@@ -12,6 +12,11 @@ elif [ "${1:-}" = "--profile" ]; then
     PROFILE=true
 fi
 
+if [ "${1:-}" = "clean" ]; then
+    docker image rm --no-prune meshping:latest-dev
+    exit 0
+fi
+
 if [ -z "$(docker image ls -q meshping:latest-dev)" ]; then
     docker build -t meshping:latest-dev .
 fi
