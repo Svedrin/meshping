@@ -46,4 +46,5 @@ COPY ui/src /opt/meshping/ui/src
 VOLUME /opt/meshping/db
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["/usr/bin/python3", "--", "/opt/meshping/src/meshping.py"]
+ENV PYTHONPATH=/opt/meshping/src
+CMD ["hypercorn", "--reload", "-k", "trio", "-b", "[::]:9922", "meshping:app"]

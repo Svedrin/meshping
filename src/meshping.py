@@ -143,7 +143,7 @@ class MeshPing:
         target.update_statistics(target_stats)
 
 
-def main():
+def build_app():
     if os.getuid() != 0:
         raise RuntimeError("need to be root, sorry about that")
 
@@ -204,7 +204,9 @@ def main():
         app.nursery.start_soon(mp.run)
         app.nursery.start_soon(run_peers, mp)
 
-    app.run(host="::", port=9922, debug=False, use_reloader=False)
+    return app
+
+app = build_app()
 
 if __name__ == '__main__':
-    main()
+    app.run(host="::", port=9922, debug=False, use_reloader=False)
