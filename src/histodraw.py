@@ -5,10 +5,13 @@
 import socket
 import numpy as np
 
+from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 
-def render(targets):
-    target = targets[0]
+# How big do you want the squares to be?
+sqsz = 8
+
+def render_target(target):
     histograms_df = target.histogram
 
     # Normalize Buckets by transforming the number of actual pings sent
@@ -36,9 +39,6 @@ def render(targets):
     rows = hmax - hmin + 1
     cols = len(histograms_df)
 
-    # How big do you want the squares to be?
-    sqsz = 8
-
     # Draw the graph in a pixels array which we then copy to an image
     width  = cols
     height = rows
@@ -57,7 +57,13 @@ def render(targets):
     width  *= sqsz
     height *= sqsz
 
-    graph = graph.resize((width, height), Image.NEAREST)
+    return graph.resize((width, height), Image.NEAREST), hmin, hmax
+
+def render(targets):
+    target = targets[0]
+    graph, hmin, hmax = render_target(target)
+    width  = graph.width
+    height = graph.height
 
     # position of the graph
     graph_x = 70
