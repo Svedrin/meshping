@@ -211,16 +211,18 @@ def add_api_views(app, mp):
 
     @app.route("/histogram/<node>/<target>.png")
     async def histogram(node, target):
-        try:
-            target = mp.get_target(target)
-        except LookupError:
-            abort(404)
+        targets = []
+        for arg_target in [target] + request.args.getlist("compare"):
+            try:
+                targets.append(mp.get_target(target))
+            except LookupError:
+                abort(404)
 
-        histogram = target.histogram
-        if histogram.empty:
-            abort(404)
+        if len(targets) > 3:
+            # an RGB image only has three channels
+            abort(400)
 
-        img = histodraw.render(target, histogram)
+        img = histodraw.render(targets)
         img_io = BytesIO()
         img.save(img_io, 'png')
         length = img_io.tell()

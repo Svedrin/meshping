@@ -7,7 +7,10 @@ import numpy as np
 
 from PIL import Image, ImageDraw, ImageFont
 
-def render(target, histograms_df):
+def render(targets):
+    target = targets[0]
+    histograms_df = target.histogram
+
     # Normalize Buckets by transforming the number of actual pings sent
     # into a float [0..1] indicating the grayness of that bucket.
     biggestbkt = histograms_df.max().max()
