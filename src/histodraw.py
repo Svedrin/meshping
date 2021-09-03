@@ -57,13 +57,51 @@ def render_target(target):
     width  *= sqsz
     height *= sqsz
 
-    return graph.resize((width, height), Image.NEAREST), hmin, hmax
+    graph = graph.resize((width, height), Image.NEAREST)
+    graph.hmin = hmin
+    graph.hmax = hmax
+    return graph
 
 def render(targets):
+    rendered_graphs = [render_target(target) for target in targets]
+
+    width  = max([ graph.width  for graph in rendered_graphs ])
+    height = max([ graph.height for graph in rendered_graphs ])
+    hmin   = min([ graph.hmin   for graph in rendered_graphs ])
+    hmax   = max([ graph.hmax   for graph in rendered_graphs ])
+
     target = targets[0]
-    graph, hmin, hmax = render_target(target)
-    width  = graph.width
-    height = graph.height
+
+    if len(rendered_graphs) == 1:
+        # Single graph -> use it as-is
+        graph = rendered_graphs[0]
+    else:
+        # Multiple graphs -> merge.
+        # This width/height may not match what we need for the output.
+        # Check for which graphs that is the case, and for these,
+        # create a new image that has the correct size and paste
+        # the graph into it.
+        resized_graphs = []
+        for graph in rendered_graphs:
+            if graph.width != width or graph.height != height:
+                print("resizing graph of (%d,%d) to (%d,%d)" % (graph.width, graph.height, width, height))
+                new_graph = Image.new("L", (width, height), "white")
+                new_graph.paste(graph,
+                    (height - graph.height + (graph.hmin - hmin) * sqsz,
+                     width  - graph.width)
+                )
+                resized_graphs.append(new_graph)
+            else:
+                print("using graph as-is")
+                resized_graphs.append(graph)
+
+        print("will merge %d graphs" % len(resized_graphs))
+
+        while len(resized_graphs) != 3:
+            print("adding dummy graph")
+            resized_graphs.append(Image.new("L", (width, height), "white"))
+
+        graph = Image.merge("RGB", resized_graphs)
 
     # position of the graph
     graph_x = 70
