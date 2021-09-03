@@ -66,9 +66,9 @@ def render(targets):
     rendered_graphs = [render_target(target) for target in targets]
 
     width  = max([ graph.width  for graph in rendered_graphs ])
-    height = max([ graph.height for graph in rendered_graphs ])
     hmin   = min([ graph.hmin   for graph in rendered_graphs ])
     hmax   = max([ graph.hmax   for graph in rendered_graphs ])
+    height = (hmax - hmin) * sqsz
 
     target = targets[0]
 
