@@ -87,8 +87,8 @@ def render(targets):
                 print("resizing graph of (%d,%d) to (%d,%d)" % (graph.width, graph.height, width, height))
                 new_graph = Image.new("L", (width, height), "black")
                 new_graph.paste(graph,
-                    (height - graph.height + (graph.hmin - hmin) * sqsz,
-                     width  - graph.width)
+                    (width  - graph.width,
+                     (hmax  - graph.hmax) * sqsz)
                 )
             else:
                 print("using graph as-is")
