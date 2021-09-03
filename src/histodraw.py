@@ -101,8 +101,9 @@ def render(targets):
         label = "%.2f" % ping
         draw.text((graph_x - len(label) * 6 - 10, offset_y - 5), label, 0x333333, font=font)
 
-    # X axis ticks
-    for col, (tstamp, _) in list(enumerate(histograms_df.iterrows()))[::3]:
+    # X axis ticks - one every three hours
+    for col in range(0, width // sqsz, 3):
+        # The histogram starts (width // sqsz) hours ago, and we're now at hour indicated by col
         offset_x = graph_x + col * 8
         draw.line((offset_x, height + graph_y - 2, offset_x, height + graph_y + 2), fill=0xAAAAAA)
 
@@ -112,10 +113,13 @@ def render(targets):
     tmpim = Image.new("RGB", (80, width + 20), "white")
     tmpdraw = ImageDraw.Draw(tmpim)
 
-    for col, (tstamp, _) in list(enumerate(histograms_df.iterrows()))[::6]:
-        offset_x = col * 8
+    # Draw one annotation every 6 hours
+    for col in range(0, width // sqsz, 6):
+        # The histogram starts (width // sqsz) hours ago, and we're now at hour indicated by col
+        tstamp = datetime.now() + timedelta(hours=(-(width // sqsz) + col))
+        offset_x = col * sqsz
         tmpdraw.text(( 6, offset_x + 0), tstamp.strftime("%Y-%m-%d"), 0x333333, font=font)
-        tmpdraw.text((18, offset_x + 8), tstamp.strftime("%H:%M:%S"), 0x333333, font=font)
+        tmpdraw.text((36, offset_x + 9), tstamp.strftime("%H:%M"),    0x333333, font=font)
 
     im.paste( tmpim.rotate(90, expand=1), (graph_x - 10, height + graph_y + 1) )
 
