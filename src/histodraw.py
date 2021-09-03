@@ -6,7 +6,7 @@ import socket
 import numpy as np
 
 from datetime import datetime, timedelta
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 # How big do you want the squares to be?
 sqsz = 8
@@ -42,15 +42,15 @@ def render_target(target):
     # Draw the graph in a pixels array which we then copy to an image
     width  = cols
     height = rows
-    pixels = np.ones(width * height)
+    pixels = np.zeros(width * height)
 
     for col, (tstamp, histogram) in enumerate(histograms_df.iterrows()):
         for bktval, bktgrayness in histogram.items():
             #       (     y       )            (x)
-            pixels[((hmax - bktval) * width) + col] = 1.0 - bktgrayness
+            pixels[((hmax - bktval) * width) + col] = bktgrayness
 
     # copy pixels to an Image and paste that into the output image
-    graph = Image.new("L", (width, height), "white")
+    graph = Image.new("L", (width, height))
     graph.putdata(pixels * 0xFF)
 
     # Scale graph so each Pixel becomes a square
@@ -74,7 +74,7 @@ def render(targets):
 
     if len(rendered_graphs) == 1:
         # Single graph -> use it as-is
-        graph = rendered_graphs[0]
+        graph = ImageOps.invert(rendered_graphs[0])
     else:
         # Multiple graphs -> merge.
         # This width/height may not match what we need for the output.
@@ -82,26 +82,27 @@ def render(targets):
         # create a new image that has the correct size and paste
         # the graph into it.
         resized_graphs = []
-        for graph in rendered_graphs:
+        for graph, color in zip(rendered_graphs, ("red", "green", "blue")):
             if graph.width != width or graph.height != height:
                 print("resizing graph of (%d,%d) to (%d,%d)" % (graph.width, graph.height, width, height))
-                new_graph = Image.new("L", (width, height), "white")
+                new_graph = Image.new("L", (width, height), "black")
                 new_graph.paste(graph,
                     (height - graph.height + (graph.hmin - hmin) * sqsz,
                      width  - graph.width)
                 )
-                resized_graphs.append(new_graph)
             else:
                 print("using graph as-is")
-                resized_graphs.append(graph)
+                new_graph = graph
+
+            alphaed = Image.new("RGBA", (width, height), color)
+            alphaed.putalpha(new_graph)
+            resized_graphs.append(alphaed)
 
         print("will merge %d graphs" % len(resized_graphs))
 
-        while len(resized_graphs) != 3:
-            print("adding dummy graph")
-            resized_graphs.append(Image.new("L", (width, height), "white"))
-
-        graph = Image.merge("RGB", resized_graphs)
+        graph = Image.new("RGBA", (width, height), "white")
+        for rnd_graph in resized_graphs:
+            graph = Image.alpha_composite(graph, rnd_graph)
 
     # position of the graph
     graph_x = 70
