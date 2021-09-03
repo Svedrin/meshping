@@ -3,6 +3,7 @@
 # kate: space-indent on; indent-width 4; replace-tabs on;
 
 import socket
+import numpy as np
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -38,17 +39,16 @@ def render(target, histograms_df):
     # Draw the graph in a pixels array which we then copy to an image
     width  = cols
     height = rows
-    pixels = [0xFF] * (width * height)
+    pixels = np.ones(width * height)
 
     for col, (tstamp, histogram) in enumerate(histograms_df.iterrows()):
         for bktval, bktgrayness in histogram.items():
-            pixelval = int((1.0 - bktgrayness) * 0xFF)
             #       (     y       )            (x)
-            pixels[((hmax - bktval) * width) + col] = pixelval
+            pixels[((hmax - bktval) * width) + col] = 1.0 - bktgrayness
 
     # copy pixels to an Image and paste that into the output image
     graph = Image.new("L", (width, height), "white")
-    graph.putdata(pixels)
+    graph.putdata(pixels * 0xFF)
 
     # Scale graph so each Pixel becomes a square
     width  *= sqsz
