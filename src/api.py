@@ -214,7 +214,7 @@ def add_api_views(app, mp):
         targets = []
         for arg_target in [target] + request.args.getlist("compare"):
             try:
-                targets.append(mp.get_target(target))
+                targets.append(mp.get_target(arg_target))
             except LookupError:
                 abort(404)
 
