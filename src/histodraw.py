@@ -5,9 +5,15 @@
 import socket
 import numpy as np
 
-from PIL import Image, ImageDraw, ImageFont
+from datetime import datetime, timedelta
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-def render(target, histograms_df):
+# How big do you want the squares to be?
+sqsz = 8
+
+def render_target(target):
+    histograms_df = target.histogram
+
     # Normalize Buckets by transforming the number of actual pings sent
     # into a float [0..1] indicating the grayness of that bucket.
     biggestbkt = histograms_df.max().max()
@@ -33,21 +39,18 @@ def render(target, histograms_df):
     rows = hmax - hmin + 1
     cols = len(histograms_df)
 
-    # How big do you want the squares to be?
-    sqsz = 8
-
     # Draw the graph in a pixels array which we then copy to an image
     width  = cols
     height = rows
-    pixels = np.ones(width * height)
+    pixels = np.zeros(width * height)
 
     for col, (tstamp, histogram) in enumerate(histograms_df.iterrows()):
         for bktval, bktgrayness in histogram.items():
             #       (     y       )            (x)
-            pixels[((hmax - bktval) * width) + col] = 1.0 - bktgrayness
+            pixels[((hmax - bktval) * width) + col] = bktgrayness
 
     # copy pixels to an Image and paste that into the output image
-    graph = Image.new("L", (width, height), "white")
+    graph = Image.new("L", (width, height))
     graph.putdata(pixels * 0xFF)
 
     # Scale graph so each Pixel becomes a square
@@ -55,6 +58,47 @@ def render(target, histograms_df):
     height *= sqsz
 
     graph = graph.resize((width, height), Image.NEAREST)
+    graph.hmin = hmin
+    graph.hmax = hmax
+    return graph
+
+def render(targets):
+    rendered_graphs = [render_target(target) for target in targets]
+
+    width  = max([ graph.width  for graph in rendered_graphs ])
+    height = max([ graph.height for graph in rendered_graphs ])
+    hmin   = min([ graph.hmin   for graph in rendered_graphs ])
+    hmax   = max([ graph.hmax   for graph in rendered_graphs ])
+
+    target = targets[0]
+
+    if len(rendered_graphs) == 1:
+        # Single graph -> use it as-is
+        graph = ImageOps.invert(rendered_graphs[0])
+    else:
+        # Multiple graphs -> merge.
+        # This width/height may not match what we need for the output.
+        # Check for which graphs that is the case, and for these,
+        # create a new image that has the correct size and paste
+        # the graph into it.
+        resized_graphs = []
+        for graph, color in zip(rendered_graphs, ("red", "green", "blue")):
+            if graph.width != width or graph.height != height:
+                new_graph = Image.new("L", (width, height), "black")
+                new_graph.paste(graph,
+                    (width  - graph.width,
+                     (hmax  - graph.hmax) * sqsz)
+                )
+            else:
+                new_graph = graph
+
+            alphaed = Image.new("RGBA", (width, height), color)
+            alphaed.putalpha(new_graph)
+            resized_graphs.append(alphaed)
+
+        graph = Image.new("RGBA", (width, height), "white")
+        for rnd_graph in resized_graphs:
+            graph = Image.alpha_composite(graph, rnd_graph)
 
     # position of the graph
     graph_x = 70
@@ -98,8 +142,9 @@ def render(target, histograms_df):
         label = "%.2f" % ping
         draw.text((graph_x - len(label) * 6 - 10, offset_y - 5), label, 0x333333, font=font)
 
-    # X axis ticks
-    for col, (tstamp, _) in list(enumerate(histograms_df.iterrows()))[::3]:
+    # X axis ticks - one every three hours
+    for col in range(0, width // sqsz, 3):
+        # The histogram starts (width // sqsz) hours ago, and we're now at hour indicated by col
         offset_x = graph_x + col * 8
         draw.line((offset_x, height + graph_y - 2, offset_x, height + graph_y + 2), fill=0xAAAAAA)
 
@@ -109,10 +154,13 @@ def render(target, histograms_df):
     tmpim = Image.new("RGB", (80, width + 20), "white")
     tmpdraw = ImageDraw.Draw(tmpim)
 
-    for col, (tstamp, _) in list(enumerate(histograms_df.iterrows()))[::6]:
-        offset_x = col * 8
+    # Draw one annotation every 6 hours
+    for col in range(0, width // sqsz, 6):
+        # The histogram starts (width // sqsz) hours ago, and we're now at hour indicated by col
+        tstamp = datetime.now() + timedelta(hours=(-(width // sqsz) + col))
+        offset_x = col * sqsz
         tmpdraw.text(( 6, offset_x + 0), tstamp.strftime("%Y-%m-%d"), 0x333333, font=font)
-        tmpdraw.text((18, offset_x + 8), tstamp.strftime("%H:%M:%S"), 0x333333, font=font)
+        tmpdraw.text((36, offset_x + 9), tstamp.strftime("%H:%M"),    0x333333, font=font)
 
     im.paste( tmpim.rotate(90, expand=1), (graph_x - 10, height + graph_y + 1) )
 
