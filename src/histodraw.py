@@ -84,21 +84,17 @@ def render(targets):
         resized_graphs = []
         for graph, color in zip(rendered_graphs, ("red", "green", "blue")):
             if graph.width != width or graph.height != height:
-                print("resizing graph of (%d,%d) to (%d,%d)" % (graph.width, graph.height, width, height))
                 new_graph = Image.new("L", (width, height), "black")
                 new_graph.paste(graph,
                     (width  - graph.width,
                      (hmax  - graph.hmax) * sqsz)
                 )
             else:
-                print("using graph as-is")
                 new_graph = graph
 
             alphaed = Image.new("RGBA", (width, height), color)
             alphaed.putalpha(new_graph)
             resized_graphs.append(alphaed)
-
-        print("will merge %d graphs" % len(resized_graphs))
 
         graph = Image.new("RGBA", (width, height), "white")
         for rnd_graph in resized_graphs:
