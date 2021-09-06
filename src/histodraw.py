@@ -62,10 +62,10 @@ def render_target(target):
     graph.hmax = hmax
     return graph
 
-def render(targets):
+def render(targets, histogram_period):
     rendered_graphs = [render_target(target) for target in targets]
 
-    width  = max([ graph.width  for graph in rendered_graphs ])
+    width  = histogram_period // 3600 * sqsz
     hmin   = min([ graph.hmin   for graph in rendered_graphs ])
     hmax   = max([ graph.hmax   for graph in rendered_graphs ])
     height = (hmax - hmin) * sqsz

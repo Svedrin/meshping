@@ -222,7 +222,7 @@ def add_api_views(app, mp):
             # an RGB image only has three channels
             abort(400)
 
-        img = histodraw.render(targets)
+        img = histodraw.render(targets, mp.histogram_period)
         img_io = BytesIO()
         img.save(img_io, 'png')
         length = img_io.tell()
