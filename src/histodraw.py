@@ -74,7 +74,11 @@ def render(targets, histogram_period):
 
     if len(rendered_graphs) == 1:
         # Single graph -> use it as-is
-        graph = ImageOps.invert(rendered_graphs[0])
+        graph = Image.new("L", (width, height), "white")
+        graph.paste(
+            ImageOps.invert(rendered_graphs[0]),
+            (width - rendered_graphs[0].width, 0)
+        )
     else:
         # Multiple graphs -> merge.
         # This width/height may not match what we need for the output.
