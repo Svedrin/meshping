@@ -96,13 +96,23 @@ def render(targets, histogram_period):
             else:
                 new_graph = graph
 
-            alphaed = Image.new("RGBA", (width, height), color)
-            alphaed.putalpha(new_graph)
-            resized_graphs.append(alphaed)
+            resized_graphs.append(new_graph)
 
-        graph = Image.new("RGBA", (width, height), "white")
-        for rnd_graph in resized_graphs:
-            graph = Image.alpha_composite(graph, rnd_graph)
+        while len(resized_graphs) != 3:
+            resized_graphs.append(Image.new("L", (width, height), "black"))
+
+        # Print the graph, on black background still.
+        graph = Image.merge("RGB", resized_graphs)
+
+        # To get a white background, convert to HSV and set V=1.
+        # V currently contains the interesting information though,
+        # so move that to S first.
+        hsv = np.array(graph.convert("HSV"))
+        # Add V to S (not sure why adding works better than replacing, but it does)
+        hsv[:, :, 1] = hsv[:, :, 1] + hsv[:, :, 2]
+        # Set V to 1
+        hsv[:, :, 2] = np.ones((height, width)) * 0xFF
+        graph = Image.fromarray(hsv, "HSV").convert("RGB")
 
     # position of the graph
     graph_x = 70
