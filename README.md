@@ -12,6 +12,12 @@ Ping daemon that pings a number of targets at once, collecting their response ti
 * Docker images: https://hub.docker.com/r/svedrin/meshping
 
 
+# UI
+
+Here's a screenshot of the Web UI:
+
+![web_ui](examples/ui.png)
+
 # Heatmaps
 
 Meshping can render heatmaps from the pings measured over the last few (by default, three) days. They look like this:
