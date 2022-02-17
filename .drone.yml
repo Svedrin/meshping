@@ -27,11 +27,11 @@ steps:
   image: alpine:3.14
   commands:
   - apk add --no-cache python3 py3-pip py3-netifaces py3-pillow bash py3-pandas
-  - pip3 install pylint pylint-fail-under
+  - pip3 install pylint
   - pip3 install -r requirements.txt
   - pip3 install -r features/requirements.txt
   - bash -c "while ! nc -z meshping 9922; do sleep 1; done"
-  - pylint-fail-under --fail_under 9 src/
+  - pylint --fail-under 9 src/
   - python3 -m behave
 
 ---
@@ -234,6 +234,6 @@ depends_on:
 
 ---
 kind: signature
-hmac: 0e0858ffa7871fd0ddb8940b9f3d2251ad88f9025a789461412add11df19b39e
+hmac: cc0dd31cda5b9d6d5e90d3f66f36e542c57ab8d49e3ac927763aa788d6a5630d
 
 ...
