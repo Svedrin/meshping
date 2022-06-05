@@ -108,6 +108,7 @@ steps:
     password:
       from_secret: docker-registry-pw
     cache_from: "svedrin/meshping:latest-armv7l"
+    debug: true
 
 trigger:
   branch:
@@ -234,6 +235,6 @@ depends_on:
 
 ---
 kind: signature
-hmac: cc0dd31cda5b9d6d5e90d3f66f36e542c57ab8d49e3ac927763aa788d6a5630d
+hmac: c1e01cdcf5c3a9a7fc21969a81e28fb2d3264ae7c006340ab4d6ecaede64dbf9
 
 ...
