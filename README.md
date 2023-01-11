@@ -117,7 +117,7 @@ Meshping up-to-date. It can be deployed as-is by adding a Stack through Portaine
 
     mkdir meshping
     cd meshping
-    wget https://github.com/Svedrin/meshping/raw/master/examples/docker-compose.yml
+    wget https://raw.githubusercontent.com/Svedrin/meshping/master/examples/docker-compose.yaml
     docker-compose up --detach
 
 Meshping should now be reachable at `http://<your-ip>:9922`.
