@@ -35,6 +35,30 @@ Most pings are fine, but there does appear to be a fair bit of disturbance - may
 The time span covered by these can be configured by setting the `MESHPING_HISTOGRAM_DAYS` environment variable to a value other than `3`.
 
 
+# Deploying
+
+Deploying meshping is easiest using [`docker-compose`](https://docs.docker.com/compose/), with the
+[docker-compose.yaml](https://github.com/Svedrin/meshping/blob/master/examples/docker-compose.yaml) file from this repo.
+This will deploy meshping, along with a [Watchtower](https://hub.docker.com/r/containrrr/watchtower) instance that keeps
+Meshping up-to-date. It can be deployed as-is by adding a Stack through Portainer, or using `docker-compose`:
+
+    mkdir meshping
+    cd meshping
+    wget https://raw.githubusercontent.com/Svedrin/meshping/master/examples/docker-compose.yaml
+    docker-compose up --detach
+
+Meshping should now be reachable at `http://<your-ip>:9922`.
+
+## Running on a Raspberry Pi
+
+A Docker image for the Raspberry Pi 4 is also available. To use it, you need to have:
+
+* Docker version 19.03.9 or newer, and
+* libseccomp version 2.4.2 or newer.
+
+See [issue #30](https://github.com/Svedrin/meshping/issues/30#issuecomment-872066856) for details and instructions on how you can check if you have them, and provide them if not.
+
+
 # Distributed Meshping
 
 If you have set up multiple Meshping instances, you can have them exchange targets via peering. To do this, set the
@@ -107,29 +131,6 @@ Otherwise you'll lose the heatmap effect because every data point will be its ow
 
 In the examples directory, there's also a [json dashboard definition](examples/grafana.json) that you can import.
 
-
-# Deploying
-
-Deploying meshping is easiest using [`docker-compose`](https://docs.docker.com/compose/), with the
-[docker-compose.yaml](https://github.com/Svedrin/meshping/blob/master/examples/docker-compose.yaml) file from this repo.
-This will deploy meshping, along with a [Watchtower](https://hub.docker.com/r/containrrr/watchtower) instance that keeps
-Meshping up-to-date. It can be deployed as-is by adding a Stack through Portainer, or using `docker-compose`:
-
-    mkdir meshping
-    cd meshping
-    wget https://raw.githubusercontent.com/Svedrin/meshping/master/examples/docker-compose.yaml
-    docker-compose up --detach
-
-Meshping should now be reachable at `http://<your-ip>:9922`.
-
-## Running on a Raspberry Pi
-
-A Docker image for the Raspberry Pi 4 is also available. To use it, you need to have:
-
-* Docker version 19.03.9 or newer, and
-* libseccomp version 2.4.2 or newer.
-
-See [issue #30](https://github.com/Svedrin/meshping/issues/30#issuecomment-872066856) for details and instructions on how you can check if you have them, and provide them if not.
 
 # Configuration options
 
