@@ -118,7 +118,7 @@ Meshping provides a `/metrics` endpoint that is meant to be scraped by Prometheu
 # Heatmaps in Grafana
 
 Grafana added [Heatmap support](https://github.com/grafana/grafana/issues/10009) in v5.1, so we now can produce graphs similar to the images above,
-that contain a [histogram over time](http://docs.grafana.org/img/docs/v43/heatmap_histogram_over_time.png) that shows the pings.
+that contain a [histogram over time](https://grafana.com/docs/grafana/latest/panels-visualizations/visualizations/heatmap/) that shows the pings.
 
 ![ISP outage](examples/heatmap.png)
 
