@@ -58,6 +58,17 @@ A Docker image for the Raspberry Pi 4 is also available. To use it, you need to 
 
 See [issue #30](https://github.com/Svedrin/meshping/issues/30#issuecomment-872066856) for details and instructions on how you can check if you have them, and provide them if not.
 
+## Running on Windows
+
+Running meshping on Windows is easiest using Docker Desktop and the WSL2 backend. Do use this method, you need to have WSL2 and Docker installed. Then run these commands in a PowerShell terminal:
+
+```
+docker volume create meshping-db
+docker run -d --name meshping -p 9922:9922 --restart=always --hostname (Get-Item env:\Computername).Value -v meshping-db:/opt/meshping/db svedrin/meshping
+```
+
+This will start MeshPing and configure it to start automatically and show the correct hostname in the UI.
+
 
 # Distributed Meshping
 
