@@ -86,7 +86,7 @@ Let's take another look at this heatmap:
 
 ![built-in heatmap](examples/heatmap4.png)
 
-You'll see that most of the pings are between 11 and 16ms, a significant number take around 22ms.
+You'll see that, while most of the pings are between 11 and 16ms, a significant number take around 22ms.
 The average as calculated by meshping is 16ms, and the standard deviation is probably somewhere around 2ms.
 
 Now suppose you're trying to formulate an alerting rule based on those numbers. Say you'd want to be alerted whenever ping results differ
@@ -102,7 +102,8 @@ those terms: one lives at 13±3ms, the other one at 22±2ms. To conduct a meanin
 it consisted of one single signal.
 
 I'd like to start looking for a solution to this. At the moment I'm focusing on getting the graphs to a point that they visualize this, and I'm
-pretty satisfied with the heatmaps as they are currently. Next, I'll probably look into modality detection and finding ways to extract patterns
+pretty satisfied with the heatmaps as they are currently. Next, I'll probably look into
+[modality detection](https://www.brendangregg.com/FrequencyTrails/modes.html) and finding ways to extract patterns
 out of the data that I can then use to draw conclusions from.
 
 
