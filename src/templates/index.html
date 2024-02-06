@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>{[ Hostname ]} &mdash; Meshping</title>
+    <meta name="viewport" content="width=device-width, initial-scale=0.75" />
     <link rel="stylesheet"        href="/ui/node_modules/bootstrap/dist/css/bootstrap.min.css"></script>
     <script type="text/javascript" src="/ui/node_modules/jquery/dist/jquery.slim.min.js"></script>
     <script type="text/javascript" src="/ui/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -17,8 +18,8 @@
       <div id="app">
         <div class="btn-toolbar justify-content-between py-sm-3" role="toolbar" aria-label="Toolbar with button groups">
           <div class="btn-group" role="group" aria-label="Links">
-            <a type="button" class="btn btn-light" href="/metrics">Metrics</a>
-            <button type="button" class="btn btn-light" v-on:click="clear_stats">Clear statistics</button>
+            <a type="button" class="btn btn-light d-none d-lg-inline" href="/metrics">Metrics</a>
+            <button type="button" class="btn btn-light d-none d-lg-inline" v-on:click="clear_stats">Clear statistics</button>
           </div>
           <div class="input-group">
             <div class="input-group-prepend">
@@ -35,16 +36,16 @@
           <tr>
             <th>&nbsp;</th>
             <th>Target</th>
-            <th>Address</th>
-            <th class="text-right">Sent</th>
-            <th class="text-right">Recv</th>
+            <th class="d-none d-sm-table-cell">Address</th>
+            <th class="text-right d-none d-lg-table-cell">Sent</th>
+            <th class="text-right d-none d-xl-table-cell">Recv</th>
             <th class="text-right">Succ</th>
-            <th class="text-right">Loss</th>
-            <th class="text-right">Min</th>
+            <th class="text-right d-none d-xl-table-cell">Loss</th>
+            <th class="text-right d-none d-lg-table-cell">Min</th>
             <th class="text-right">Avg15m</th>
-            <th class="text-right">Avg6h</th>
-            <th class="text-right">Avg24h</th>
-            <th class="text-right">Max</th>
+            <th class="text-right d-none d-lg-table-cell">Avg6h</th>
+            <th class="text-right d-none d-lg-table-cell">Avg24h</th>
+            <th class="text-right d-none d-lg-table-cell">Max</th>
             <th class="text-right">Last</th>
             <th>&nbsp;</th>
           </tr>
@@ -78,30 +79,33 @@
                 {[ icons['exclamation-circle.svg'] ]}
               </span>
             </td>
-            <td>{{ target.name }}</td>
-            <td>{{ target.addr }}</td>
-            <td class="text-right">{{ target.sent }}</td>
-            <td class="text-right">{{ target.recv }}</td>
+            <td>{{ target.name }}<span class="d-inline d-sm-none text-secondary"><br />{{ target.addr }}</span></td>
+            <td class="d-none d-sm-table-cell">{{ target.addr }}</td>
+            <td class="text-right d-none d-lg-table-cell">{{ target.sent }}</td>
+            <td class="text-right d-none d-xl-table-cell">{{ target.recv }}</td>
             <td class="text-right">{{ target.succ   | prettyFloat }}</td>
-            <td class="text-right">{{ target.loss   | prettyFloat }}</td>
-            <td class="text-right">{{ target.min    | prettyFloat }}</td>
+            <td class="text-right d-none d-xl-table-cell">{{ target.loss   | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell">{{ target.min    | prettyFloat }}</td>
             <td class="text-right">{{ target.avg15m | prettyFloat }}</td>
-            <td class="text-right">{{ target.avg6h  | prettyFloat }}</td>
-            <td class="text-right">{{ target.avg24h | prettyFloat }}</td>
-            <td class="text-right">{{ target.max    | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell">{{ target.avg6h  | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell">{{ target.avg24h | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell">{{ target.max    | prettyFloat }}</td>
             <td class="text-right">{{ target.last   | prettyFloat }}</td>
             <td style="white-space: nowrap">
               <a v-bind:href="'/histogram/' + hostname + '/' + target.addr + '.png'" target="_blank">
                 <img class="border" src="/ui/node_modules/bootstrap-icons/icons/graph-up.svg" alt="graph" title="Graph" />
               </a>
-              <img class="border" src="/ui/node_modules/bootstrap-icons/icons/trash.svg" alt="del" title="Delete Target" v-on:click="delete_target(target)" />
+              <img class="border d-none d-lg-inline" src="/ui/node_modules/bootstrap-icons/icons/trash.svg" alt="del" title="Delete Target" v-on:click="delete_target(target)" />
             </td>
           </tr>
           <tr>
-            <td colspan="3"><input type="text" class="form-control" v-model="add_tgt_name" placeholder="example.com" /></td>
-            <td colspan="5"><input type="text" class="form-control" v-model="add_tgt_addr" placeholder="1.2.3.4 (optional)" /></td>
+            <td class="d-none d-sm-table-cell">&nbsp;</td>
+            <td colspan="2"><input type="text" class="form-control" v-model="add_tgt_name" placeholder="example.com" /></td>
+            <td colspan="2"><input type="text" class="form-control" v-model="add_tgt_addr" placeholder="1.2.3.4 (optional)" /></td>
             <td><button class="form-control" v-on:click="create_target()">&plus;</button></td>
-            <td colspan="5">&nbsp;</td>
+            <td>&nbsp;</td>
+            <td colspan="6" class="d-none d-lg-table-cell">&nbsp;</td>
+            <td colspan="2" class="d-none d-xl-table-cell">&nbsp;</td>
           </tr>
         </table>
       </div>
