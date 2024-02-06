@@ -4,7 +4,7 @@ import logging
 import httpx
 import trio
 
-from ifaces import Ifaces4
+from ifaces import Ifaces4, Ifaces6
 
 async def run_peers(mp):
     peers = os.environ.get("MESHPING_PEERS", "")
@@ -15,11 +15,24 @@ async def run_peers(mp):
 
     while True:
         if4 = Ifaces4()
+        if6 = Ifaces6()
+
+        def is_local(addr):
+            try:
+                return if4.is_local(addr)
+            except ValueError:
+                pass
+            try:
+                return if6.is_local(addr)
+            except ValueError:
+                pass
+            return False
+
         peer_targets = [
             dict(
                 name  = target.name,
                 addr  = target.addr,
-                local = if4.is_local(target.addr)
+                local = is_local(target.addr)
             )
             for target in mp.all_targets()
             if not target.is_foreign # ENOFORN
