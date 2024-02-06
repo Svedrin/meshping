@@ -92,7 +92,8 @@
             <td class="text-right d-none d-lg-table-cell">{{ target.max    | prettyFloat }}</td>
             <td class="text-right">{{ target.last   | prettyFloat }}</td>
             <td style="white-space: nowrap">
-              <a v-bind:href="'/histogram/' + hostname + '/' + target.addr + '.png'" target="_blank">
+              <a v-if="target.recv > 0"
+                 v-bind:href="'/histogram/' + hostname + '/' + target.addr + '.png'" target="_blank">
                 <img class="border" src="/ui/node_modules/bootstrap-icons/icons/graph-up.svg" alt="graph" title="Graph" />
               </a>
               <img class="border d-none d-lg-inline" src="/ui/node_modules/bootstrap-icons/icons/trash.svg" alt="del" title="Delete Target" v-on:click="delete_target(target)" />
