@@ -223,6 +223,9 @@ def add_api_views(app, mp):
             abort(400)
 
         img = histodraw.render(targets, mp.histogram_period)
+        if img is None:
+            abort(404)
+
         img_io = BytesIO()
         img.save(img_io, 'png')
         length = img_io.tell()

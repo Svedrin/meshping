@@ -13,6 +13,8 @@ sqsz = 8
 
 def render_target(target):
     histograms_df = target.histogram
+    if histograms_df.empty:
+        return None
 
     # Normalize Buckets by transforming the number of actual pings sent
     # into a float [0..1] indicating the grayness of that bucket.
@@ -64,6 +66,9 @@ def render_target(target):
 
 def render(targets, histogram_period):
     rendered_graphs = [render_target(target) for target in targets]
+
+    if any(graph is None for graph in rendered_graphs):
+        return None
 
     width  = histogram_period // 3600 * sqsz
     hmin   = min([ graph.hmin   for graph in rendered_graphs ])
