@@ -31,7 +31,7 @@ window.app = new Vue({
                 });
             }
             var ip_as_filled_str = function(ipaddr) {
-                if (ipaddr.includes(":")) {
+                if (!ipaddr.includes(":")) {
                     // IPv4
                     return (ipaddr
                         .split(".")
