@@ -25,13 +25,13 @@ window.app = new Vue({
                 var search = this.search.toLowerCase();
                 this.targets_filtered = this.targets_all.filter(function(target){
                     return (
-                        target.name.toLowerCase().indexOf(search) !== -1 ||
-                        target.addr.indexOf(search) !== -1
+                        target.name.toLowerCase().includes(search) ||
+                        target.addr.includes(search)
                     );
                 });
             }
             var ip_as_filled_str = function(ipaddr) {
-                if (ipaddr.indexOf(":") === -1) {
+                if (ipaddr.includes(":")) {
                     // IPv4
                     return (ipaddr
                         .split(".")
