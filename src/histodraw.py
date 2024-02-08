@@ -3,6 +3,8 @@
 # kate: space-indent on; indent-width 4; replace-tabs on;
 
 import socket
+import os
+import pytz
 import numpy as np
 
 from datetime import datetime, timedelta
@@ -167,10 +169,16 @@ def render(targets, histogram_period):
         label = "%.2f" % ping
         draw.text((graph_x - len(label) * 6 - 10, offset_y - 5), label, 0x333333, font=font)
 
+    now = (
+        datetime
+            .now(pytz.timezone(os.environ.get("TZ", "Etc/UTC")))
+            .replace(second=0, minute=0)
+    )
+
     # X axis ticks - one every three hours
-    for col in range(0, width // sqsz, 3):
+    for col in range((now.hour % 3), width // sqsz, 3):
         # The histogram starts (width // sqsz) hours ago, and we're now at hour indicated by col
-        offset_x = graph_x + col * 8
+        offset_x = graph_x + col * sqsz
         draw.line((offset_x, height + graph_y - 2, offset_x, height + graph_y + 2), fill=0xAAAAAA)
 
     # X axis annotations
@@ -180,13 +188,13 @@ def render(targets, histogram_period):
     tmpdraw = ImageDraw.Draw(tmpim)
 
     # Draw one annotation every 6 hours
-    for col in range(0, width // sqsz, 6):
+    for col in range((now.hour % 6), width // sqsz, 6):
         # The histogram starts (width // sqsz) hours ago, and we're now at hour indicated by col
-        tstamp = datetime.now().replace(second=0, minute=0) + timedelta(hours=(-(width // sqsz) + col + 1))
+        tstamp = now + timedelta(hours=(-(width // sqsz) + col + 1))
         offset_x = col * sqsz
-        if tstamp.hour <= 6:
-            tmpdraw.text(( 0, offset_x + 0), tstamp.strftime("%m-%d"), 0x333333, font=font)
-        tmpdraw.text(    (36, offset_x + 0), tstamp.strftime("%H:%M"), 0x333333, font=font)
+        if tstamp.hour < 6:
+            tmpdraw.text(( 0, offset_x + 4), tstamp.strftime("%m-%d"), 0x333333, font=font)
+        tmpdraw.text(    (36, offset_x + 4), tstamp.strftime("%H:%M"), 0x333333, font=font)
 
     im.paste( tmpim.rotate(90, expand=1), (graph_x - 10, height + graph_y + 1) )
 
