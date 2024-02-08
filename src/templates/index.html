@@ -119,8 +119,14 @@
           </tr>
           <tr>
             <td class="d-none d-sm-table-cell">&nbsp;</td>
-            <td colspan="2"><input type="text" class="form-control" v-model="add_tgt_name" placeholder="example.com" /></td>
-            <td colspan="2"><input type="text" class="form-control" v-model="add_tgt_addr" placeholder="1.2.3.4 (optional)" /></td>
+            <td colspan="2">
+              <input type="text" class="form-control" v-model="add_tgt_name" placeholder="example.com"
+                v-bind:disabled="creating" v-on:keyup.enter="create_target()" />
+            </td>
+            <td colspan="2">
+              <input type="text" class="form-control" v-model="add_tgt_addr" placeholder="1.2.3.4 (optional)"
+                v-bind:disabled="creating" v-on:keyup.enter="create_target()" />
+            </td>
             <td>
               <button v-if="!creating" class="form-control" v-on:click="create_target()">&plus;</button>
               <span   v-if="creating"  class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
