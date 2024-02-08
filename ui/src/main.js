@@ -90,6 +90,7 @@ window.app = new Vue({
                     `<strong>Error!</strong> Could not add target ${json.target}: ` +
                     json.error
                 );
+                setTimeout(() => $('#add_tgt_name').focus(), 50);
             }
         },
         clear_stats: async function() {
