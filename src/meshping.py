@@ -157,6 +157,7 @@ def build_app():
         "MESHPING_PROMETHEUS_URL",
         "MESHPING_PROMETHEUS_QUERY",
         "MESHPING_REDIS_HOST",
+        "MESHPING_DEV",
     )
 
     deprecated_env_vars = (
@@ -173,7 +174,10 @@ def build_app():
             print("env var %s is deprecated, ignored" % key, file=sys.stderr)
 
     app = QuartTrio(__name__, static_url_path="")
-    #app.config["TEMPLATES_AUTO_RELOAD"] = True
+
+    if os.environ.get("MESHPING_DEV", "false") == "true":
+        app.config["TEMPLATES_AUTO_RELOAD"] = True
+
     app.secret_key = str(uuid4())
     app.jinja_options = dict(
         variable_start_string = '{[',

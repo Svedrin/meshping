@@ -46,6 +46,7 @@ else
 fi
 
 docker run --rm -it --net=host \
+    -e MESHPING_DEV=true \
     -v /tmp/statistico:/tmp/statistico \
     -v $PWD/db:/opt/meshping/db \
     -v $PWD/src:/opt/meshping/src \
