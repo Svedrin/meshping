@@ -64,11 +64,15 @@ def render_target(target):
     graph.hmax = hmax
     return graph
 
-def render(targets, histogram_period):
-    rendered_graphs = [render_target(target) for target in targets]
 
-    if any(graph is None for graph in rendered_graphs):
-        return None
+def render(targets, histogram_period):
+    rendered_graphs = []
+
+    for target in targets:
+        target_graph = render_target(target)
+        if target_graph is None:
+            raise ValueError("No data available for target %s" % target)
+        rendered_graphs.append(target_graph)
 
     width  = histogram_period // 3600 * sqsz
     hmin   = min([ graph.hmin   for graph in rendered_graphs ])

@@ -216,15 +216,17 @@ def add_api_views(app, mp):
             try:
                 targets.append(mp.get_target(arg_target))
             except LookupError:
-                abort(404)
+                print("lookuperror")
+                abort(404, description=("Target %s not found" % arg_target))
 
         if len(targets) > 3:
             # an RGB image only has three channels
-            abort(400)
+            abort(400, description="Can only compare up to three targets")
 
-        img = histodraw.render(targets, mp.histogram_period)
-        if img is None:
-            abort(404)
+        try:
+            img = histodraw.render(targets, mp.histogram_period)
+        except ValueError as err:
+            abort(404, description=err)
 
         img_io = BytesIO()
         img.save(img_io, 'png')
