@@ -180,10 +180,11 @@ def render(targets, histogram_period):
     # Draw one annotation every 6 hours
     for col in range(0, width // sqsz, 6):
         # The histogram starts (width // sqsz) hours ago, and we're now at hour indicated by col
-        tstamp = datetime.now() + timedelta(hours=(-(width // sqsz) + col))
+        tstamp = datetime.now().replace(second=0, minute=0) + timedelta(hours=(-(width // sqsz) + col + 1))
         offset_x = col * sqsz
-        tmpdraw.text(( 6, offset_x + 0), tstamp.strftime("%Y-%m-%d"), 0x333333, font=font)
-        tmpdraw.text((36, offset_x + 9), tstamp.strftime("%H:%M"),    0x333333, font=font)
+        if tstamp.hour <= 6:
+            tmpdraw.text(( 0, offset_x + 0), tstamp.strftime("%m-%d"), 0x333333, font=font)
+        tmpdraw.text(    (36, offset_x + 0), tstamp.strftime("%H:%M"), 0x333333, font=font)
 
     im.paste( tmpim.rotate(90, expand=1), (graph_x - 10, height + graph_y + 1) )
 
