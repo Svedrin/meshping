@@ -18,7 +18,7 @@ if [ "${1:-}" = "clean" ]; then
 fi
 
 if [ -z "$(docker image ls -q meshping:latest-dev)" ]; then
-    docker build -t meshping:latest-dev .
+    docker build --network host -t meshping:latest-dev .
 fi
 
 mkdir -p /tmp/statistico
