@@ -9,6 +9,7 @@ window.app = new Vue({
         targets_filtered: [],
         add_tgt_name: "",
         add_tgt_addr: "",
+        comparing: false,
     },
     methods: {
         update_targets: async function () {
@@ -97,6 +98,26 @@ window.app = new Vue({
             setTimeout(function(vue){
                 vue.success_msg = "";
             }, 5000, this);
+        },
+        on_btn_compare: function() {
+            if (!this.comparing) {
+                this.comparing = true;
+                this.success_msg = "Select targets, then press Compare again";
+            } else {
+                var compare_targets = $("input[name=compare_target]:checked").map((_, el) => el.value).toArray();
+                this.success_msg = "";
+                this.comparing = false;
+                if (compare_targets.length == 0) {
+                    alert("Please select a few targets to compare.");
+                } else if (compare_targets.length > 3) {
+                    alert("We can only compare up to three targets at once.");
+                } else {
+                    window.open(
+                        `/histogram/${this.hostname}/${compare_targets[0]}.png?` +
+                        compare_targets.slice(1).map(el => `compare=${el}`).join('&')
+                    );
+                }
+            }
         }
     },
     created: function() {

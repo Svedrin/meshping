@@ -20,6 +20,9 @@
           <div class="btn-group" role="group" aria-label="Links">
             <a type="button" class="btn btn-light d-none d-lg-inline" href="/metrics">Metrics</a>
             <button type="button" class="btn btn-light d-none d-lg-inline" v-on:click="clear_stats">Clear statistics</button>
+            <button type="button" class="btn"
+              v-bind:class="{ 'btn-light': !comparing, 'btn-primary': comparing }"
+              v-on:click="on_btn_compare">Compare</button>
           </div>
           <div class="input-group">
             <div class="input-group-prepend">
@@ -92,11 +95,20 @@
             <td class="text-right d-none d-lg-table-cell">{{ target.max    | prettyFloat }}</td>
             <td class="text-right">{{ target.last   | prettyFloat }}</td>
             <td style="white-space: nowrap">
-              <a v-if="target.recv > 0"
-                 v-bind:href="'/histogram/' + hostname + '/' + target.addr + '.png'" target="_blank">
-                <img class="border" src="/ui/node_modules/bootstrap-icons/icons/graph-up.svg" alt="graph" title="Graph" />
-              </a>
-              <img class="border d-none d-lg-inline" src="/ui/node_modules/bootstrap-icons/icons/trash.svg" alt="del" title="Delete Target" v-on:click="delete_target(target)" />
+              <span v-if="!comparing">
+                <a v-if="target.recv > 0" target="_blank"
+                  v-bind:href="'/histogram/' + hostname + '/' + target.addr + '.png'">
+                  <img class="border" alt="graph" title="Graph"
+                      src="/ui/node_modules/bootstrap-icons/icons/graph-up.svg" />
+                </a>
+                <img class="border d-none d-lg-inline" alt="del" title="Delete Target"
+                     src="/ui/node_modules/bootstrap-icons/icons/trash.svg"
+                     v-on:click="delete_target(target)" />
+              </span>
+              <span v-if="comparing">
+              <input type="checkbox" name="compare_target"
+                v-if="target.recv > 0" v-bind:value="target.addr" />
+              </span>
             </td>
           </tr>
           <tr>
