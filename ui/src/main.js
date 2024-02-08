@@ -11,6 +11,7 @@ window.app = new Vue({
         add_tgt_name: "",
         add_tgt_addr: "",
         comparing: false,
+        creating:  false,
     },
     methods: {
         update_targets: async function () {
@@ -65,6 +66,7 @@ window.app = new Vue({
             }
         },
         create_target: async function() {
+            this.creating = true;
             var target_str = this.add_tgt_name;
             if (this.add_tgt_addr !== "") {
                 target_str += "@" + this.add_tgt_addr;
@@ -73,6 +75,7 @@ window.app = new Vue({
                 "target": target_str
             });
             var json = await response.json();
+            this.creating = false;
             if (json.success) {
                 this.add_tgt_name = "";
                 this.add_tgt_addr = "";

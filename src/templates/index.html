@@ -121,7 +121,10 @@
             <td class="d-none d-sm-table-cell">&nbsp;</td>
             <td colspan="2"><input type="text" class="form-control" v-model="add_tgt_name" placeholder="example.com" /></td>
             <td colspan="2"><input type="text" class="form-control" v-model="add_tgt_addr" placeholder="1.2.3.4 (optional)" /></td>
-            <td><button class="form-control" v-on:click="create_target()">&plus;</button></td>
+            <td>
+              <button v-if="!creating" class="form-control" v-on:click="create_target()">&plus;</button>
+              <span   v-if="creating"  class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            </td>
             <td>&nbsp;</td>
             <td colspan="6" class="d-none d-lg-table-cell">&nbsp;</td>
             <td colspan="2" class="d-none d-xl-table-cell">&nbsp;</td>
