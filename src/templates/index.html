@@ -106,8 +106,8 @@
                      v-on:click="delete_target(target)" />
               </span>
               <span v-if="comparing">
-              <input type="checkbox" name="compare_target"
-                v-if="target.recv > 0" v-bind:value="target.addr" />
+                <input type="checkbox" name="compare_target"
+                  v-if="target.recv > 0" v-bind:value="target.addr" />
               </span>
             </td>
           </tr>
