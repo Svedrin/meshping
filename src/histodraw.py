@@ -79,8 +79,6 @@ def render(targets, histogram_period):
     hmax   = max([ graph.hmax   for graph in rendered_graphs ])
     height = (hmax - hmin) * sqsz
 
-    target = targets[0]
-
     if len(rendered_graphs) == 1:
         # Single graph -> use it as-is
         graph = Image.new("L", (width, height), "white")
@@ -125,7 +123,7 @@ def render(targets, histogram_period):
 
     # position of the graph
     graph_x = 70
-    graph_y = 40
+    graph_y = 30 * len(targets) + 10
 
     # im will hold the output image
     im = Image.new("RGB", (graph_x + width + 20, graph_y + height + 100), "white")
@@ -143,17 +141,21 @@ def render(targets, histogram_period):
         lgfont = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 16)
 
     # Headline
-    if target.name == target.addr:
-        headline_text = u"%s → %s" % (socket.gethostname(), target.name)
+    if len(targets) == 1:
+        targets_with_colors = zip(targets, (0x000000, ))
     else:
-        headline_text = u"%s → %s (%s)" % (socket.gethostname(), target.name, target.addr)
+        targets_with_colors = zip(targets, (0x0000FF, 0x00FF00, 0xFF0000))
 
-    headline_width, headline_height = draw.textsize(headline_text, font=lgfont)
-    draw.text(
-        ((graph_x + width + 20 - headline_width) // 2,
-         (graph_y - headline_height) // 2 - 1),
-        headline_text, 0x000000, font=lgfont
-    )
+    for idx, (target, color) in enumerate(targets_with_colors):
+        headline_text = u"%s → %s" % (socket.gethostname(), target.label)
+        headline_width, headline_height = draw.textsize(headline_text, font=lgfont)
+        draw.text(
+            (
+                (graph_x + width + 20 - headline_width) // 2,
+                30 * idx + 11
+            ),
+            headline_text, color, font=lgfont
+        )
 
     # Y axis ticks and annotations
     for hidx in range(hmin, hmax, 5):

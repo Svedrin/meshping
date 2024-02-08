@@ -248,3 +248,9 @@ class Target:
 
     def set_error(self, error):
         self.update_meta({"state": "error", "error": error})
+
+    @property
+    def label(self):
+        if self.name == self.addr:
+            return self.name
+        return "%s (%s)" % (self.name, self.addr)
