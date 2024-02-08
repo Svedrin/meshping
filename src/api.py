@@ -186,7 +186,12 @@ def add_api_views(app, mp):
             added = []
 
             if "@" not in target:
-                for info in socket.getaddrinfo(target, 0, 0, socket.SOCK_STREAM):
+                try:
+                    addrinfo = socket.getaddrinfo(target, 0, 0, socket.SOCK_STREAM)
+                except socket.gaierror as err:
+                    return jsonify(success=False, target=target, error=str(err))
+
+                for info in addrinfo:
                     target_with_addr = "%s@%s" % (target, info[4][0])
                     mp.add_target(target_with_addr)
                     added.append(target_with_addr)

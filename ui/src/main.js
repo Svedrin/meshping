@@ -82,6 +82,11 @@ window.app = new Vue({
                     "</ul>"
                 );
                 this.update_targets();
+            } else {
+                this.show_error(
+                    `<strong>Error!</strong> Could not add target ${json.target}: ` +
+                    json.error
+                );
             }
         },
         clear_stats: async function() {
