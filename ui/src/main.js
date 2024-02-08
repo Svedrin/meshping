@@ -2,6 +2,7 @@ window.app = new Vue({
     el: '#app',
     data: {
         hostname: window.meshping_hostname,
+        error_msg: "",
         success_msg: "",
         last_update: 0,
         search: localStorage.getItem("meshping_search") || "",
@@ -99,19 +100,25 @@ window.app = new Vue({
                 vue.success_msg = "";
             }, 5000, this);
         },
+        show_error: function(msg) {
+            this.error_msg = msg;
+            setTimeout(function(vue){
+                vue.error_msg = "";
+            }, 5000, this);
+        },
         on_btn_compare: function() {
             if (!this.comparing) {
                 this.comparing = true;
-                this.success_msg = "Select targets, then press Compare again";
+                this.success_msg = "Select targets, then press compare again";
             } else {
                 var compare_targets = $("input[name=compare_target]:checked").map((_, el) => el.value).toArray();
-                this.success_msg = "";
-                this.comparing = false;
                 if (compare_targets.length == 0) {
-                    alert("Please select a few targets to compare.");
+                    this.show_error("Please select a few targets to compare.");
                 } else if (compare_targets.length > 3) {
-                    alert("We can only compare up to three targets at once.");
+                    this.show_error("We can only compare up to three targets at once.");
                 } else {
+                    this.success_msg = "";
+                    this.comparing = false;
                     window.open(
                         `/histogram/${this.hostname}/${compare_targets[0]}.png?` +
                         compare_targets.slice(1).map(el => `compare=${el}`).join('&')

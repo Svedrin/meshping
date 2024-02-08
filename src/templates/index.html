@@ -23,6 +23,8 @@
             <button type="button" class="btn"
               v-bind:class="{ 'btn-light': !comparing, 'btn-primary': comparing }"
               v-on:click="on_btn_compare">Compare</button>
+            <button type="button" class="btn btn-light" v-if="comparing"
+              v-on:click="comparing=false; success_msg=''">Cancel</button>
           </div>
           <div class="input-group">
             <div class="input-group-prepend">
@@ -31,7 +33,11 @@
             <input type="text" v-model="search" id="inpsearch" class="form-control" placeholder="Name or IP" aria-label="Name or IP" aria-describedby="btnGroupSearch">
           </div>
         </div>
-        <div class="alert alert-success" v-show="success_msg !== ''">
+        <div class="alert alert-danger" v-show="error_msg !== ''">
+          <a href="#" class="close" aria-label="close" v-on:click="error_msg = ''">&times;</a>
+          <span v-html="error_msg"></span>
+        </div>
+        <div class="alert alert-success" v-show="error_msg === '' &amp;&amp; success_msg !== ''">
           <a href="#" class="close" aria-label="close" v-on:click="success_msg = ''">&times;</a>
           <span v-html="success_msg"></span>
         </div>
