@@ -47,6 +47,7 @@ fi
 
 docker run --rm -it --net=host \
     -e MESHPING_DEV=true \
+    -e TZ=${TZ:-Europe/Berlin} \
     -v /tmp/statistico:/tmp/statistico \
     -v $PWD/db:/opt/meshping/db \
     -v $PWD/src:/opt/meshping/src \
