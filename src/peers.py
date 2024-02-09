@@ -42,7 +42,7 @@ async def run_peers(mp):
             for peer in peers:
                 try:
                     await client.post(
-                        "http://%s/peer" % peer,
+                        f"http://{peer}/peer",
                         headers={
                             "Content-Type": "application/json"
                         },

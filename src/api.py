@@ -104,9 +104,11 @@ def add_api_views(app, mp):
         for target in request_json["targets"]:
             if not isinstance(target, dict):
                 return "targets must be dicts", 400
-            if  "name" not in target  or not target["name"].strip() or \
-                "addr" not in target  or not target["addr"].strip() or \
-                "local" not in target or not isinstance(target["local"], bool):
+            if (
+                not target.get("name", "").strip() or
+                not target.get("addr", "").strip() or
+                not isinstance(target.get("local"), bool)
+            ):
                 return "required field missing in target", 400
 
             target["name"] = target["name"].strip()
@@ -177,7 +179,7 @@ def add_api_views(app, mp):
 
             return jsonify(success=True, targets=targets)
 
-        elif request.method == "POST":
+        if request.method == "POST":
             request_json = await request.get_json()
             if "target" not in request_json:
                 return "missing target", 400
@@ -201,6 +203,8 @@ def add_api_views(app, mp):
 
             return jsonify(success=True, targets=added)
 
+        abort(400)
+
     @app.route("/api/targets/<target>", methods=["PATCH", "PUT", "DELETE"])
     async def edit_target(target):
         if request.method == "DELETE":
@@ -222,7 +226,7 @@ def add_api_views(app, mp):
                 targets.append(mp.get_target(arg_target))
             except LookupError:
                 print("lookuperror")
-                abort(404, description=("Target %s not found" % arg_target))
+                abort(404, description=f"Target {arg_target} not found")
 
         if len(targets) > 3:
             # an RGB image only has three channels

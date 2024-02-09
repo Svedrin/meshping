@@ -28,8 +28,7 @@ FAC_24h = math.exp(-INTERVAL / (24 * 60 * 60.))
 def exp_avg(current_avg, add_value, factor):
     if current_avg is None:
         return add_value
-    else:
-        return (current_avg * factor) + (add_value * (1 - factor))
+    return (current_avg * factor) + (add_value * (1 - factor))
 
 
 class MeshPing:
@@ -168,10 +167,10 @@ def build_app():
 
     for key in os.environ:
         if key.startswith("MESHPING_") and key not in known_env_vars:
-            print("env var %s is unknown" % key, file=sys.stderr)
+            print(f"env var {key} is unknown", file=sys.stderr)
             sys.exit(1)
         if key.startswith("MESHPING_") and key in deprecated_env_vars:
-            print("env var %s is deprecated, ignored" % key, file=sys.stderr)
+            print(f"env var {key} is deprecated, ignored", file=sys.stderr)
 
     app = QuartTrio(__name__, static_url_path="")
 

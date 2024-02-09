@@ -136,7 +136,7 @@ class Database:
     def get(self, addr):
         for row in self.conn.execute("SELECT id, addr, name FROM targets WHERE addr = ?", (addr, )):
             return Target(*row)
-        raise LookupError("Target does not exist: %s" % addr)
+        raise LookupError(f"Target does not exist: {addr}")
 
     def all(self):
         for row in self.conn.execute('SELECT id, addr, name FROM targets'):
@@ -168,7 +168,7 @@ def open_database():
     try:
         return Database(db_path)
     except OperationalError as err:
-        print("Could not open database %s: %s" % (db_path, err), file=sys.stderr)
+        print(f"Could not open database {db_path}: {err}", file=sys.stderr)
         sys.exit(1)
 
 
@@ -239,7 +239,7 @@ class Target:
 
     def set_state(self, state):
         if state not in ("up", "down", "unknown"):
-            raise ValueError('state must be one of ("up", "down", "unknown"), not %s' % state)
+            raise ValueError(f'state must be one of ("up", "down", "unknown"), found {state}')
         self.update_meta({"state": str(state)})
 
     @property
@@ -253,4 +253,4 @@ class Target:
     def label(self):
         if self.name == self.addr:
             return self.name
-        return "%s (%s)" % (self.name, self.addr)
+        return f"{self.name} ({self.addr})"
