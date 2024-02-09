@@ -146,8 +146,8 @@ def render(targets, histogram_period):
         targets_with_colors = zip(targets, (0x0000FF, 0x00FF00, 0xFF0000))
 
     for idx, (target, color) in enumerate(targets_with_colors):
-        headline_text = "%s → %s" % (socket.gethostname(), target.label)
-        headline_width, _headline_height = draw.textsize(headline_text, font=lgfont)
+        headline_text  = "%s → %s" % (socket.gethostname(), target.label)
+        headline_width = lgfont.getlength(headline_text)
         draw.text(
             (
                 (graph_x + width + 20 - headline_width) // 2,
