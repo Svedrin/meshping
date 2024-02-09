@@ -40,15 +40,12 @@ def render_target(target):
     hmin = histograms_df.columns.min() // 10 * 10
     hmax = histograms_df.columns.max() // 10 * 10 + 11
 
-    rows = hmax - hmin + 1
-    cols = len(histograms_df)
-
     # Draw the graph in a pixels array which we then copy to an image
-    width  = cols
-    height = rows
+    height = hmax - hmin + 1
+    width  = len(histograms_df)
     pixels = np.zeros(width * height)
 
-    for col, (tstamp, histogram) in enumerate(histograms_df.iterrows()):
+    for col, (_tstamp, histogram) in enumerate(histograms_df.iterrows()):
         for bktval, bktgrayness in histogram.items():
             #       (     y       )            (x)
             pixels[((hmax - bktval) * width) + col] = bktgrayness
@@ -73,7 +70,7 @@ def render(targets, histogram_period):
     for target in targets:
         target_graph = render_target(target)
         if target_graph is None:
-            raise ValueError("No data available for target %s" % target)
+            raise ValueError(f"No data available for target {target}")
         rendered_graphs.append(target_graph)
 
     width  = histogram_period // 3600 * sqsz
@@ -149,8 +146,8 @@ def render(targets, histogram_period):
         targets_with_colors = zip(targets, (0x0000FF, 0x00FF00, 0xFF0000))
 
     for idx, (target, color) in enumerate(targets_with_colors):
-        headline_text = u"%s → %s" % (socket.gethostname(), target.label)
-        headline_width, headline_height = draw.textsize(headline_text, font=lgfont)
+        headline_text = "%s → %s" % (socket.gethostname(), target.label)
+        headline_width, _headline_height = draw.textsize(headline_text, font=lgfont)
         draw.text(
             (
                 (graph_x + width + 20 - headline_width) // 2,
@@ -166,7 +163,7 @@ def render(targets, histogram_period):
         draw.line((graph_x - 2, offset_y, graph_x + 2, offset_y), fill=0xAAAAAA)
 
         ping = 2 ** (hidx / 10.)
-        label = "%.2f" % ping
+        label = f"{ping:.2f}"
         draw.text((graph_x - len(label) * 6 - 10, offset_y - 5), label, 0x333333, font=font)
 
     now = (
