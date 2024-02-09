@@ -16,8 +16,7 @@ steps:
     MESHPING_PEERING_INTERVAL: 10
     MESHPING_PEERS: "pylint-and-test:31337"
   commands:
-  - apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash dumb-init py3-netifaces py3-pillow ttf-dejavu py3-pandas
-  - pip3 install --break-system-packages Cython
+  - apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash dumb-init py3-netifaces py3-pillow ttf-dejavu py3-pandas cython
   - pip3 install --break-system-packages -r requirements.txt
   - cd /drone/src/oping-py && python3 setup.py build && python3 setup.py install
   - cd /drone/src && dumb-init -- python3 src/meshping.py
@@ -235,6 +234,6 @@ depends_on:
 
 ---
 kind: signature
-hmac: 412d12982ba50aa2b53dd65a5b5a422d7c3c29dab2c5c84ba2b437425e4d0c31
+hmac: f9027700855ee1cc0016e0727986424216ef4a3bb701624a71e47e9c279a51b6
 
 ...
