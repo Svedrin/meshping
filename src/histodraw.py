@@ -143,9 +143,9 @@ def render(targets, histogram_period):
         lgfont = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 16)
 
     # Headline
-    if len(targets) == 1:
+    if len(targets) == 1:                  # just black for a single graph
         targets_with_colors = zip(targets, (0x000000, ))
-    else:
+    else:                                  # red, green, blue for multiple graphs
         targets_with_colors = zip(targets, (0x0000FF, 0x00FF00, 0xFF0000))
 
     for idx, (target, color) in enumerate(targets_with_colors):
