@@ -175,9 +175,12 @@ def render(targets, histogram_period):
             .replace(second=0, minute=0)
     )
 
-    # X axis ticks - one every three hours
-    for col in range((now.hour % 3), width // sqsz, 3):
+    # X axis ticks - one every two hours
+    for col in range(0, width // sqsz):
         # The histogram starts (width // sqsz) hours ago, and we're now at hour indicated by col
+        tstamp = now + timedelta(hours=(-(width // sqsz) + col + 1))
+        if tstamp.hour % 2 != 0:
+            continue
         offset_x = graph_x + col * sqsz
         draw.line((offset_x, height + graph_y - 2, offset_x, height + graph_y + 2), fill=0xAAAAAA)
 
@@ -187,12 +190,14 @@ def render(targets, histogram_period):
     tmpim = Image.new("RGB", (80, width + 20), "white")
     tmpdraw = ImageDraw.Draw(tmpim)
 
-    # Draw one annotation every 6 hours
-    for col in range((now.hour % 6), width // sqsz, 6):
+    # Draw one annotation every four hours
+    for col in range(0, width // sqsz):
         # The histogram starts (width // sqsz) hours ago, and we're now at hour indicated by col
         tstamp = now + timedelta(hours=(-(width // sqsz) + col + 1))
+        if tstamp.hour % 4 != 0:
+            continue
         offset_x = col * sqsz
-        if tstamp.hour < 6:
+        if tstamp.hour == 0:
             tmpdraw.text(( 0, offset_x + 4), tstamp.strftime("%m-%d"), 0x333333, font=font)
         tmpdraw.text(    (36, offset_x + 4), tstamp.strftime("%H:%M"), 0x333333, font=font)
 
