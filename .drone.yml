@@ -8,7 +8,7 @@ platform:
 
 steps:
 - name: meshping
-  image: alpine:3.14
+  image: alpine:3.19
   environment:
     MESHPING_DATABASE_PATH: /tmp
     MESHPING_PING_TIMEOUT:  1
@@ -17,19 +17,19 @@ steps:
     MESHPING_PEERS: "pylint-and-test:31337"
   commands:
   - apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash dumb-init py3-netifaces py3-pillow ttf-dejavu py3-pandas
-  - pip3 install Cython
-  - pip3 install -r requirements.txt
+  - pip3 install --break-system-packages Cython
+  - pip3 install --break-system-packages -r requirements.txt
   - cd /drone/src/oping-py && python3 setup.py build && python3 setup.py install
   - cd /drone/src && dumb-init -- python3 src/meshping.py
   detach: true
 
 - name: pylint-and-test
-  image: alpine:3.14
+  image: alpine:3.19
   commands:
   - apk add --no-cache python3 py3-pip py3-netifaces py3-pillow bash py3-pandas
-  - pip3 install pylint
-  - pip3 install -r requirements.txt
-  - pip3 install -r features/requirements.txt
+  - pip3 install --break-system-packages pylint
+  - pip3 install --break-system-packages -r requirements.txt
+  - pip3 install --break-system-packages -r features/requirements.txt
   - bash -c "while ! nc -z meshping 9922; do sleep 1; done"
   - pylint --fail-under 9 src/
   - python3 -m behave
@@ -44,14 +44,14 @@ platform:
 
 steps:
 - name: set "latest" tag
-  image: alpine:3.14
+  image: alpine:3.19
   commands:
   - echo -n "latest-amd64" > .tags
   when:
     branch: master
 
 - name: set "staging" tag
-  image: alpine:3.14
+  image: alpine:3.19
   commands:
   - echo -n "staging-amd64" > .tags
   when:
@@ -87,14 +87,14 @@ platform:
 
 steps:
 - name: set "latest" tag
-  image: alpine:3.14
+  image: alpine:3.19
   commands:
   - echo -n "latest-armv7l" > .tags
   when:
     branch: master
 
 - name: set "staging" tag
-  image: alpine:3.14
+  image: alpine:3.19
   commands:
   - echo -n "staging-armv7l" > .tags
   when:
@@ -161,7 +161,7 @@ platform:
 
 steps:
 - name: set version tag
-  image: alpine:3.14
+  image: alpine:3.19
   commands:
   - echo -n "${DRONE_TAG}-amd64" > .tags
 
@@ -190,7 +190,7 @@ platform:
 
 steps:
 - name: set version tag
-  image: alpine:3.14
+  image: alpine:3.19
   commands:
   - echo -n "${DRONE_TAG}-armv7l" > .tags
 
