@@ -74,8 +74,8 @@ def render(targets, histogram_period):
         rendered_graphs.append(target_graph)
 
     width  = histogram_period // 3600 * sqsz
-    hmin   = min([ graph.hmin   for graph in rendered_graphs ])
-    hmax   = max([ graph.hmax   for graph in rendered_graphs ])
+    hmin   = min(graph.hmin for graph in rendered_graphs)
+    hmax   = max(graph.hmax for graph in rendered_graphs)
     height = (hmax - hmin) * sqsz
 
     if len(rendered_graphs) == 1:
@@ -146,8 +146,8 @@ def render(targets, histogram_period):
         targets_with_colors = zip(targets, (0x0000FF, 0x00FF00, 0xFF0000))
 
     for idx, (target, color) in enumerate(targets_with_colors):
-        headline_text = "%s → %s" % (socket.gethostname(), target.label)
-        headline_width, _headline_height = draw.textsize(headline_text, font=lgfont)
+        headline_text  = "%s → %s" % (socket.gethostname(), target.label)
+        headline_width = lgfont.getlength(headline_text)
         draw.text(
             (
                 (graph_x + width + 20 - headline_width) // 2,
@@ -158,7 +158,7 @@ def render(targets, histogram_period):
 
     # Y axis ticks and annotations
     for hidx in range(hmin, hmax, 5):
-        bottomrow = (hidx - hmin)
+        bottomrow = hidx - hmin
         offset_y = height + graph_y - bottomrow * sqsz - 1
         draw.line((graph_x - 2, offset_y, graph_x + 2, offset_y), fill=0xAAAAAA)
 

@@ -1,9 +1,8 @@
 # Build oping-py
 
-FROM alpine:3.14
+FROM alpine:3.19
 
-RUN apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash nodejs npm
-RUN pip3 install Cython
+RUN apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash nodejs npm cython
 
 COPY ui/package*.json /opt/meshping/ui/
 RUN cd /opt/meshping/ui && npm install
@@ -14,12 +13,12 @@ RUN cd /opt/meshping/oping-py && python3 setup.py build && python3 setup.py inst
 
 # Build meshping
 
-FROM alpine:3.14
+FROM alpine:3.19
 
 RUN apk add --no-cache python3 py3-pip liboping bash py3-netifaces py3-pillow dumb-init ttf-dejavu py3-pandas
 
 COPY requirements.txt /opt/meshping/requirements.txt
-RUN pip3 install --no-cache-dir -r /opt/meshping/requirements.txt
+RUN pip3 install --break-system-packages --no-cache-dir -r /opt/meshping/requirements.txt
 
 WORKDIR /opt/meshping
 COPY --from=0 /opt/meshping/ui/node_modules/jquery/LICENSE.txt                              /opt/meshping/ui/node_modules/jquery/
@@ -39,7 +38,7 @@ COPY --from=0 /opt/meshping/ui/node_modules/vue/LICENSE                         
 COPY --from=0 /opt/meshping/ui/node_modules/vue/dist/vue.min.js                             /opt/meshping/ui/node_modules/vue/dist/
 COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/LICENSE                            /opt/meshping/ui/node_modules/vue-resource/
 COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/dist/vue-resource.min.js           /opt/meshping/ui/node_modules/vue-resource/dist/
-COPY --from=0 /usr/lib/python3.9/site-packages/oping.*.so /usr/lib/python3.9/site-packages
+COPY --from=0 /usr/lib/python3.11/site-packages/*/oping.*.so /usr/lib/python3.11/site-packages
 COPY src    /opt/meshping/src
 COPY ui/src /opt/meshping/ui/src
 
