@@ -171,7 +171,7 @@ def render(targets, histogram_period):
         # Beginning of the current hour...
         datetime
             .now(pytz.timezone(os.environ.get("TZ", "Etc/UTC")))
-            .replace(minute=0, second=0)
+            .replace(minute=0, second=0, microsecond=0)
         # Plus the current hour which we're also drawing on screen
         + timedelta(hours=1)
     )
