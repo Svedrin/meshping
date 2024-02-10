@@ -6,6 +6,7 @@ import socket
 import os
 import pytz
 import numpy as np
+import pandas
 
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -96,10 +97,11 @@ def render(targets, histogram_period):
         # the graph into it.
         resized_graphs = []
         for graph, color in zip(rendered_graphs, ("red", "green", "blue")):
+            dtmax = (tmax - graph.tmax) // pandas.Timedelta(hours=1)
             if graph.width != width or graph.height != height:
                 new_graph = Image.new("L", (width, height), "black")
                 new_graph.paste(graph,
-                    (width  - graph.width,
+                    (width  - graph.width - sqsz * dtmax,
                      (hmax  - graph.hmax) * sqsz)
                 )
             else:
