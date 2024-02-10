@@ -61,6 +61,8 @@ def render_target(target):
     graph = graph.resize((width, height), Image.NEAREST)
     graph.hmin = hmin
     graph.hmax = hmax
+    graph.tmin = histograms_df.index.min()
+    graph.tmax = histograms_df.index.max()
     return graph
 
 
@@ -76,6 +78,7 @@ def render(targets, histogram_period):
     width  = histogram_period // 3600 * sqsz
     hmin   = min(graph.hmin for graph in rendered_graphs)
     hmax   = max(graph.hmax for graph in rendered_graphs)
+    tmax   = max(graph.tmax for graph in rendered_graphs)
     height = (hmax - hmin) * sqsz
 
     if len(rendered_graphs) == 1:
@@ -166,12 +169,12 @@ def render(targets, histogram_period):
         label = f"{ping:.2f}"
         draw.text((graph_x - len(label) * 6 - 10, offset_y - 5), label, 0x333333, font=font)
 
-    # Calculate the times at which the histogram begins and ends
+    # Calculate the times at which the histogram begins and ends.
     t_hist_end = (
-        # Beginning of the current hour...
-        datetime
-            .now(pytz.timezone(os.environ.get("TZ", "Etc/UTC")))
-            .replace(minute=0, second=0, microsecond=0)
+        # Latest hour for which we have data...
+        tmax.tz_localize("Etc/UTC")
+            .tz_convert(os.environ.get("TZ", "Etc/UTC"))
+            .to_pydatetime()
         # Plus the current hour which we're also drawing on screen
         + timedelta(hours=1)
     )
