@@ -166,18 +166,22 @@ def render(targets, histogram_period):
         label = f"{ping:.2f}"
         draw.text((graph_x - len(label) * 6 - 10, offset_y - 5), label, 0x333333, font=font)
 
-    now = (
+    # Calculate the times at which the histogram begins and ends
+    t_hist_end = (
+        # Beginning of the current hour...
         datetime
             .now(pytz.timezone(os.environ.get("TZ", "Etc/UTC")))
-            .replace(second=0, minute=0)
+            .replace(minute=0, second=0)
+        # Plus the current hour which we're also drawing on screen
+        + timedelta(hours=1)
     )
 
-    histbegin = now - timedelta(hours=(histogram_period // 3600))
+    t_hist_begin = t_hist_end - timedelta(hours=(histogram_period // 3600))
 
     # X axis ticks - one every two hours
     for col in range(1, width // sqsz):
         # We're now at hour indicated by col
-        if (histbegin + timedelta(hours=col)).hour % 2 != 0:
+        if (t_hist_begin + timedelta(hours=col)).hour % 2 != 0:
             continue
         offset_x = graph_x + col * sqsz
         draw.line((offset_x, height + graph_y - 2, offset_x, height + graph_y + 2), fill=0xAAAAAA)
@@ -191,7 +195,7 @@ def render(targets, histogram_period):
     # Draw one annotation every four hours
     for col in range(0, width // sqsz + 1):
         # We're now at hour indicated by col
-        tstamp = histbegin + timedelta(hours=col)
+        tstamp = t_hist_begin + timedelta(hours=col)
         if tstamp.hour % 4 != 0:
             continue
         offset_x = col * sqsz
