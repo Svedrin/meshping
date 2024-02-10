@@ -96,7 +96,7 @@ def render(targets, histogram_period):
         # create a new image that has the correct size and paste
         # the graph into it.
         resized_graphs = []
-        for graph, color in zip(rendered_graphs, ("red", "green", "blue")):
+        for graph in rendered_graphs:
             dtmax = (tmax - graph.tmax) // pandas.Timedelta(hours=1)
             if graph.width != width or graph.height != height:
                 new_graph = Image.new("L", (width, height), "black")
