@@ -2,7 +2,7 @@
 
 FROM alpine:3.19
 
-RUN apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash nodejs npm cython
+RUN apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash nodejs npm cython tzdata
 
 COPY ui/package*.json /opt/meshping/ui/
 RUN cd /opt/meshping/ui && npm install
