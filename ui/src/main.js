@@ -12,6 +12,7 @@ window.app = new Vue({
         add_tgt_addr: "",
         comparing: false,
         creating:  false,
+        route_target: {name: "", "traceroute": []},
     },
     methods: {
         update_targets: async function () {
@@ -92,6 +93,10 @@ window.app = new Vue({
                 );
                 setTimeout(() => $('#add_tgt_name').focus(), 50);
             }
+        },
+        show_route_for_target: function(target) {
+            this.route_target = target;
+            $('#routeModal').modal()
         },
         clear_stats: async function() {
             var response = await this.$http.delete('/api/stats');
