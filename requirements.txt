@@ -4,3 +4,4 @@ Quart==0.19.4
 httpx==0.26.0
 netifaces
 packaging
+icmplib

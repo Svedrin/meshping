@@ -5,12 +5,14 @@
 import os
 import os.path
 import math
+import socket
 import sys
 
 from uuid       import uuid4
 from time       import time
 from markupsafe import Markup
 from quart_trio import QuartTrio
+from icmplib    import traceroute
 
 import trio
 
@@ -30,6 +32,11 @@ def exp_avg(current_avg, add_value, factor):
         return add_value
     return (current_avg * factor) + (add_value * (1 - factor))
 
+def reverse_lookup(ip):
+    try:
+        return socket.gethostbyaddr(ip)[0]
+    except socket.herror:
+        return ip
 
 class MeshPing:
     def __init__(self, timeout=5, interval=30, histogram_days=3):
@@ -54,6 +61,25 @@ class MeshPing:
 
     def clear_statistics(self):
         Target.db.clear_statistics()
+
+    async def run_traceroutes(self):
+        while True:
+            next_run = time() + 900
+            for target in Target.db.all():
+                trace = await trio.to_thread.run_sync(
+                    lambda: traceroute(target.addr, fast=True, timeout=0.5, count=1)
+                )
+                target.set_traceroute([
+                    {
+                        "name":    reverse_lookup(hop.address),
+                        "address": hop.address,
+                        "max_rtt": hop.max_rtt
+                    }
+                    for hop in trace
+                ])
+
+            await trio.sleep(next_run - time())
+
 
     async def run(self):
         pingobj = PingObj()
@@ -205,6 +231,7 @@ def build_app():
     @app.before_serving
     async def _():
         app.nursery.start_soon(mp.run)
+        app.nursery.start_soon(mp.run_traceroutes)
         app.nursery.start_soon(run_peers, mp)
 
     return app

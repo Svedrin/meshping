@@ -88,8 +88,8 @@
                 {[ icons['exclamation-circle.svg'] ]}
               </span>
             </td>
-            <td>{{ target.name }}<span class="d-inline d-sm-none text-secondary"><br />{{ target.addr }}</span></td>
-            <td class="d-none d-sm-table-cell">{{ target.addr }}</td>
+            <td v-on:click="show_route_for_target(target)">{{ target.name }}<span class="d-inline d-sm-none text-secondary"><br />{{ target.addr }}</span></td>
+            <td class="d-none d-sm-table-cell" v-on:click="show_route_for_target(target)">{{ target.addr }}</td>
             <td class="text-right d-none d-lg-table-cell">{{ target.sent }}</td>
             <td class="text-right d-none d-xl-table-cell">{{ target.recv }}</td>
             <td class="text-right">{{ target.succ   | prettyFloat }}</td>
@@ -136,6 +136,36 @@
             <td colspan="2" class="d-none d-xl-table-cell">&nbsp;</td>
           </tr>
         </table>
+        <!-- Route Modal -->
+        <div class="modal fade" id="routeModal" tabindex="-1" role="dialog" aria-labelledby="routeModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="routeModalLabel">Route for {{route_target.name}}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <table class="table">
+                  <tr>
+                    <th>Hop</th>
+                    <th class="text-right">RTT</th>
+                    <th>&nbsp;</th>
+                  </tr>
+                  <tr v-for="hop in route_target.traceroute">
+                    <td>{{ hop.name }}<span class="d-inline text-secondary"><br />{{ hop.address }}</span></td>
+                    <td class="text-right">{{ hop.max_rtt }} ms</td>
+                    <td><button class="form-control" v-on:click="target_from_route_hop(hop)">&plus;</button></td>
+                  </tr>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <script type="text/javascript" src="/ui/src/main.js"></script>

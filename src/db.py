@@ -1,4 +1,5 @@
 import os
+import json
 import sqlite3
 import sys
 
@@ -241,6 +242,15 @@ class Target:
         if state not in ("up", "down", "unknown"):
             raise ValueError(f'state must be one of ("up", "down", "unknown"), found {state}')
         self.update_meta({"state": str(state)})
+
+    @property
+    def traceroute(self):
+        return json.loads(self.meta.get("traceroute", "[]"))
+
+    def set_traceroute(self, hops):
+        self.update_meta({
+            "traceroute": json.dumps(hops)
+        })
 
     @property
     def error(self):

@@ -12,6 +12,7 @@ window.app = new Vue({
         add_tgt_addr: "",
         comparing: false,
         creating:  false,
+        route_target: {name: "", "traceroute": []},
     },
     methods: {
         update_targets: async function () {
@@ -134,6 +135,15 @@ window.app = new Vue({
                     );
                 }
             }
+        },
+        show_route_for_target: function(target) {
+            this.route_target = target;
+            $('#routeModal').modal("show");
+        },
+        target_from_route_hop: function(hop) {
+            this.add_tgt_name = hop.name;
+            this.add_tgt_addr = hop.address;
+            $('#routeModal').modal("hide");
         }
     },
     created: function() {
