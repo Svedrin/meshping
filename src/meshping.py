@@ -5,6 +5,7 @@
 import os
 import os.path
 import math
+import socket
 import sys
 
 from uuid       import uuid4
@@ -31,6 +32,11 @@ def exp_avg(current_avg, add_value, factor):
         return add_value
     return (current_avg * factor) + (add_value * (1 - factor))
 
+def reverse_lookup(ip):
+    try:
+        return socket.gethostbyaddr(ip)[0]
+    except socket.herror:
+        return ip
 
 class MeshPing:
     def __init__(self, timeout=5, interval=30, histogram_days=3):
@@ -65,6 +71,7 @@ class MeshPing:
                 )
                 target.set_traceroute([
                     {
+                        "name":    reverse_lookup(hop.address),
                         "address": hop.address,
                         "max_rtt": hop.max_rtt
                     }

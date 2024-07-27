@@ -153,7 +153,7 @@
                     <th class="text-right">RTT</th>
                   </tr>
                   <tr v-for="hop in route_target.traceroute">
-                    <td>{{ hop.address }}</td>
+                    <td>{{ hop.name }}<span class="d-inline text-secondary"><br />{{ hop.address }}</span></td>
                     <td class="text-right">{{ hop.max_rtt }} ms</td>
                   </tr>
                 </table>
