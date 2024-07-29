@@ -150,12 +150,14 @@
                 <table class="table">
                   <tr>
                     <th>Hop</th>
+                    <th>MTU</th>
                     <th class="text-right">RTT</th>
                     <th>&nbsp;</th>
                   </tr>
                   <tr v-for="hop in route_target.traceroute">
                     <td>{{ hop.name }}<span class="d-inline text-secondary"><br />{{ hop.address }}</span></td>
-                    <td class="text-right">{{ hop.max_rtt }} ms</td>
+                    <td>{{ hop.mtu }}&nbsp;b</td>
+                    <td class="text-right">{{ hop.max_rtt }}&nbsp;ms</td>
                     <td><button class="form-control" v-on:click="target_from_route_hop(hop)">&plus;</button></td>
                   </tr>
                 </table>
