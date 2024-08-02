@@ -95,10 +95,10 @@ def ip_pmtud(ip, default=None):
                 print(ip, "down, done:", mtu)
                 return mtu
 
-            except ICMPSocketError as err:
+            except (ICMPSocketError, OSError) as err:
                 print(ip, mtu, err)
                 if "Errno 90" not in str(err):
-                    raise
+                    return default
 
             new_mtu = sock.get_mtu()
             if new_mtu == mtu:
