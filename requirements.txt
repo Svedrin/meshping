@@ -2,6 +2,6 @@ hypercorn==0.16.0
 Quart-Trio==0.11.1
 Quart==0.19.4
 httpx==0.26.0
+icmplib==3.0.4
 netifaces
 packaging
-icmplib
