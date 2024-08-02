@@ -46,7 +46,8 @@ class PMTUDv4Socket(ICMPv4Socket):
 class PMTUDv6Socket(ICMPv6Socket):
     def _create_socket(self, type):
         sock = super(PMTUDv6Socket, self)._create_socket(type)
-        sock.setsockopt(socket.IPPROTO_IPV6, IPV6_MTU_DISCOVER, IPV6_PMTUDISC_DO)
+        sock.setsockopt(socket.IPPROTO_IPV6, IPV6_MTU_DISCOVER,    IPV6_PMTUDISC_DO)
+        sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_DONTFRAG, 1)
         return sock
 
     def get_header_len(self):
