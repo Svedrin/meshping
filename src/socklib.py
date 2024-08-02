@@ -1,7 +1,9 @@
 import socket
 
-from icmplib.sockets import ICMPv4Socket, ICMPSocketError
-from icmplib.models  import ICMPRequest
+from icmplib.sockets    import ICMPv4Socket, ICMPv6Socket
+from icmplib.exceptions import ICMPSocketError, TimeoutExceeded
+from icmplib.models     import ICMPRequest
+from icmplib.utils      import unique_identifier
 
 # see /usr/include/linux/in.h
 IP_MTU_DISCOVER = 10
@@ -15,8 +17,7 @@ IPV6_MTU_DISCOVER = 23
 IPV6_PMTUDISC_DO  =  2
 IPV6_MTU          = 24
 IPV6_HEADER_LEN   = 40
-
-UDP_HEADER_LEN    =  8
+ICMPV6_HEADER_LEN =  8
 
 def reverse_lookup(ip):
     try:
@@ -31,6 +32,9 @@ class PMTUDv4Socket(ICMPv4Socket):
         sock.setsockopt(socket.IPPROTO_IP, IP_MTU_DISCOVER, IP_PMTUDISC_DO)
         return sock
 
+    def get_header_len(self):
+        return IP_HEADER_LEN + ICMP_HEADER_LEN
+
     def get_mtu(self):
         return self._sock.getsockopt(socket.IPPROTO_IP, IP_MTU)
 
@@ -38,57 +42,68 @@ class PMTUDv4Socket(ICMPv4Socket):
         self._sock.connect((request.destination, 0))
         return super(PMTUDv4Socket, self).send(request)
 
-def ipv4_pmtud(ip):
-    mtu = 9999
-    with PMTUDv4Socket(address=None, privileged=True) as sock:
-        for sequence in range(30):
-            request = ICMPRequest(
-                destination  = ip,
-                id           = 1337,
-                sequence     = sequence,
-                payload_size = mtu - IP_HEADER_LEN - ICMP_HEADER_LEN
-            )
-            try:
-                # deliberately send a way-too-large packet to provoke an error
-                sock.send(request)
-                sock.receive(request, 1)
-                break
-            except ICMPSocketError as err:
-                print("nay! %r" % err)
-                if "Message too long" not in err.message:
-                    raise
 
-            mtu = sock.get_mtu()
-            print("new mtu!", mtu)
-            continue
+class PMTUDv6Socket(ICMPv6Socket):
+    def _create_socket(self, type):
+        sock = super(PMTUDv6Socket, self)._create_socket(type)
+        sock.setsockopt(socket.IPPROTO_IPV6, IPV6_MTU_DISCOVER, IPV6_PMTUDISC_DO)
+        return sock
 
-    print("done:", mtu)
-    return mtu
+    def get_header_len(self):
+        return IPV6_HEADER_LEN + ICMPV6_HEADER_LEN
 
+    def get_mtu(self):
+        return self._sock.getsockopt(socket.IPPROTO_IPV6, IPV6_MTU)
 
-def ipv6_pmtud(ip):
-    s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-    s.setsockopt(socket.IPPROTO_IPV6, IPV6_MTU_DISCOVER, IPV6_PMTUDISC_DO)
-    s.connect((ip, 99))
-
-    try:
-        # deliberately send a way-too-large packet to provoke an error
-        s.send(b'#' * 9999)
-    except socket.error:
-        return s.getsockopt(socket.IPPROTO_IPV6, IPV6_MTU)
-    else:
-        raise ValueError("Path MTU not found")
+    def send(self, request):
+        self._sock.connect((request.destination, 0))
+        return super(PMTUDv6Socket, self).send(request)
 
 
 def ip_pmtud(ip, default=None):
-    # Prefer IPv6. If that doesn't work, fallback to v4.
     try:
-        return ipv6_pmtud(ip)
-    except socket.gaierror:
-        # Host not found, try ipv4
-        pass
-
-    try:
-        return ipv4_pmtud(ip)
+        addrinfo = socket.getaddrinfo(ip, 0, type=socket.SOCK_DGRAM)[0]
     except socket.gaierror:
         return default
+
+    if addrinfo[0] == socket.AF_INET6:
+        sock = PMTUDv6Socket(address=None, privileged=True)
+    else:
+        sock = PMTUDv4Socket(address=None, privileged=True)
+
+    mtu = 9999
+    with sock:
+        ping_id = unique_identifier()
+        for sequence in range(30):
+            request = ICMPRequest(
+                destination  = ip,
+                id           = ping_id,
+                sequence     = sequence,
+                payload_size = mtu - sock.get_header_len()
+            )
+            try:
+                # deliberately send a way-too-large packet to provoke an error.
+                # if the ping is successful, we found the MTU.
+                sock.send(request)
+                sock.receive(request, 1)
+                print(ip, "success, done:", mtu)
+                return mtu
+
+            except TimeoutExceeded:
+                # Target down, but no error -> MTU is probably fine.
+                print(ip, "down, done:", mtu)
+                return mtu
+
+            except ICMPSocketError as err:
+                print(ip, mtu, err)
+                if "Errno 90" not in str(err):
+                    raise
+
+            new_mtu = sock.get_mtu()
+            if new_mtu == mtu:
+                break
+            mtu = new_mtu
+            print(ip, "new mtu!", mtu)
+
+    print(ip, "done:", mtu)
+    return mtu
