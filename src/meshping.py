@@ -69,7 +69,7 @@ class MeshPing:
                         "name":    reverse_lookup(hop.address),
                         "address": hop.address,
                         "max_rtt": hop.max_rtt,
-                        "mtu":     ip_pmtud(hop.address, default=None)
+                        "pmtud":   ip_pmtud(hop.address)
                     }
                     for hop in trace
                 ])

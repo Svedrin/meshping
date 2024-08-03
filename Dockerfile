@@ -30,6 +30,7 @@ COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/LICENSE.md          
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/graph-up.svg              /opt/meshping/ui/node_modules/bootstrap-icons/icons/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/trash.svg                 /opt/meshping/ui/node_modules/bootstrap-icons/icons/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/arrow-up-right-circle.svg /opt/meshping/ui/node_modules/bootstrap-icons/icons/
+COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/arrow-clockwise.svg /opt/meshping/ui/node_modules/bootstrap-icons/icons/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/check-circle.svg          /opt/meshping/ui/node_modules/bootstrap-icons/icons/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/exclamation-circle.svg    /opt/meshping/ui/node_modules/bootstrap-icons/icons/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/question-circle.svg       /opt/meshping/ui/node_modules/bootstrap-icons/icons/

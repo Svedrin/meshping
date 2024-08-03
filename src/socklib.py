@@ -61,7 +61,7 @@ class PMTUDv6Socket(ICMPv6Socket):
         return super(PMTUDv6Socket, self).send(request)
 
 
-def ip_pmtud(ip, default=None):
+def ip_pmtud(ip):
     try:
         addrinfo = socket.getaddrinfo(ip, 0, type=socket.SOCK_DGRAM)[0]
     except socket.gaierror:
@@ -88,17 +88,17 @@ def ip_pmtud(ip, default=None):
                 sock.send(request)
                 sock.receive(request, 1)
                 print(ip, "success, done:", mtu)
-                return mtu
+                return {"state": "up", "mtu": mtu}
 
             except TimeoutExceeded:
                 # Target down, but no error -> MTU is probably fine.
                 print(ip, "down, done:", mtu)
-                return mtu
+                return {"state": "down", "mtu": mtu}
 
             except (ICMPSocketError, OSError) as err:
                 print(ip, mtu, err)
                 if "Errno 90" not in str(err):
-                    return default
+                    return {"state": "error", "error": str(err), "mtu": mtu}
 
             new_mtu = sock.get_mtu()
             if new_mtu == mtu:
@@ -107,4 +107,4 @@ def ip_pmtud(ip, default=None):
             print(ip, "new mtu!", mtu)
 
     print(ip, "done:", mtu)
-    return mtu
+    return {"state": "ttl_exceeded", "mtu": mtu}
