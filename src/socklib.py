@@ -87,16 +87,13 @@ def ip_pmtud(ip):
                 # if the ping is successful, we found the MTU.
                 sock.send(request)
                 sock.receive(request, 1)
-                print(ip, "success, done:", mtu)
                 return {"state": "up", "mtu": mtu}
 
             except TimeoutExceeded:
                 # Target down, but no error -> MTU is probably fine.
-                print(ip, "down, done:", mtu)
                 return {"state": "down", "mtu": mtu}
 
             except (ICMPSocketError, OSError) as err:
-                print(ip, mtu, err)
                 if "Errno 90" not in str(err):
                     return {"state": "error", "error": str(err), "mtu": mtu}
 
@@ -104,7 +101,5 @@ def ip_pmtud(ip):
             if new_mtu == mtu:
                 break
             mtu = new_mtu
-            print(ip, "new mtu!", mtu)
 
-    print(ip, "done:", mtu)
     return {"state": "ttl_exceeded", "mtu": mtu}
