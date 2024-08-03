@@ -62,17 +62,18 @@ class PMTUDv6Socket(ICMPv6Socket):
 
 
 def ip_pmtud(ip):
+    mtu = 9999
+
     try:
         addrinfo = socket.getaddrinfo(ip, 0, type=socket.SOCK_DGRAM)[0]
-    except socket.gaierror:
-        return default
+    except socket.gaierror as err:
+        return {"state": "error", "error": str(err), "mtu": mtu}
 
     if addrinfo[0] == socket.AF_INET6:
         sock = PMTUDv6Socket(address=None, privileged=True)
     else:
         sock = PMTUDv4Socket(address=None, privileged=True)
 
-    mtu = 9999
     with sock:
         ping_id = unique_identifier()
         for sequence in range(30):
