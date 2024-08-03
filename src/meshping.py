@@ -5,7 +5,6 @@
 import os
 import os.path
 import math
-import socket
 import sys
 
 from uuid       import uuid4
@@ -20,6 +19,7 @@ from oping import PingObj, PingError
 from api   import add_api_views
 from peers import run_peers
 from db    import Target
+from socklib import reverse_lookup, ip_pmtud
 
 INTERVAL = 30
 
@@ -32,11 +32,6 @@ def exp_avg(current_avg, add_value, factor):
         return add_value
     return (current_avg * factor) + (add_value * (1 - factor))
 
-def reverse_lookup(ip):
-    try:
-        return socket.gethostbyaddr(ip)[0]
-    except socket.herror:
-        return ip
 
 class MeshPing:
     def __init__(self, timeout=5, interval=30, histogram_days=3):
@@ -73,7 +68,8 @@ class MeshPing:
                     {
                         "name":    reverse_lookup(hop.address),
                         "address": hop.address,
-                        "max_rtt": hop.max_rtt
+                        "max_rtt": hop.max_rtt,
+                        "pmtud":   ip_pmtud(hop.address)
                     }
                     for hop in trace
                 ])
