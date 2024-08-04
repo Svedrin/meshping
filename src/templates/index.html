@@ -138,7 +138,7 @@
         </table>
         <!-- Route Modal -->
         <div class="modal fade" id="routeModal" tabindex="-1" role="dialog" aria-labelledby="routeModalLabel" aria-hidden="true">
-          <div class="modal-dialog" role="document">
+          <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title" id="routeModalLabel">Route for {{route_target.name}}</h5>
@@ -150,26 +150,25 @@
                 <table class="table">
                   <tr>
                     <th>Hop</th>
-                    <th>MTU</th>
-                    <th class="text-right">RTT</th>
-                    <th>&nbsp;</th>
+                    <th class="text-right">Info</th>
+                    <th class="d-none d-lg-table-cell">&nbsp;</th>
                   </tr>
                   <tr v-for="hop in route_target.traceroute">
-                    <td>{{ hop.name }}<span class="d-inline text-secondary"><br />{{ hop.address }}</span></td>
-                    <td>
-                      <span v-if="hop.pmtud.state == 'up'">{{ hop.pmtud.mtu }}&nbsp;b</span>
+                    <td class="overflow-hidden">{{ hop.name }}<span class="d-inline text-secondary"><br />{{ hop.address }}</span></td>
+                    <td class="text-right">
+                      {{ hop.max_rtt }}&nbsp;ms<br />
+                      <span v-if="hop.pmtud.state == 'up'">{{ hop.pmtud.mtu }}&nbsp;B</span>
                       <span v-if="hop.pmtud.state == 'down'" title="Hop does not respond to ping">
-                        {{ hop.pmtud.mtu }}&nbsp;b&nbsp;<span class="text-secondary">{[ icons['question-circle.svg'] ]}</span>
+                        {{ hop.pmtud.mtu }}&nbsp;B&nbsp;<span class="text-secondary">{[ icons['x-circle.svg'] ]}</span>
                       </span>
                       <span v-if="hop.pmtud.state == 'ttl_exceeded'" title="TTL exceeded: Maybe a routing loop somewhere?">
-                        {{ hop.pmtud.mtu }}&nbsp;b&nbsp;<span class="text-warning">{[ icons['arrow-clockwise.svg'] ]}</span>
+                        {{ hop.pmtud.mtu }}&nbsp;B&nbsp;<span class="text-warning">{[ icons['arrow-clockwise.svg'] ]}</span>
                       </span>
                       <span v-if="hop.pmtud.state == 'error'" v-bind:title="'Error: ' + hop.pmtud.error">
-                        {{ hop.pmtud.mtu }}&nbsp;b&nbsp;<span class="text-danger">{[ icons['exclamation-circle.svg'] ]}</span>
+                        {{ hop.pmtud.mtu }}&nbsp;B&nbsp;<span class="text-danger">{[ icons['exclamation-circle.svg'] ]}</span>
                       </span>
                     </td>
-                    <td class="text-right">{{ hop.max_rtt }}&nbsp;ms</td>
-                    <td><button class="form-control" v-on:click="target_from_route_hop(hop)">&plus;</button></td>
+                    <td class="d-none d-lg-table-cell"><button class="form-control" v-on:click="target_from_route_hop(hop)">&plus;</button></td>
                   </tr>
                 </table>
               </div>
