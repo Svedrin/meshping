@@ -60,19 +60,25 @@ class MeshPing:
     async def run_traceroutes(self):
         while True:
             next_run = time() + 900
+            pmtud_cache = {}
             for target in Target.db.all():
                 trace = await trio.to_thread.run_sync(
                     lambda: traceroute(target.addr, fast=True, timeout=0.5, count=1)
                 )
-                target.set_traceroute([
-                    {
+
+                trace_hops = []
+                for hop in trace:
+                    if hop.address not in pmtud_cache:
+                        pmtud_cache[hop.address] = ip_pmtud(hop.address)
+
+                    trace_hops.append({
                         "name":    reverse_lookup(hop.address),
                         "address": hop.address,
                         "max_rtt": hop.max_rtt,
-                        "pmtud":   ip_pmtud(hop.address)
-                    }
-                    for hop in trace
-                ])
+                        "pmtud":   pmtud_cache[hop.address]
+                    })
+
+                target.set_traceroute(trace_hops)
 
             await trio.sleep(next_run - time())
 
