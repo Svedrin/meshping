@@ -12,6 +12,7 @@ from time       import time
 from markupsafe import Markup
 from quart_trio import QuartTrio
 from icmplib    import traceroute
+from ipwhois    import IPWhois, IPDefinedError
 
 import trio
 
@@ -39,6 +40,7 @@ class MeshPing:
         self.timeout  = timeout
         self.interval = interval
         self.histogram_period = histogram_days * 86400
+        self.whois_cache = {}
 
     def all_targets(self):
         return Target.db.all()
@@ -80,11 +82,35 @@ class MeshPing:
                         "name":    reverse_lookup(hop.address),
                         "address": hop.address,
                         "max_rtt": hop.max_rtt,
-                        "pmtud":   pmtud_cache[hop.address]
+                        "pmtud":   pmtud_cache[hop.address],
+                        "whois":   self.whois_cache.get(hop.address, {}),
                     })
 
                 target.set_traceroute(trace_hops)
 
+            await trio.sleep(next_run - time())
+
+
+    async def run_whois(self):
+        # wait for the initial traceroute run (yes this method sucks)
+        await trio.sleep(120)
+        while True:
+            next_run = time() + 3600
+            whois_cache = {}
+            for target in Target.db.all():
+                trace_hops = target.traceroute
+                for hop in trace_hops:
+                    try:
+                        if hop["address"] not in whois_cache:
+                            whois = IPWhois(hop["address"]).lookup_rdap()
+                        whois_cache[hop["address"]] = whois
+                        hop["whois"] = whois
+                    except IPDefinedError:
+                        # RFC1918, RFC6598 or something else
+                        continue
+                target.set_traceroute(trace_hops)
+
+            self.whois_cache = whois_cache
             await trio.sleep(next_run - time())
 
 
@@ -239,6 +265,7 @@ def build_app():
     async def _():
         app.nursery.start_soon(mp.run)
         app.nursery.start_soon(mp.run_traceroutes)
+        app.nursery.start_soon(mp.run_whois)
         app.nursery.start_soon(run_peers, mp)
 
     return app
