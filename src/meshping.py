@@ -66,6 +66,16 @@ class MeshPing:
                     lambda: traceroute(target.addr, fast=True, timeout=0.5, count=1)
                 )
 
+                hopaddrs = [hop.address for hop in trace]
+
+                # no idea what O(n²) means bro (/s)
+                for idx, hopaddr in enumerate(hopaddrs):
+                    if hopaddr in hopaddrs[:idx]:
+                        target.set_route_loop(True)
+                        break
+                else:
+                    target.set_route_loop(False)
+
                 trace_hops = []
                 for hop in trace:
                     if hop.address not in pmtud_cache:

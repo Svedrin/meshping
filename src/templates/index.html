@@ -78,8 +78,11 @@
               <span v-if="target.state == 'up' &amp;&amp; target.avg15m &gt;  target.avg24h * 1.05" title="Target is up but latency is increasing" class="text-warning">
                 {[ icons['arrow-up-right-circle.svg'] ]}
               </span>
-              <span v-if="target.state == 'down'" title="Target is down" class="text-danger">
+              <span v-if="target.state == 'down' &amp;&amp; !target.route_loop" title="Target is down" class="text-danger">
                 {[ icons['x-circle.svg'] ]}
+              </span>
+              <span v-if="target.state == 'down' &amp;&amp;  target.route_loop" title="Target unreachable due to a routing loop" class="text-danger">
+                {[ icons['arrow-clockwise.svg'] ]}
               </span>
               <span v-if="target.state == 'unknown'" title="Target state is unknown" class="text-secondary">
                 {[ icons['question-circle.svg'] ]}

@@ -175,6 +175,7 @@ def add_api_views(app, mp):
                         succ=succ,
                         loss=loss,
                         traceroute=target.traceroute,
+                        route_loop=target.route_loop,
                     )
                 )
 

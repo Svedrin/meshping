@@ -253,6 +253,15 @@ class Target:
         })
 
     @property
+    def route_loop(self):
+        return self.meta.get("route_loop", "false") == "true"
+
+    def set_route_loop(self, route_loop):
+        self.update_meta({
+            "route_loop": ("true" if route_loop else "false")
+        })
+
+    @property
     def error(self):
         return self.meta.get("error")
 
