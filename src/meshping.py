@@ -67,14 +67,9 @@ class MeshPing:
                 )
 
                 hopaddrs = [hop.address for hop in trace]
-
-                # no idea what O(n²) means bro (/s)
-                for idx, hopaddr in enumerate(hopaddrs):
-                    if hopaddr in hopaddrs[:idx]:
-                        target.set_route_loop(True)
-                        break
-                else:
-                    target.set_route_loop(False)
+                target.set_route_loop(
+                    len(hopaddrs) != len(set(hopaddrs))
+                )
 
                 trace_hops = []
                 for hop in trace:
