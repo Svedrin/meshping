@@ -4,6 +4,7 @@
 
 import socket
 
+from datetime import datetime
 from io     import BytesIO
 from quart  import Response, render_template, request, jsonify, send_from_directory, send_file, abort
 
@@ -247,4 +248,11 @@ def add_api_views(app, mp):
         resp = await send_file(img_io, mimetype='image/png')
         resp.headers["content-length"] = length
         resp.headers["refresh"] = "300"
+        resp.headers["content-disposition"] = (
+            'inline; filename="meshping_%s_%s.png"' % (
+                datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
+                target
+            )
+        )
+
         return resp
