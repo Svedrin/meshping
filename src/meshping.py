@@ -102,9 +102,8 @@ class MeshPing:
                 for hop in trace_hops:
                     try:
                         if hop["address"] not in whois_cache:
-                            whois = IPWhois(hop["address"]).lookup_rdap()
-                        whois_cache[hop["address"]] = whois
-                        hop["whois"] = whois
+                            whois_cache[hop["address"]] = IPWhois(hop["address"]).lookup_rdap()
+                        hop["whois"] = whois_cache[hop["address"]]
                     except IPDefinedError:
                         # RFC1918, RFC6598 or something else
                         continue
