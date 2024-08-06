@@ -4,10 +4,13 @@ Ping daemon that pings a number of targets at once, collecting their response ti
 
 ## Features
 
+* Runs traceroute to show the hops between your monitoring node and the targets.
+* Performs [Path MTU discovery](https://en.wikipedia.org/wiki/Path_MTU_Discovery) for each hop along the route, so you can see where MTUs get smaller.
+* Detects and displays routing loops.
+* Shows [AS](https://en.wikipedia.org/wiki/Autonomous_system_(Internet)) info about the hops along the route.
 * Meshping instances can be [peered](#wide-distribution-peering) with one another and will then ping the same targets.
 * Scrapeable by [Prometheus](prometheus.io).
 * Targets can be added and removed on-the-fly, without restarting or reloading anything.
-* CLI tool to interact with the daemon.
 * IPv6 supported.
 * Docker images: https://hub.docker.com/r/svedrin/meshping
 
@@ -169,4 +172,4 @@ Building locally for development is easiest by running the `./run-dev.sh` script
 
 * First and foremost: Feel free to open an [issue](https://github.com/Svedrin/meshping/issues/new) in this repository. :)
 * If you'd like to get in touch, you can send me an [email](mailto:i.am@svedr.in).
-* I also regularly hang out at the Linux User Group in Fulda.
+* I also regularly hang out at the [Linux User Group in Fulda](https://lugfd.de/).
