@@ -154,7 +154,7 @@
                   <tr>
                     <th>Hop</th>
                     <th class="text-right">Info</th>
-                    <th class="d-none d-lg-table-cell">&nbsp;</th>
+                    <th class="d-none d-lg-table-cell" style="width: 40px">&nbsp;</th>
                   </tr>
                   <tr v-for="hop in route_target.traceroute">
                   <td class="overflow-hidden">{{ hop.name }}<span class="d-inline text-secondary"><br />{{ hop.address }}</span><span class="d-inline text-secondary" v-if="hop.whois.asn"><br /><span v-if="hop.whois.asn != 'NA'">AS {{ hop.whois.asn }}:</span> {{ hop.whois.network.name }}</span></td>
@@ -171,7 +171,7 @@
                         {{ hop.pmtud.mtu }}&nbsp;B&nbsp;<span class="text-danger">{[ icons['exclamation-circle.svg'] ]}</span>
                       </span>
                     </td>
-                    <td class="d-none d-lg-table-cell"><button class="form-control" v-on:click="target_from_route_hop(hop)">&plus;</button></td>
+                    <td class="d-none d-lg-table-cell" style="width: 40px"><button class="form-control" v-on:click="target_from_route_hop(hop)">&plus;</button></td>
                   </tr>
                 </table>
               </div>
