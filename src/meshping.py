@@ -69,8 +69,9 @@ class MeshPing:
                 )
 
                 hopaddrs = [hop.address for hop in trace]
+                hoaddrs_set = set(hopaddrs)
                 target.set_route_loop(
-                    len(hopaddrs) != len(set(hopaddrs))
+                    len(hopaddrs) != len(hoaddrs_set) and len(hoaddrs_set) > 1
                 )
 
                 trace_hops = []
