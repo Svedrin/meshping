@@ -4,6 +4,7 @@
 
 import socket
 
+from subprocess import run as run_command
 from datetime import datetime
 from io     import BytesIO
 from quart  import Response, render_template, request, jsonify, send_from_directory, send_file, abort
@@ -252,6 +253,47 @@ def add_api_views(app, mp):
             'inline; filename="meshping_%s_%s.png"' % (
                 datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
                 target
+            )
+        )
+
+        return resp
+
+    @app.route("/network.svg")
+    async def network_diagram():
+        targets    = mp.all_targets()
+        uniq_hops  = {}
+        uniq_links = set()
+
+        for target in targets:
+            prev_hop = "SELF"
+            for hop in target.traceroute:
+                uniq_hops.setdefault(hop["address"], hop)
+                uniq_links.add( (prev_hop, hop["address"]) )
+                prev_hop = hop["address"]
+
+        tpl = await render_template(
+            "network.puml",
+            hostname=socket.gethostname(),
+            targets=targets,
+            uniq_hops=uniq_hops.values(),
+            uniq_links=uniq_links
+        );
+
+
+        plantuml = run_command(["plantuml", "-tsvg", "-p"], input=tpl.encode("UTF-8"), capture_output=True)
+
+        if plantuml.stderr:
+            return Response(plantuml.stderr, mimetype="text/plain"), 500
+
+        resp = Response(
+            plantuml.stdout,
+            mimetype="image/svg+xml"
+        )
+
+        resp.headers["refresh"] = "300"
+        resp.headers["content-disposition"] = (
+            'inline; filename="meshping_%s_network.puml"' % (
+                datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             )
         )
 
