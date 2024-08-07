@@ -4,6 +4,7 @@
 
 import socket
 
+from subprocess import run as run_command
 from datetime import datetime
 from io     import BytesIO
 from quart  import Response, render_template, request, jsonify, send_from_directory, send_file, abort
@@ -252,6 +253,50 @@ def add_api_views(app, mp):
             'inline; filename="meshping_%s_%s.png"' % (
                 datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
                 target
+            )
+        )
+
+        return resp
+
+    @app.route("/network.svg")
+    async def network_diagram():
+        targets    = mp.all_targets()
+        uniq_hops  = {}
+        uniq_links = set()
+
+        for target in targets:
+            prev_hop = "SELF"
+            for hop in target.traceroute:
+                safeaddr = hop["address"].replace(":", "_").replace(".", "_")
+                uniq_hops.setdefault(hop["address"], dict(hop, safeaddr=safeaddr, target=None))
+                if hop["address"] == target.addr:
+                    uniq_hops[hop["address"]]["target"] = target
+                uniq_links.add( (prev_hop, safeaddr) )
+                prev_hop = safeaddr
+
+        tpl = await render_template(
+            "network.puml",
+            hostname   = socket.gethostname(),
+            targets    = targets,
+            uniq_hops  = uniq_hops,
+            uniq_links = sorted(uniq_links),
+            uniq_hops_sorted = [uniq_hops[hop] for hop in sorted(uniq_hops.keys())],
+        );
+
+        plantuml = run_command(["plantuml", "-tsvg", "-p"], input=tpl.encode("utf-8"), capture_output=True)
+
+        if plantuml.stderr:
+            return Response(plantuml.stderr.decode("utf-8") + "\n\n===\n\n" + tpl, mimetype="text/plain"), 500
+
+        resp = Response(
+            plantuml.stdout,
+            mimetype="image/svg+xml"
+        )
+
+        resp.headers["refresh"] = "300"
+        resp.headers["content-disposition"] = (
+            'inline; filename="meshping_%s_network.puml"' % (
+                datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             )
         )
 

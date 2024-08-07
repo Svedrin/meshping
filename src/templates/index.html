@@ -18,6 +18,7 @@
       <div id="app">
         <div class="btn-toolbar justify-content-between py-sm-3" role="toolbar" aria-label="Toolbar with button groups">
           <div class="btn-group" role="group" aria-label="Links">
+            <a type="button" class="btn btn-light d-none d-lg-inline" href="/network.svg" target="_blank">Map</a>
             <a type="button" class="btn btn-light d-none d-lg-inline" href="/metrics">Metrics</a>
             <button type="button" class="btn btn-light d-none d-lg-inline" v-on:click="clear_stats">Clear statistics</button>
             <button type="button" class="btn"
@@ -136,7 +137,9 @@
             </td>
             <td>&nbsp;</td>
             <td colspan="6" class="d-none d-lg-table-cell">&nbsp;</td>
-            <td colspan="2" class="d-none d-xl-table-cell">&nbsp;</td>
+            <td colspan="2" class="d-none d-xl-table-cell">
+              <a href="https://github.com/Svedrin/meshping" target="_blank" class="text-muted">Meshping</a>
+            </td>
           </tr>
         </table>
         <!-- Route Modal -->

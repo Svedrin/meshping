@@ -1,0 +1,16 @@
+@startuml
+
+title Network Map
+
+node "{[ hostname ]}" as SELF
+
+{% for hop in uniq_hops_sorted %}
+node "{% if hop.target %}{[ hop.target.name ]}{% else %}{[ hop.name ]}{% endif %}\n{[ hop.address ]}{% if hop.whois %}\n{[ hop.whois.network.name ]}{% endif %}{% if hop.target %}\n[[{[ url_for('histogram', node=hostname, target=hop.target.addr, _external=True)]} Histogram]]{% endif %}" as {[ hop.safeaddr ]}
+{% endfor %}
+
+{% for (lft, rgt) in uniq_links -%}
+"{[ lft ]}" -- "{[ rgt ]}"
+{% endfor -%}
+
+footer rendered with PlantUML and [[http://github.com/Svedrin/meshping Meshping]]
+@enduml
