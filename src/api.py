@@ -267,16 +267,20 @@ def add_api_views(app, mp):
         for target in targets:
             prev_hop = "SELF"
             for hop in target.traceroute:
-                uniq_hops.setdefault(hop["address"], hop)
-                uniq_links.add( (prev_hop, hop["address"]) )
-                prev_hop = hop["address"]
+                safeaddr = hop["address"].replace(":", "_").replace(".", "_")
+                uniq_hops.setdefault(hop["address"], dict(hop, safeaddr=safeaddr, target=None))
+                if hop["address"] == target.addr:
+                    uniq_hops[hop["address"]]["target"] = target
+                uniq_links.add( (prev_hop, safeaddr) )
+                prev_hop = safeaddr
 
         tpl = await render_template(
             "network.puml",
-            hostname=socket.gethostname(),
-            targets=targets,
-            uniq_hops=uniq_hops.values(),
-            uniq_links=uniq_links
+            hostname   = socket.gethostname(),
+            targets    = targets,
+            uniq_hops  = uniq_hops,
+            uniq_links = sorted(uniq_links),
+            uniq_hops_sorted = [uniq_hops[hop] for hop in sorted(uniq_hops.keys())],
         );
 
 
