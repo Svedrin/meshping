@@ -60,6 +60,12 @@ class MeshPing:
         Target.db.clear_statistics()
 
     async def run_traceroutes(self):
+        # Populate the whois cache from the existing targets in our database.
+        for target in Target.db.all():
+            for hop in target.traceroute:
+                if hop["whois"]:
+                    self.whois_cache.setdefault(hop["address"], hop["whois"])
+
         while True:
             next_run = time() + 900
             pmtud_cache = {}
