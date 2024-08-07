@@ -41,6 +41,7 @@ class MeshPing:
         self.interval = interval
         self.histogram_period = histogram_days * 86400
         self.whois_cache = {}
+        self.initial_traceroute_done = trio.Event()
 
     def all_targets(self):
         return Target.db.all()
@@ -95,12 +96,12 @@ class MeshPing:
 
                 target.set_traceroute(trace_hops)
 
+            self.initial_traceroute_done.set()
             await trio.sleep(next_run - time())
 
 
     async def run_whois(self):
-        # wait for the initial traceroute run (yes this method sucks)
-        await trio.sleep(120)
+        await self.initial_traceroute_done.wait()
         while True:
             next_run = time() + 3600
             whois_cache = {}
