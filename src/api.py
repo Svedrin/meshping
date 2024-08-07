@@ -283,11 +283,10 @@ def add_api_views(app, mp):
             uniq_hops_sorted = [uniq_hops[hop] for hop in sorted(uniq_hops.keys())],
         );
 
-
-        plantuml = run_command(["plantuml", "-tsvg", "-p"], input=tpl.encode("UTF-8"), capture_output=True)
+        plantuml = run_command(["plantuml", "-tsvg", "-p"], input=tpl.encode("utf-8"), capture_output=True)
 
         if plantuml.stderr:
-            return Response(plantuml.stderr, mimetype="text/plain"), 500
+            return Response(plantuml.stderr.decode("utf-8") + "\n\n===\n\n" + tpl, mimetype="text/plain"), 500
 
         resp = Response(
             plantuml.stdout,
