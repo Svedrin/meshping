@@ -40,8 +40,14 @@ class MeshPing:
         self.timeout  = timeout
         self.interval = interval
         self.histogram_period = histogram_days * 86400
-        self.whois_cache = {}
         self.initial_traceroute_done = trio.Event()
+
+        self.whois_cache = {}
+        # Populate the whois cache from the existing targets in our database.
+        for target in Target.db.all():
+            for hop in target.traceroute:
+                if hop["whois"]:
+                    self.whois_cache.setdefault(hop["address"], hop["whois"])
 
     def all_targets(self):
         return Target.db.all()
@@ -61,12 +67,6 @@ class MeshPing:
         Target.db.clear_statistics()
 
     async def run_traceroutes(self):
-        # Populate the whois cache from the existing targets in our database.
-        for target in Target.db.all():
-            for hop in target.traceroute:
-                if hop["whois"]:
-                    self.whois_cache.setdefault(hop["address"], hop["whois"])
-
         while True:
             next_run = time() + 900
             pmtud_cache = {}
