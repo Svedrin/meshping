@@ -12,5 +12,5 @@ node "{% if hop.target %}{[ hop.target.name ]}{% else %}{[ hop.name ]}{% endif %
 "{[ lft ]}" -- "{[ rgt ]}"
 {% endfor -%}
 
-footer rendered with PlantUML and [[http://github.com/Svedrin/meshping Meshping]]
+footer rendered on {[ now ]} by [[http://github.com/Svedrin/meshping Meshping]] using PlantUML
 @enduml

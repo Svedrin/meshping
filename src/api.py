@@ -274,9 +274,12 @@ def add_api_views(app, mp):
                 uniq_links.add( (prev_hop, safeaddr) )
                 prev_hop = safeaddr
 
+        now = datetime.now()
+
         tpl = await render_template(
             "network.puml",
             hostname   = socket.gethostname(),
+            now        = now.strftime("%Y-%m-%d %H:%M:%S"),
             targets    = targets,
             uniq_hops  = uniq_hops,
             uniq_links = sorted(uniq_links),
@@ -297,8 +300,8 @@ def add_api_views(app, mp):
         resp.headers["Cache-Control"] = "max-age=36000, public" # 10h
 
         resp.headers["content-disposition"] = (
-            'inline; filename="meshping_%s_network.puml"' % (
-                datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            'inline; filename="meshping_%s_network.svg"' % (
+                now.strftime("%Y-%m-%d_%H-%M-%S")
             )
         )
 
