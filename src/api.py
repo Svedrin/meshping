@@ -293,7 +293,9 @@ def add_api_views(app, mp):
             mimetype="image/svg+xml"
         )
 
-        resp.headers["refresh"] = "300"
+        resp.headers["refresh"]       = "43200"                 # 12h
+        resp.headers["Cache-Control"] = "max-age=36000, public" # 10h
+
         resp.headers["content-disposition"] = (
             'inline; filename="meshping_%s_network.puml"' % (
                 datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
