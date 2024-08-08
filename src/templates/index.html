@@ -18,18 +18,18 @@
       <div id="app">
         <div class="btn-toolbar justify-content-between py-sm-3" role="toolbar" aria-label="Toolbar with button groups">
           <div class="btn-group" role="group" aria-label="Links">
-            <a type="button" class="btn btn-light d-none d-lg-inline" href="/network.svg" target="_blank">Map</a>
-            <a type="button" class="btn btn-light d-none d-lg-inline" href="/metrics">Metrics</a>
-            <button type="button" class="btn btn-light d-none d-lg-inline" v-on:click="clear_stats">Clear statistics</button>
+            <a type="button" class="btn btn-light" href="/network.svg" target="_blank">{[ icons['map.svg'] ]} <span class="d-none d-md-inline">Map</span></a>
+            <a type="button" class="btn btn-light d-none d-lg-inline" href="/metrics">{[ icons['bar-chart-line.svg'] ]} Metrics</a>
+            <button type="button" class="btn btn-light d-none d-lg-inline" v-on:click="clear_stats">{[ icons['x-square.svg'] ]} Clear statistics</button>
             <button type="button" class="btn"
               v-bind:class="{ 'btn-light': !comparing, 'btn-primary': comparing }"
-              v-on:click="on_btn_compare">Compare</button>
+              v-on:click="on_btn_compare">{[ icons['card-checklist.svg'] ]} <span class="d-none d-md-inline">Compare</span></button>
             <button type="button" class="btn btn-light" v-if="comparing"
               v-on:click="comparing=false; success_msg=''">Cancel</button>
           </div>
           <div class="input-group">
             <div class="input-group-prepend">
-              <div class="input-group-text" id="btnGroupSearch">Search</div>
+              <div class="input-group-text" id="btnGroupSearch">{[ icons['search.svg'] ]} <span class="d-none d-md-inline">Search</span></div>
             </div>
             <input type="text" v-model="search" id="inpsearch" class="form-control" placeholder="Name or IP" aria-label="Name or IP" aria-describedby="btnGroupSearch">
           </div>
