@@ -4,10 +4,13 @@ Ping daemon that pings a number of targets at once, collecting their response ti
 
 ## Features
 
+* Graphs show latencies as they are, not aggregated into an average.
 * Runs traceroute to show the hops between your monitoring node and the targets.
+* Uses traced routes to draw a map of your network, rendered as an SVG.
 * Performs [Path MTU discovery](https://en.wikipedia.org/wiki/Path_MTU_Discovery) for each hop along the route, so you can see where MTUs get smaller.
 * Detects and displays routing loops.
 * Shows [AS](https://en.wikipedia.org/wiki/Autonomous_system_(Internet)) info about the hops along the route.
+* Multiple targets can be rendered in a single graph for comparison.
 * Meshping instances can be [peered](#wide-distribution-peering) with one another and will then ping the same targets.
 * Scrapeable by [Prometheus](prometheus.io).
 * Targets can be added and removed on-the-fly, without restarting or reloading anything.
@@ -17,9 +20,26 @@ Ping daemon that pings a number of targets at once, collecting their response ti
 
 # UI
 
-Here's a screenshot of the Web UI:
+Here's a screenshot of the main Web UI:
 
 ![web_ui](examples/ui.png)
+
+There's a mobile-friendly version too:
+
+![web_ui-mobile](examples/ui-mobile.png)
+
+Loop detection looks like this:
+
+![web_ui-loop-detected](examples/ui-loop-detected.png)
+
+Here's a view of the traced route, including the Path MTU up to each hop and the AS information:
+
+![web_ui-traceroute](examples/ui-traceroute.png)
+
+Last but not least, here's an example for a network map, also including AS information:
+
+![web_ui-netmap](examples/ui-netmap.png)
+
 
 # Heatmaps
 
@@ -119,34 +139,6 @@ Meshping provides a `/metrics` endpoint that is meant to be scraped by Prometheu
  * loss rate in %: `rate(meshping_lost{target="$target"}[2m]) / rate(meshping_sent[2m]) * 100`
  * quantiles: `histogram_quantile(0.95, rate(meshping_pings_bucket{target="$target"}[2m]))`
  * averages: `rate(meshping_pings_sum{target="10.5.1.2"}[2m]) / rate(meshping_pings_count[2m])`
-
-
-# Heatmaps in Grafana
-
-Grafana added [Heatmap support](https://github.com/grafana/grafana/issues/10009) in v5.1, so we now can produce graphs similar to the images above,
-that contain a [histogram over time](https://grafana.com/docs/grafana/latest/panels-visualizations/visualizations/heatmap/) that shows the pings.
-
-![ISP outage](examples/heatmap.png)
-
-## Setup
-
-To get these graphs, add a Heatmap panel to Grafana, and configure it with:
-
-* Query: `increase(meshping_pings_bucket{target=\"$target\"}[1h])`
-* Legend format: `{{ le }}`
-* Unit: `ms`
-* Min step: `1h`
-
-For a one-histogram-per-day panel, use these settings:
-
-* Query: `increase(meshping_pings_bucket{target=\"$target\"}[1d])`
-* Min step: `1d`
-
-
-Meshping is meant to look at pings over a long time range (e.g. two days or a week), so be sure not to make those time frames too short.
-Otherwise you'll lose the heatmap effect because every data point will be its own histogram.
-
-In the examples directory, there's also a [json dashboard definition](examples/grafana.json) that you can import.
 
 
 # Configuration options
