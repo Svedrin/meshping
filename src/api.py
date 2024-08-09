@@ -6,6 +6,7 @@ import socket
 
 from subprocess import run as run_command
 from datetime import datetime
+from random import randint
 from io     import BytesIO
 from quart  import Response, render_template, request, jsonify, send_from_directory, send_file, abort
 
@@ -265,14 +266,33 @@ def add_api_views(app, mp):
         uniq_links = set()
 
         for target in targets:
-            prev_hop = "SELF"
+            prev_hop  = "SELF"
+            prev_dist = 0
             for hop in target.traceroute:
-                safeaddr = hop["address"].replace(":", "_").replace(".", "_")
-                uniq_hops.setdefault(hop["address"], dict(hop, safeaddr=safeaddr, target=None))
+                hop_id = hop["address"].replace(":", "_").replace(".", "_")
+
+                # Check if we know this hop already. If we do, just skip ahead.
+                if hop_id not in uniq_hops:
+                    # Fill in the blanks for missing hops, if any
+                    while hop["distance"] > prev_dist + 1:
+                        dummy_id = str(randint(10000000, 99999999))
+                        dummy = dict(id=dummy_id, distance=(prev_dist + 1), address=None, name=None, target=None, whois=None)
+                        uniq_hops[dummy_id] = dummy
+                        uniq_links.add( (prev_hop, dummy_id) )
+                        prev_hop   = dummy_id
+                        prev_dist += 1
+
+                    # Now render the hop itself
+                    hop_id = hop["address"].replace(":", "_").replace(".", "_")
+                    uniq_hops.setdefault(hop_id, dict(hop, id=hop_id, target=None))
+                    uniq_links.add( (prev_hop, hop_id) )
+
                 if hop["address"] == target.addr:
-                    uniq_hops[hop["address"]]["target"] = target
-                uniq_links.add( (prev_hop, safeaddr) )
-                prev_hop = safeaddr
+                    uniq_hops[hop_id]["target"] = target
+
+                prev_hop  = hop_id
+                prev_dist = hop["distance"]
+
 
         now = datetime.now()
 
