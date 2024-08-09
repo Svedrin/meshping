@@ -53,6 +53,8 @@ Here's one we recently used to debug connectivity issues a customer was having i
 
 ![datacenter heatmap](examples/heatmap6.png)
 
+This was actually bad enough that RDP sessions would drop and file shares would become unavailable. Being able to clearly see the issue (and also verify the fix!) was invaluable.
+
 Here's the heatmap for a WiFi point-to-point link that spans a few kilometers:
 
 ![wifiwifi](examples/heatmap5.png)
@@ -72,7 +74,7 @@ Meshping up-to-date. It can be deployed as-is by adding a Stack through Portaine
     mkdir meshping
     cd meshping
     wget https://raw.githubusercontent.com/Svedrin/meshping/master/examples/docker-compose.yaml
-    docker-compose up --detach
+    docker compose up --detach
 
 Meshping should now be reachable at `http://<your-ip>:9922`.
 
