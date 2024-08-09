@@ -155,12 +155,14 @@
               <div class="modal-body">
                 <table class="table">
                   <tr>
+                    <th class="d-none d-lg-table-cell">&nbsp;</th>
                     <th>Hop</th>
                     <th class="text-right">Info</th>
                     <th class="d-none d-lg-table-cell" style="width: 40px">&nbsp;</th>
                   </tr>
                   <tr v-for="hop in route_target.traceroute">
-                  <td style="overflow-wrap: anywhere">{{ hop.name }}<span class="d-inline text-secondary"><br />{{ hop.address }}</span><span class="d-inline text-secondary" v-if="hop.whois.asn"><br /><span v-if="hop.whois.asn != 'NA'">AS {{ hop.whois.asn }}:</span> {{ hop.whois.network.name }}</span></td>
+                    <td class="d-none d-lg-table-cell">{{ hop.distance }}</th>
+                    <td style="overflow-wrap: anywhere">{{ hop.name }}<span class="d-inline text-secondary"><br />{{ hop.address }}</span><span class="d-inline text-secondary" v-if="hop.whois.asn"><br /><span v-if="hop.whois.asn != 'NA'">AS {{ hop.whois.asn }}:</span> {{ hop.whois.network.name }}</span></td>
                     <td class="text-right">
                       {{ hop.max_rtt }}&nbsp;ms<br />
                       <span v-if="hop.pmtud.state == 'up'">{{ hop.pmtud.mtu }}&nbsp;B</span>

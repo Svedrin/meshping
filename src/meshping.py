@@ -88,6 +88,7 @@ class MeshPing:
 
                     trace_hops.append({
                         "name":    reverse_lookup(hop.address),
+                        "distance":hop.distance,
                         "address": hop.address,
                         "max_rtt": hop.max_rtt,
                         "pmtud":   pmtud_cache[hop.address],
