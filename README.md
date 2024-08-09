@@ -47,7 +47,11 @@ Meshping can render heatmaps from the pings measured over the last few (by defau
 
 ![built-in heatmap](examples/heatmap4.png)
 
-Here you can nicely see that, while most of the pings are between 11 and 16ms, a significant number take around 22ms. This indicates that under some conditions, packets may take a different route to the recipient, or the recipient may just take longer to send a reply.
+You can nicely see that, while most of the pings are between 11 and 16ms, a significant number take around 22ms. This indicates that under some conditions, packets may take a different route to the recipient, or the recipient may just take longer to send a reply.
+
+Here's one we recently used to debug connectivity issues a customer was having in one of our datacenters. One of the firewalls had gone bonkers, occasionally delaying packets. The average ping had gone up to 7ms, which maybe would not have looked all that bad, but the histogram very clearly shows that something's wrong:
+
+![datacenter heatmap](examples/heatmap6.png)
 
 Here's the heatmap for a WiFi point-to-point link that spans a few kilometers:
 
