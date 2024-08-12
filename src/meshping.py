@@ -97,6 +97,12 @@ class MeshPing:
 
                 target.set_traceroute(trace_hops)
 
+                # Running a bunch'a traceroutes all at once might trigger our default
+                # gw's rate limiting if it receives too many packets with a ttl of 1
+                # too quickly. Let's go a bit slower so that it doesn't stop sending
+                # "ttl exceeded" replies and messing up our results.
+                await trio.sleep(2)
+
             self.initial_traceroute_done.set()
             await trio.sleep(next_run - time())
 
