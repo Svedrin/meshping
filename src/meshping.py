@@ -72,7 +72,8 @@ class MeshPing:
             pmtud_cache = {}
             for target in Target.db.all():
                 trace = await trio.to_thread.run_sync(
-                    lambda: traceroute(target.addr, fast=True, timeout=0.5, count=1)
+                    lambda tgtaddr: traceroute(tgtaddr, fast=True, timeout=0.5, count=1),
+                    target.addr
                 )
 
                 hopaddrs = [hop.address for hop in trace]
