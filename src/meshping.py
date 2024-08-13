@@ -68,7 +68,8 @@ class MeshPing:
 
     async def run_traceroutes(self):
         while True:
-            next_run = time() + 900
+            now = time()
+            next_run = now + 900
             pmtud_cache = {}
             for target in Target.db.all():
                 trace = await trio.to_thread.run_sync(
@@ -94,6 +95,7 @@ class MeshPing:
                         "max_rtt": hop.max_rtt,
                         "pmtud":   pmtud_cache[hop.address],
                         "whois":   self.whois_cache.get(hop.address, {}),
+                        "time":    now,
                     })
 
                 target.set_traceroute(trace_hops)

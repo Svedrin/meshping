@@ -287,6 +287,13 @@ def add_api_views(app, mp):
                     uniq_hops.setdefault(hop_id, dict(hop, id=hop_id, target=None))
                     uniq_links.add( (prev_hop, hop_id) )
 
+                    # make sure we show the most recent state info
+                    if (
+                        uniq_hops[hop_id]["state"] != hop["state"] and
+                        uniq_hops[hop_id]["time"]  <  hop["time"]
+                    ):
+                        uniq_hops[hop_id].update(state=hop["state"], time=hop["time"])
+
                 if hop["address"] == target.addr:
                     uniq_hops[hop_id]["target"] = target
 
