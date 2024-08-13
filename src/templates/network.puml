@@ -1,12 +1,32 @@
 @startuml
 
+<style>
+.node_up {
+    BackgroundColor MediumSeaGreen
+    FontColor White
+}
+.node_different {
+    BackgroundColor Khaki
+    FontColor Black
+}
+.node_down {
+    BackgroundColor IndianRed
+    FontColor White
+}
+</style>
+
+hide <<node_up>> stereotype
+hide <<node_different>> stereotype
+hide <<node_down>> stereotype
+
+
 title Network Map
 
 node "{[ hostname ]}" as SELF
 
 {% for hop in uniq_hops_sorted -%}
 {% if hop.address -%}
-node "{% if hop.target %}{[ hop.target.name ]}{% else %}{[ hop.name ]}{% endif %}\n{[ hop.address ]}{% if hop.whois %}\n{[ hop.whois.network.name ]}{% endif %}{% if hop.target %}\n[[{[ url_for('histogram', node=hostname, target=hop.target.addr, _external=True)]} Histogram]]{% endif %}" as {[ hop.id ]}
+node "{% if hop.target %}{[ hop.target.name ]}{% else %}{[ hop.name ]}{% endif %}\n{[ hop.address ]}{% if hop.whois %}\n{[ hop.whois.network.name ]}{% endif %}{% if hop.target %}\n[[{[ url_for('histogram', node=hostname, target=hop.target.addr, _external=True)]} Histogram]]{% endif %}" <<node_{[ hop.state ]}>> as {[ hop.id ]}
 {% else -%}
 rectangle "?" as {[ hop.id ]}
 {% endif -%}
