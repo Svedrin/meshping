@@ -258,7 +258,10 @@ class Target:
             # Check with lkgt to see which hops are still there
             result = []
             for (lkgt_hop, curr_hop) in zip_longest(lkgt, curr):
-                assert lkgt_hop is not None
+                if lkgt_hop is None:
+                    # This should not be able to happen, because we checked
+                    # len(lkgt) < len(curr) above.
+                    raise ValueError("lost known good traceroute: hop is None")
                 if curr_hop is None:
                     # hops missing from current traceroute are down
                     result.append( dict(lkgt_hop, state="down") )
