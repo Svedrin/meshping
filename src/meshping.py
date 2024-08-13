@@ -119,11 +119,9 @@ class MeshPing:
                     try:
                         if hop["address"] not in whois_cache:
                             whois_cache[hop["address"]] = IPWhois(hop["address"]).lookup_rdap()
-                        hop["whois"] = whois_cache[hop["address"]]
                     except IPDefinedError:
                         # RFC1918, RFC6598 or something else
                         continue
-                target.set_traceroute(trace_hops)
 
             self.whois_cache = whois_cache
             await trio.sleep(next_run - time())
