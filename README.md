@@ -164,6 +164,7 @@ Building locally for development is easiest by running the `./run-dev.sh` script
 # Known issues
 
 * If you're running meshping behind nginx, be sure to set `proxy_http_version 1.1;` or it'll be unbearably slow.
+* Only [scores 11/12 in the Joel Test](https://github.com/Svedrin/meshping/issues/57).
 
 
 # Who do I talk to?
