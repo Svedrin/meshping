@@ -4,14 +4,17 @@
 .node_up {
     BackgroundColor MediumSeaGreen
     FontColor White
+    HyperlinkColor White
 }
 .node_different {
     BackgroundColor Khaki
     FontColor Black
+    HyperlinkColor White
 }
 .node_down {
     BackgroundColor IndianRed
     FontColor White
+    HyperlinkColor White
 }
 </style>
 
