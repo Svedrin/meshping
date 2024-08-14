@@ -41,7 +41,7 @@ Last but not least, here's an example for a network map, also including AS infor
 
 ![web_ui-netmap](examples/ui-netmap.png)
 
-When a target stops responding, nodes in the network map are colored to show where an outage might have occurred:
+When a target stops responding, nodes in the network map are colored to show where an outage might have occurred (I faked this one for demo purposes by dropping their responses using iptables):
 
 ![web_ui-netmap](examples/ui-netmap-colored.png)
 
