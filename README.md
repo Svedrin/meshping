@@ -10,6 +10,7 @@ Pings a number of targets at once, collecting their response times in histograms
 * Performs [Path MTU discovery](https://en.wikipedia.org/wiki/Path_MTU_Discovery) for each hop along the route, so you can see where MTUs get smaller.
 * Detects and displays routing loops.
 * Shows [AS](https://en.wikipedia.org/wiki/Autonomous_system_(Internet)) info about the hops along the route.
+* Shows where exactly an outage occurs by coloring nodes in the network map red, even if those aren't targets.
 * Multiple targets can be rendered in a single graph for comparison.
 * Meshping instances can be [peered](#wide-distribution-peering) with one another and will then ping the same targets.
 * Scrapeable by [Prometheus](prometheus.io).
@@ -40,6 +41,9 @@ Last but not least, here's an example for a network map, also including AS infor
 
 ![web_ui-netmap](examples/ui-netmap.png)
 
+When a target stops responding, nodes in the network map are colored to show where an outage might have occurred:
+
+![web_ui-netmap](examples/ui-netmap-colored.png)
 
 # Heatmaps
 
