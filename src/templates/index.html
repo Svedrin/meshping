@@ -48,15 +48,15 @@
             <th>&nbsp;</th>
             <th>Target</th>
             <th class="d-none d-sm-table-cell">Address</th>
-            <th class="text-right d-none d-lg-table-cell">Sent</th>
-            <th class="text-right d-none d-xl-table-cell">Recv</th>
+            <th class="text-right d-none d-lg-table-cell text-secondary">Sent</th>
+            <th class="text-right d-none d-xl-table-cell text-secondary">Recv</th>
             <th class="text-right">Succ</th>
-            <th class="text-right d-none d-xl-table-cell">Loss</th>
-            <th class="text-right d-none d-lg-table-cell">Min</th>
+            <th class="text-right d-none d-xl-table-cell text-secondary">Loss</th>
+            <th class="text-right d-none d-lg-table-cell text-secondary">Min</th>
             <th class="text-right">Avg15m</th>
-            <th class="text-right d-none d-lg-table-cell">Avg6h</th>
-            <th class="text-right d-none d-lg-table-cell">Avg24h</th>
-            <th class="text-right d-none d-lg-table-cell">Max</th>
+            <th class="text-right d-none d-lg-table-cell text-secondary">Avg6h</th>
+            <th class="text-right d-none d-lg-table-cell text-secondary">Avg24h</th>
+            <th class="text-right d-none d-lg-table-cell text-secondary">Max</th>
             <th class="text-right">Last</th>
             <th>&nbsp;</th>
           </tr>
@@ -95,15 +95,15 @@
             </td>
             <td v-on:click="show_route_for_target(target)">{{ target.name }}<span class="d-inline d-sm-none text-secondary"><br />{{ target.addr }}</span></td>
             <td class="d-none d-sm-table-cell" v-on:click="show_route_for_target(target)">{{ target.addr }}</td>
-            <td class="text-right d-none d-lg-table-cell">{{ target.sent }}</td>
-            <td class="text-right d-none d-xl-table-cell">{{ target.recv }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.sent }}</td>
+            <td class="text-right d-none d-xl-table-cell text-secondary">{{ target.recv }}</td>
             <td class="text-right">{{ target.succ   | prettyFloat }}</td>
-            <td class="text-right d-none d-xl-table-cell">{{ target.loss   | prettyFloat }}</td>
-            <td class="text-right d-none d-lg-table-cell">{{ target.min    | prettyFloat }}</td>
+            <td class="text-right d-none d-xl-table-cell text-secondary">{{ target.loss   | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.min    | prettyFloat }}</td>
             <td class="text-right">{{ target.avg15m | prettyFloat }}</td>
-            <td class="text-right d-none d-lg-table-cell">{{ target.avg6h  | prettyFloat }}</td>
-            <td class="text-right d-none d-lg-table-cell">{{ target.avg24h | prettyFloat }}</td>
-            <td class="text-right d-none d-lg-table-cell">{{ target.max    | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.avg6h  | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.avg24h | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.max    | prettyFloat }}</td>
             <td class="text-right">{{ target.last   | prettyFloat }}</td>
             <td style="white-space: nowrap">
               <span v-if="!comparing">
