@@ -171,7 +171,7 @@ Building locally for development is easiest by running the `./run-dev.sh` script
 * Only [scores 11/12 in the Joel Test](https://github.com/Svedrin/meshping/issues/57).
 
 
-## Stargazers over time
+# Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/Svedrin/meshping.svg?variant=adaptive)](https://starchart.cc/Svedrin/meshping)
 
