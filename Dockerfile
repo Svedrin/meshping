@@ -1,6 +1,6 @@
 # Build oping-py
 
-FROM alpine:3.19
+FROM alpine:3.20
 
 RUN apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash nodejs npm cython tzdata
 
@@ -13,7 +13,7 @@ RUN cd /opt/meshping/oping-py && python3 setup.py build && python3 setup.py inst
 
 # Build meshping
 
-FROM alpine:3.19
+FROM alpine:3.20
 
 RUN apk add --no-cache python3 py3-pip liboping bash py3-netifaces py3-pillow dumb-init ttf-dejavu py3-pandas tzdata plantuml openjdk8-jre
 
@@ -32,7 +32,7 @@ COPY --from=0 /opt/meshping/ui/node_modules/vue/LICENSE                         
 COPY --from=0 /opt/meshping/ui/node_modules/vue/dist/vue.min.js                             /opt/meshping/ui/node_modules/vue/dist/
 COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/LICENSE                            /opt/meshping/ui/node_modules/vue-resource/
 COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/dist/vue-resource.min.js           /opt/meshping/ui/node_modules/vue-resource/dist/
-COPY --from=0 /usr/lib/python3.11/site-packages/*/oping.*.so /usr/lib/python3.11/site-packages
+COPY --from=0 /usr/lib/python3.12/site-packages/*/oping.*.so /usr/lib/python3.12/site-packages
 COPY src    /opt/meshping/src
 COPY ui/src /opt/meshping/ui/src
 
