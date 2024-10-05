@@ -8,7 +8,7 @@ platform:
 
 steps:
 - name: meshping
-  image: alpine:3.19
+  image: alpine:3.20
   environment:
     MESHPING_DATABASE_PATH: /tmp
     MESHPING_PING_TIMEOUT:  1
@@ -23,7 +23,7 @@ steps:
   detach: true
 
 - name: pylint-and-test
-  image: alpine:3.19
+  image: alpine:3.20
   commands:
   - apk add --no-cache python3 py3-pip py3-netifaces py3-pillow bash py3-pandas
   - pip3 install --break-system-packages pylint
@@ -43,14 +43,14 @@ platform:
 
 steps:
 - name: set "latest" tag
-  image: alpine:3.19
+  image: alpine:3.20
   commands:
   - echo -n "latest-amd64" > .tags
   when:
     branch: master
 
 - name: set "staging" tag
-  image: alpine:3.19
+  image: alpine:3.20
   commands:
   - echo -n "staging-amd64" > .tags
   when:
@@ -86,14 +86,14 @@ platform:
 
 steps:
 - name: set "latest" tag
-  image: alpine:3.19
+  image: alpine:3.20
   commands:
   - echo -n "latest-armv7l" > .tags
   when:
     branch: master
 
 - name: set "staging" tag
-  image: alpine:3.19
+  image: alpine:3.20
   commands:
   - echo -n "staging-armv7l" > .tags
   when:
@@ -160,7 +160,7 @@ platform:
 
 steps:
 - name: set version tag
-  image: alpine:3.19
+  image: alpine:3.20
   commands:
   - echo -n "${DRONE_TAG}-amd64" > .tags
 
@@ -189,7 +189,7 @@ platform:
 
 steps:
 - name: set version tag
-  image: alpine:3.19
+  image: alpine:3.20
   commands:
   - echo -n "${DRONE_TAG}-armv7l" > .tags
 
@@ -234,6 +234,6 @@ depends_on:
 
 ---
 kind: signature
-hmac: c9fca57794d867d8705ec4f1aad27b14877f13e092e8f85127132b9cc4f90e04
+hmac: fec4c321325389b797495c046e9fc3e905e56e9c96af87a9c56a23adff12764a
 
 ...
