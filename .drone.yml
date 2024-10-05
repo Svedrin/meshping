@@ -65,6 +65,31 @@ steps:
       from_secret: docker-registry-pw
     cache_from: "svedrin/meshping:latest-amd64"
 
+- name: set "latest-arm64-v8" tag
+  image: alpine:3.20
+  commands:
+  - echo -n "latest-arm64-v8" > .tags
+  when:
+    branch: master
+
+- name: set "staging-arm64-v8" tag
+  image: alpine:3.20
+  commands:
+  - echo -n "staging-amd64-v8" > .tags
+  when:
+    branch: staging
+
+- name: build docker image for arm64-v8
+  image: owncloudci/drone-docker-buildx
+  privileged: true
+  settings:
+    repo: svedrin/meshping
+    username: svedrin
+    password:
+      from_secret: docker-registry-pw
+    cache_from: "svedrin/meshping:latest-arm64-v8"
+    platforms: linux/arm64/v8
+
 trigger:
   branch:
   - master
@@ -234,6 +259,6 @@ depends_on:
 
 ---
 kind: signature
-hmac: fec4c321325389b797495c046e9fc3e905e56e9c96af87a9c56a23adff12764a
+hmac: 0d1cfe329b8738a3bd54c50c22e8d31a4ad2345d1473fc823b3e89daeadc9ca1
 
 ...

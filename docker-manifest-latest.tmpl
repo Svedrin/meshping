@@ -15,6 +15,12 @@ manifests:
       os: linux
       variant: v7
 
+  - image: svedrin/meshping:latest-arm64-v8
+    platform:
+      architecture: arm64
+      os: linux
+      variant: v8
+
 {{/equal}}
 {{#equal build.branch "staging"}}
 
@@ -32,5 +38,11 @@ manifests:
       architecture: arm
       os: linux
       variant: v7
+
+  - image: svedrin/meshping:{{build.branch}}-arm64-v8
+    platform:
+      architecture: arm64
+      os: linux
+      variant: v8
 
 {{/equal}}
