@@ -153,7 +153,7 @@ name: manifest-latest
 
 steps:
 - name: publish
-  image: plugins/manifest:1.2
+  image: plugins/manifest:1.4
   settings:
     ignore_missing: true
     spec: docker-manifest-latest.tmpl
@@ -259,6 +259,6 @@ depends_on:
 
 ---
 kind: signature
-hmac: fd018704d0adf5a5f184a964a4333de5e56bb4133bf4faa69cbdc89d72824b39
+hmac: 2f1b45aa9d0f56f75221e3e72e767ce0d8b2f32b81aac682be0adb8467e2a941
 
 ...
