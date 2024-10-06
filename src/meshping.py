@@ -6,6 +6,7 @@ import os
 import os.path
 import math
 import sys
+import logging
 
 from uuid       import uuid4
 from time       import time
@@ -124,6 +125,8 @@ class MeshPing:
                     except IPDefinedError:
                         # RFC1918, RFC6598 or something else
                         continue
+                    except Exception as err:
+                        logging.warning("Could not query whois for IP %s: %s", hop["address"], err)
 
             self.whois_cache = whois_cache
             await trio.sleep(next_run - time())
