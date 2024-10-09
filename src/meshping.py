@@ -34,6 +34,10 @@ def exp_avg(current_avg, add_value, factor):
         return add_value
     return (current_avg * factor) + (add_value * (1 - factor))
 
+async def sleep_until(when):
+    now = time()
+    if now < when:
+        await trio.sleep(when - now)
 
 class MeshPing:
     def __init__(self, timeout=5, interval=30, histogram_days=3):
@@ -108,7 +112,7 @@ class MeshPing:
                 await trio.sleep(2)
 
             self.initial_traceroute_done.set()
-            await trio.sleep(next_run - time())
+            await sleep_until(next_run)
 
 
     async def run_whois(self):
@@ -129,7 +133,7 @@ class MeshPing:
                         logging.warning("Could not query whois for IP %s: %s", hop["address"], err)
 
             self.whois_cache = whois_cache
-            await trio.sleep(next_run - time())
+            await sleep_until(next_run)
 
 
     async def run(self):
@@ -168,8 +172,7 @@ class MeshPing:
 
             # If we don't have any targets, we're done for now -- just sleep
             if not current_targets:
-                if time() < next_ping:
-                    await trio.sleep(next_ping - time())
+                await sleep_until(next_ping)
                 continue
 
             # We do have targets, so first, let's ping them
@@ -188,8 +191,7 @@ class MeshPing:
                     if hostinfo["addr"] in current_targets:
                         current_targets.remove(hostinfo["addr"])
 
-            if time() < next_ping:
-                await trio.sleep(next_ping - time())
+            await sleep_until(next_ping)
 
     def process_ping_result(self, timestamp, hostinfo):
         target = self.get_target(hostinfo["addr"])
