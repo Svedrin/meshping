@@ -129,7 +129,7 @@ class MeshPing:
             addr.version == 6 and
             addr not in IPNetwork("2000::/3")
         ):
-            return None
+            return {}
 
         # It's not, look up whois info
         try:
@@ -139,7 +139,7 @@ class MeshPing:
             )
         except IPDefinedError:
             # RFC1918, RFC6598 or something else
-            return None
+            return {}
         except Exception as err:
             logging.warning("Could not query whois for IP %s: %s", hop_address, err)
         return self.whois_cache[hop_address]
