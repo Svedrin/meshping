@@ -14,6 +14,7 @@ from markupsafe import Markup
 from quart_trio import QuartTrio
 from icmplib    import traceroute
 from ipwhois    import IPWhois, IPDefinedError
+from netaddr    import IPAddress, IPNetwork
 
 import trio
 
@@ -118,14 +119,38 @@ class MeshPing:
     async def run_whois(self):
         await self.initial_traceroute_done.wait()
         while True:
-            next_run = time() + 3600
+            now = int(time())
+            next_run = now + 3600
             whois_cache = {}
             for target in Target.db.all():
                 trace_hops = target.traceroute
                 for hop in trace_hops:
+                    # If we know this address already and it's up-to-date, skip it
+                    if (
+                        hop["address"] in whois_cache and
+                        whois_cache[hop["address"]].get("last_check", 0) + 72*3600 < now
+                    ):
+                        continue
+
+                    # Check if the IP is private or reserved
+                    addr = IPAddress(hop["address"])
+                    if (addr.version == 4 and (
+                        addr in IPNetwork("10.0.0.0/8")     or
+                        addr in IPNetwork("172.16.0.0/12")  or
+                        addr in IPNetwork("192.168.0.0/16") or
+                        addr in IPNetwork("100.64.0.0/10")
+                    )) or (
+                        addr.version == 6 and
+                        addr not in IPNetwork("2000::/3")
+                    ):
+                        continue
+
+                    # It's not, look up whois info
                     try:
-                        if hop["address"] not in whois_cache:
-                            whois_cache[hop["address"]] = IPWhois(hop["address"]).lookup_rdap()
+                        whois_cache[hop["address"]] = dict(
+                            IPWhois(hop["address"]).lookup_rdap(),
+                            last_check=now
+                        )
                     except IPDefinedError:
                         # RFC1918, RFC6598 or something else
                         continue
