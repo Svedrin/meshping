@@ -46,14 +46,8 @@ class MeshPing:
         self.timeout  = timeout
         self.interval = interval
         self.histogram_period = histogram_days * 86400
-        self.initial_traceroute_done = trio.Event()
 
         self.whois_cache = {}
-        # Populate the whois cache from the existing targets in our database.
-        for target in Target.db.all():
-            for hop in target.traceroute:
-                if hop["whois"]:
-                    self.whois_cache.setdefault(hop["address"], hop["whois"])
 
     def all_targets(self):
         return Target.db.all()
@@ -100,7 +94,7 @@ class MeshPing:
                         "address": hop.address,
                         "max_rtt": hop.max_rtt,
                         "pmtud":   pmtud_cache[hop.address],
-                        "whois":   self.whois_cache.get(hop.address, {}),
+                        "whois":   self.whois(hop.address),
                         "time":    now,
                     })
 
@@ -112,54 +106,43 @@ class MeshPing:
                 # "ttl exceeded" replies and messing up our results.
                 await trio.sleep(2)
 
-            self.initial_traceroute_done.set()
             await sleep_until(next_run)
 
 
-    async def run_whois(self):
-        await self.initial_traceroute_done.wait()
-        while True:
-            now = int(time())
-            next_run = now + 3600
-            whois_cache = {}
-            for target in Target.db.all():
-                trace_hops = target.traceroute
-                for hop in trace_hops:
-                    # If we know this address already and it's up-to-date, skip it
-                    if (
-                        hop["address"] in whois_cache and
-                        whois_cache[hop["address"]].get("last_check", 0) + 72*3600 < now
-                    ):
-                        continue
+    def whois(self, hop_address):
+        # If we know this address already and it's up-to-date, skip it
+        now = int(time())
+        if (
+            hop_address in self.whois_cache and
+            self.whois_cache[hop_address].get("last_check", 0) + 72*3600 < now
+        ):
+            return self.whois_cache[hop_address]
 
-                    # Check if the IP is private or reserved
-                    addr = IPAddress(hop["address"])
-                    if (addr.version == 4 and (
-                        addr in IPNetwork("10.0.0.0/8")     or
-                        addr in IPNetwork("172.16.0.0/12")  or
-                        addr in IPNetwork("192.168.0.0/16") or
-                        addr in IPNetwork("100.64.0.0/10")
-                    )) or (
-                        addr.version == 6 and
-                        addr not in IPNetwork("2000::/3")
-                    ):
-                        continue
+        # Check if the IP is private or reserved
+        addr = IPAddress(hop_address)
+        if (addr.version == 4 and (
+            addr in IPNetwork("10.0.0.0/8")     or
+            addr in IPNetwork("172.16.0.0/12")  or
+            addr in IPNetwork("192.168.0.0/16") or
+            addr in IPNetwork("100.64.0.0/10")
+        )) or (
+            addr.version == 6 and
+            addr not in IPNetwork("2000::/3")
+        ):
+            return None
 
-                    # It's not, look up whois info
-                    try:
-                        whois_cache[hop["address"]] = dict(
-                            IPWhois(hop["address"]).lookup_rdap(),
-                            last_check=now
-                        )
-                    except IPDefinedError:
-                        # RFC1918, RFC6598 or something else
-                        continue
-                    except Exception as err:
-                        logging.warning("Could not query whois for IP %s: %s", hop["address"], err)
-
-            self.whois_cache = whois_cache
-            await sleep_until(next_run)
-
+        # It's not, look up whois info
+        try:
+            self.whois_cache[hop_address] = dict(
+                IPWhois(hop_address).lookup_rdap(),
+                last_check=now
+            )
+        except IPDefinedError:
+            # RFC1918, RFC6598 or something else
+            return None
+        except Exception as err:
+            logging.warning("Could not query whois for IP %s: %s", hop_address, err)
+        return self.whois_cache[hop_address]
 
     async def run(self):
         pingobj = PingObj()
@@ -310,7 +293,6 @@ def build_app():
     async def _():
         app.nursery.start_soon(mp.run)
         app.nursery.start_soon(mp.run_traceroutes)
-        app.nursery.start_soon(mp.run_whois)
         app.nursery.start_soon(run_peers, mp)
 
     return app
