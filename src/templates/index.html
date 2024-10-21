@@ -17,7 +17,7 @@
     <div class="container mx-0 mx-lg-auto mt-md-3">
       <h1><span class="d-none d-sm-inline">Meshping: </span>{[ Hostname ]}</h1>
       <div id="app">
-        <div class="btn-toolbar justify-content-between py-sm-3" role="toolbar" aria-label="Toolbar with button groups">
+        <div class="btn-toolbar justify-content-between py-sm-3 d-print-none" role="toolbar" aria-label="Toolbar with button groups">
           <div class="btn-group" role="group" aria-label="Links">
             <a type="button" class="btn btn-light" href="/network.svg" target="_blank">{[ icons['map.svg'] ]} <span class="d-none d-md-inline">Map</span></a>
             <a type="button" class="btn btn-light d-none d-lg-inline" href="/metrics">{[ icons['bar-chart-line.svg'] ]} Metrics</a>
@@ -58,7 +58,7 @@
             <th class="text-right d-none d-lg-table-cell text-secondary">Avg24h</th>
             <th class="text-right d-none d-lg-table-cell text-secondary">Max</th>
             <th class="text-right">Last</th>
-            <th>&nbsp;</th>
+            <th class="d-print-none">&nbsp;</th>
           </tr>
           <tr v-if="targets_all.length == 0 &amp;&amp; last_update == 0">
             <td colspan="14"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading</td>
@@ -105,7 +105,7 @@
             <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.avg24h | prettyFloat }}</td>
             <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.max    | prettyFloat }}</td>
             <td class="text-right">{{ target.last   | prettyFloat }}</td>
-            <td style="white-space: nowrap">
+            <td style="white-space: nowrap" class="d-print-none">
               <span v-if="!comparing">
                 <a v-if="target.recv > 0" target="_blank"
                   v-bind:href="'/histogram/' + hostname + '/' + target.addr + '.png'">
@@ -122,7 +122,7 @@
               </span>
             </td>
           </tr>
-          <tr>
+          <tr class="d-print-none">
             <td class="d-none d-sm-table-cell">&nbsp;</td>
             <td colspan="2">
               <input type="text" class="form-control" v-model="add_tgt_name" placeholder="example.com"
@@ -208,5 +208,9 @@
       </div>
     </div>
     <script type="text/javascript" src="/ui/src/main.js"></script>
+    <div class="d-none d-print-block text-secondary" style="position: fixed; bottom: 0">
+      <span style="position: fixed; right: 0">github.com/Svedrin/meshping</span>
+      Meshping by Michael Ziegler
+    </div>
   </body>
 </html>
