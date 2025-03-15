@@ -139,7 +139,7 @@ pretty satisfied with the heatmaps as they are currently. Next, I'll probably lo
 [modality detection](https://www.brendangregg.com/FrequencyTrails/modes.html) and finding ways to extract patterns
 out of the data that I can then use to draw conclusions from.
 
-Much of this is derived from [Theo Schlossnagle's talk about Math in big sytems](https://www.youtube.com/watch?v=NUMBd6tlfO0), go check it out if you want to know more.
+Much of this is derived from [Theo Schlossnagle's talk called "Monitoring: The Math Behind Bad Behavior"](https://www.youtube.com/watch?v=NThyvGkU6xY), go check it out if you want to know more.
 
 
 # Prometheus
