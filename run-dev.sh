@@ -45,7 +45,7 @@ else
     COMMAND="$@"
 fi
 
-docker run --rm -it --net=host \
+docker run --rm -it --net=host --hostname meshping \
     -e MESHPING_DEV=true \
     -e TZ=${TZ:-Europe/Berlin} \
     -v /tmp/statistico:/tmp/statistico \
