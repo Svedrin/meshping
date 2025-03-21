@@ -77,6 +77,13 @@ def add_api_views(app, mp):
                         name  = target.name,
                     )
                 )
+            respdata.append(
+                'meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="+Inf"} %(count)d' % dict(
+                    addr  = target.addr,
+                    count = count,
+                    name  = target.name,
+                )
+            )
 
         return Response('\n'.join(respdata) + '\n', mimetype="text/plain")
 
