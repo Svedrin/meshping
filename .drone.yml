@@ -65,6 +65,27 @@ steps:
       from_secret: docker-registry-pw
     cache_from: "svedrin/meshping:latest-amd64"
 
+
+trigger:
+  branch:
+  - master
+  - staging
+  event:
+    exclude:
+    - pull_request
+
+depends_on:
+- tests
+
+---
+kind: pipeline
+name: linux-arm64-latest
+
+platform:
+  arch: arm
+  os: linux
+
+steps:
 - name: set "latest-arm64" tag
   image: alpine:3.20
   commands:
@@ -79,9 +100,8 @@ steps:
   when:
     branch: staging
 
-- name: build docker image for arm64
-  image: owncloudci/drone-docker-buildx
-  privileged: true
+- name: build docker image
+  image: plugins/docker
   settings:
     repo: svedrin/meshping
     username: svedrin
@@ -172,6 +192,7 @@ trigger:
 depends_on:
 - linux-amd64-latest
 - linux-armv7l-latest
+- linux-arm64-latest
 
 
 
@@ -255,6 +276,7 @@ trigger:
 depends_on:
 - linux-amd64-tagged
 - linux-armv7l-tagged
+- linux-arm64-tagged
 
 
 ---
