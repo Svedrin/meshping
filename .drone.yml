@@ -79,21 +79,21 @@ depends_on:
 
 ---
 kind: pipeline
-name: linux-arm64-latest
+name: linux-aarch64-latest
 
 platform:
-  arch: arm64
+  arch: aarch64
   os: linux
 
 steps:
-- name: set "latest-arm64" tag
+- name: set "latest-aarch64" tag
   image: alpine:3.20
   commands:
-  - echo -n "latest-arm64" > .tags
+  - echo -n "latest-aarch64" > .tags
   when:
     branch: master
 
-- name: set "staging-arm64" tag
+- name: set "staging-aarch64" tag
   image: alpine:3.20
   commands:
   - echo -n "staging-amd64" > .tags
@@ -107,8 +107,8 @@ steps:
     username: svedrin
     password:
       from_secret: docker-registry-pw
-    cache_from: "svedrin/meshping:latest-arm64"
-    platforms: linux/arm64
+    cache_from: "svedrin/meshping:latest-aarch64"
+    platforms: linux/aarch64
 
 trigger:
   branch:
@@ -192,7 +192,7 @@ trigger:
 depends_on:
 - linux-amd64-latest
 - linux-armv7l-latest
-- linux-arm64-latest
+- linux-aarch64-latest
 
 
 
@@ -276,11 +276,11 @@ trigger:
 depends_on:
 - linux-amd64-tagged
 - linux-armv7l-tagged
-- linux-arm64-tagged
+- linux-aarch64-tagged
 
 
 ---
 kind: signature
-hmac: 852147758a96c616ad3223048b6b18152eee1ef4ddf3a4ab0992fb9950314058
+hmac: fa9426322deb123bfa8d3ae9b3912ef45f19bcf949cd80c3196cee52cb3d225c
 
 ...
