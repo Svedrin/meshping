@@ -82,7 +82,7 @@ kind: pipeline
 name: linux-arm64-latest
 
 platform:
-  arch: arm
+  arch: arm64
   os: linux
 
 steps:
@@ -281,6 +281,6 @@ depends_on:
 
 ---
 kind: signature
-hmac: 2f1b45aa9d0f56f75221e3e72e767ce0d8b2f32b81aac682be0adb8467e2a941
+hmac: 852147758a96c616ad3223048b6b18152eee1ef4ddf3a4ab0992fb9950314058
 
 ...
