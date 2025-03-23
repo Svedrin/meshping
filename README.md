@@ -2,6 +2,8 @@
 
 Pings a number of targets at once, collecting their response times in histograms. Deploy at strategic points in your network to detect weak links and gain insight to your network's topology.
 
+I held a talk at the Chemnitzer Linuxtage 2025, the slides can be found here: [2025-03_Vortrag-CLT-Meshping.pdf](examples/2025-03_Vortrag-CLT-Meshping.pdf).
+
 ## Features
 
 * Graphs show latencies as they are, not aggregated into an average.
