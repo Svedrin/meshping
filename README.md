@@ -157,9 +157,19 @@ Meshping provides a `/metrics` endpoint that is meant to be scraped by Prometheu
 
 Meshping is configured through environment variables. These exist:
 
-* `MESHPING_TIMEOUT`: Ping timeout (default: 5s).
+* `MESHPING_PING_INTERVAL`: Interval between sent ICMP echo request packages for each target in seconds (default: 30)
+* `MESHPING_PING_TIMEOUT`: Ping timeout in seconds (default: 5).
 * `MESHPING_PEERS`: Comma-separated list of other Meshping instances to peer with (only `ip:port`, no URLs).
 * `MESHPING_HISTOGRAM_DAYS`: How many days of data to keep in the histograms (default: 3).
+* `MESHPING_DATABASE_PATH`: Path to the underlying SQLite database file, either relative to the main script invocation location or absolute (default: `db`)
+* `MESHPING_PEERING_INTERVAL`: Interval between peer communication attempts in seconds (default: 30)
+* `MESHPING_DEV`: Set to `true` to allow automatic UI template reloading (default: `false`)
+
+Following variables are deprecated and thus their use is discouraged:
+
+* `MESHPING_PROMETHEUS_URL`: Not configurable at the moment. See [Prometheus](#prometheus)
+* `MESHPING_PROMETHEUS_QUERY`: Not configurable at the moment. See [Prometheus](#prometheus)
+* `MESHPING_REDIS_HOST`: Not configurable at the moment
 
 
 # Dev build
