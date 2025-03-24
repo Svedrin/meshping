@@ -284,9 +284,10 @@ def build_app():
         )
 
     mp = MeshPing(
-        int(os.environ.get("MESHPING_PING_TIMEOUT",   5)),
-        int(os.environ.get("MESHPING_PING_INTERVAL", 30)),
-        int(os.environ.get("MESHPING_HISTOGRAM_DAYS", 3))
+        int(os.environ.get("MESHPING_PING_TIMEOUT",          5)),
+        int(os.environ.get("MESHPING_PING_INTERVAL",        30)),
+        int(os.environ.get("MESHPING_HISTOGRAM_DAYS",        3)),
+        int(os.environ.get("MESHPING_TRACEROUTE_INTERVAL", 900))
     )
 
     add_api_views(app, mp)
