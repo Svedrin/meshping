@@ -160,6 +160,7 @@ Meshping is configured through environment variables. These exist:
 * `MESHPING_TIMEOUT`: Ping timeout (default: 5s).
 * `MESHPING_PEERS`: Comma-separated list of other Meshping instances to peer with (only `ip:port`, no URLs).
 * `MESHPING_HISTOGRAM_DAYS`: How many days of data to keep in the histograms (default: 3).
+* `MESHPING_TRACEROUTE_INTERVAL`: Seconds between traceroute runs (default: 900)
 
 
 # Dev build
