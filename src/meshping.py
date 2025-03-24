@@ -41,11 +41,12 @@ async def sleep_until(when):
         await trio.sleep(when - now)
 
 class MeshPing:
-    def __init__(self, timeout=5, interval=30, histogram_days=3):
+    def __init__(self, timeout=5, interval=30, histogram_days=3, traceroute_interval=900):
         assert interval > timeout, "Interval must be larger than the timeout"
         self.timeout  = timeout
         self.interval = interval
         self.histogram_period = histogram_days * 86400
+        self.traceroute_interval = traceroute_interval
 
         self.whois_cache = {}
 
@@ -69,7 +70,7 @@ class MeshPing:
     async def run_traceroutes(self):
         while True:
             now = time()
-            next_run = now + 900
+            next_run = now + self.traceroute_interval
             pmtud_cache = {}
             for target in Target.db.all():
                 trace = await trio.to_thread.run_sync(
@@ -237,6 +238,7 @@ def build_app():
         "MESHPING_DATABASE_PATH",
         "MESHPING_PING_TIMEOUT",
         "MESHPING_PING_INTERVAL",
+        "MESHPING_TRACEROUTE_INTERVAL",
         "MESHPING_HISTOGRAM_DAYS",
         "MESHPING_PEERS",
         "MESHPING_PEERING_INTERVAL",
@@ -282,9 +284,10 @@ def build_app():
         )
 
     mp = MeshPing(
-        int(os.environ.get("MESHPING_PING_TIMEOUT",   5)),
-        int(os.environ.get("MESHPING_PING_INTERVAL", 30)),
-        int(os.environ.get("MESHPING_HISTOGRAM_DAYS", 3))
+        int(os.environ.get("MESHPING_PING_TIMEOUT",          5)),
+        int(os.environ.get("MESHPING_PING_INTERVAL",        30)),
+        int(os.environ.get("MESHPING_HISTOGRAM_DAYS",        3)),
+        int(os.environ.get("MESHPING_TRACEROUTE_INTERVAL", 900))
     )
 
     add_api_views(app, mp)
