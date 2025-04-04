@@ -2,7 +2,7 @@ import json
 import os
 import socket
 
-from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.template import loader
 from markupsafe import Markup
@@ -28,6 +28,36 @@ def index(request):
         "icons": icons,
     }
     return HttpResponse(template.render(context, request))
+
+
+# route /histogram/<str:node>/<str:target>.png
+def histogram(request, **kwargs):
+    return HttpResponseServerError('not implemented')
+
+
+# route /metrics
+def metrics(request):
+    return HttpResponseServerError('not implemented')
+
+
+# route /network.svg
+def network(request):
+    return HttpResponseServerError('not implemented')
+
+
+# route /peer
+def peer(request):
+    return HttpResponseServerError('not implemented')
+
+
+# route /api/resolve/<str:name>
+def resolve(request, **kwargs):
+    return HttpResponseServerError('not implemented')
+
+
+# route /api/stats
+def stats(request):
+    return HttpResponseServerError('not implemented')
 
 
 # route /api/targets
@@ -97,3 +127,8 @@ def targets(request):
             'success': True,
             'targets': added,
         })
+
+
+# route /api/targets/<str:target>
+def edit_target(request, **kwargs):
+    return HttpResponseServerError('not implemented')
