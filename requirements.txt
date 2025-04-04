@@ -7,3 +7,7 @@ ipwhois>=1.2.0
 netifaces
 netaddr
 packaging
+
+
+Django
+Jinja2

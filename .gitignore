@@ -8,3 +8,8 @@ build/
 
 ui/node_modules/
 db/
+
+meshping/ui/node_modules/
+meshping/db/
+
+venv/
