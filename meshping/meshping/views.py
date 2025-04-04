@@ -20,12 +20,16 @@ from .models import Statistics, Target
 # TODO find a better method for finding the icons to not have an absolute path here
 # TODO make local development possible when node modules are on disk (relative path)
 def index(request):
+    def read_svg_file(icons_dir, filename):
+        with open(os.path.join(icons_dir, filename), "r", encoding="utf-8") as f:
+            return Markup(f.read())
+
     template = loader.get_template("index.html.j2")
     # icons_dir = "/opt/meshping/ui/node_modules/bootstrap-icons/icons/"
     icons_dir = "../ui/node_modules/bootstrap-icons/icons/"
     icons_dir = os.path.join(os.path.dirname(__file__), icons_dir)
     icons = {
-        filename: Markup(open(os.path.join(icons_dir, filename), "r").read())
+        filename: read_svg_file(icons_dir, filename)
         for filename in os.listdir(icons_dir)
     }
     context = {
@@ -66,13 +70,17 @@ def stats(request):
 
 
 # route /api/targets
+#
+# django ensures a valid http request method, so we do not need a return value
+# pylint: disable=inconsistent-return-statements
+#
 # TODO add state to response for each target
 # TODO add error to response for each target
 # TODO add traceroute to response for each target
 # TODO add route_loop to response for each target
 # TODO do not crash when the uniqueness constraint is not met for new targets
 @require_http_methods(["GET", "POST"])
-def targets(request):
+def targets_endpoint(request):
     if request.method == "GET":
         targets = []
 
@@ -107,7 +115,7 @@ def targets(request):
 
         return JsonResponse({"targets": targets})
 
-    elif request.method == "POST":
+    if request.method == "POST":
         request_json = json.loads(request.body)
         if "target" not in request_json:
             return HttpResponseBadRequest("missing target")

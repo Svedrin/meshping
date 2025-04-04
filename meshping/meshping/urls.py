@@ -11,6 +11,6 @@ urlpatterns = [
     path("peer", views.peer, name="peer"),
     path("api/resolve/<str:name>", views.resolve, name="resolve"),
     path("api/stats", views.stats, name="stats"),
-    path("api/targets", views.targets, name="targets"),
+    path("api/targets", views.targets_endpoint, name="targets"),
     path("api/targets/<str:target>", views.edit_target, name="target"),
 ]
