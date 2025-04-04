@@ -18,12 +18,18 @@ class Histogram(models.Model):
     count = models.IntegerField(default=1)
 
 
-# TODO decide on max_length, even though ignored by sqlite
-# TODO uniqueness constraint `UNIQUE (target_id, field)`
 class Statistics(models.Model):
-    target = models.ForeignKey(Target, on_delete=models.CASCADE)
-    field = models.CharField(max_length=255)
-    value = models.FloatField()
+    target = models.OneToOneField(Target, on_delete=models.CASCADE, primary_key=True)
+    sent =  models.FloatField(default=0.0)
+    lost =  models.FloatField(default=0.0)
+    recv =  models.FloatField(default=0.0)
+    sum =  models.FloatField(default=0.0)
+    last =  models.FloatField(default=0.0)
+    max =  models.FloatField(default=0.0)
+    min =  models.FloatField(default=0.0)
+    avg15m =  models.FloatField(default=0.0)
+    avg6h =  models.FloatField(default=0.0)
+    avg24h =  models.FloatField(default=0.0)
 
 
 # TODO check if the CharField maps to SQLite TEXT + decide on max_length
