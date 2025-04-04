@@ -8,6 +8,6 @@ netifaces
 netaddr
 packaging
 
-
-Django
-Jinja2
+black~=25.1.0
+Django~=5.1.7
+Jinja2~=3.1.6
