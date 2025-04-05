@@ -82,6 +82,7 @@ def stats(request):
 # TODO add traceroute to response for each target
 # TODO add route_loop to response for each target
 # TODO do not crash when the uniqueness constraint is not met for new targets
+# TODO nasty race condition, retrieving objects can fail when target was just deleted
 @require_http_methods(["GET", "POST"])
 def targets_endpoint(request):
     if request.method == "GET":
@@ -160,5 +161,8 @@ def targets_endpoint(request):
 
 
 # route /api/targets/<str:target>
-def edit_target(request, **kwargs):
-    return HttpResponseServerError("not implemented")
+@require_http_methods(["DELETE"])
+def edit_target(request, target):
+    if request.method == "DELETE":
+        Target.objects.filter(addr=target).delete()
+        return JsonResponse({"success": True})
