@@ -2,6 +2,7 @@ import json
 import os
 import socket
 
+from django.forms.models import model_to_dict
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -48,8 +49,90 @@ def histogram(request, **kwargs):
 
 
 # route /metrics
+#
+# TODO is the metrics output valid prometheus format when no values are present?
 def metrics(request):
-    return HttpResponseServerError("not implemented")
+    respdata = [
+        "\n".join(
+            [
+                "# HELP meshping_sent Sent pings",
+                "# TYPE meshping_sent counter",
+                "# HELP meshping_recv Received pongs",
+                "# TYPE meshping_recv counter",
+                "# HELP meshping_lost Lost pings (actual counter, not just sent-recv)",
+                "# TYPE meshping_lost counter",
+                "# HELP meshping_max max ping",
+                "# TYPE meshping_max gauge",
+                "# HELP meshping_min min ping",
+                "# TYPE meshping_min gauge",
+                "# HELP meshping_pings Pings bucketed by response time",
+                "# TYPE meshping_pings histogram",
+            ]
+        )
+    ]
+
+    for target in Target.objects.all():
+        target_stats, _created = Statistics.objects.get_or_create(target=target)
+        target_info = dict(
+            model_to_dict(target_stats), addr=target.addr, name=target.name
+        )
+        respdata.append(
+            "\n".join(
+                [
+                    'meshping_sent{name="%(name)s",target="%(addr)s"} %(sent)d',
+                    'meshping_recv{name="%(name)s",target="%(addr)s"} %(recv)d',
+                    'meshping_lost{name="%(name)s",target="%(addr)s"} %(lost)d',
+                ]
+            )
+            % target_info
+        )
+
+        if target_info["recv"]:
+            respdata.append(
+                "\n".join(
+                    [
+                        'meshping_max{name="%(name)s",target="%(addr)s"} %(max).2f',
+                        'meshping_min{name="%(name)s",target="%(addr)s"} %(min).2f',
+                    ]
+                )
+                % target_info
+            )
+
+        respdata.append(
+            "\n".join(
+                [
+                    'meshping_pings_sum{name="%(name)s",target="%(addr)s"} %(sum)f',
+                    'meshping_pings_count{name="%(name)s",target="%(addr)s"} %(recv)d',
+                ]
+            )
+            % target_info
+        )
+
+        # TODO add the histogram
+    #        histogram = target.histogram.tail(1)
+    #        count = 0
+    #        for bucket in histogram.columns:
+    #            if histogram[bucket][0] == 0:
+    #                continue
+    #            nextping = 2 ** ((bucket + 1) / 10.)
+    #            count += histogram[bucket][0]
+    #            respdata.append(
+    #                'meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="%(le).2f"} %(count)d' % dict(
+    #                    addr  = target.addr,
+    #                    count = count,
+    #                    le    = nextping,
+    #                    name  = target.name,
+    #                )
+    #            )
+    #        respdata.append(
+    #            'meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="+Inf"} %(count)d' % dict(
+    #                addr  = target.addr,
+    #                count = count,
+    #                name  = target.name,
+    #            )
+    #        )
+
+    return HttpResponse("\n".join(respdata) + "\n", content_type="text/plain")
 
 
 # route /network.svg
