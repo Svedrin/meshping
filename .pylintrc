@@ -3,7 +3,7 @@ extension-pkg-whitelist = netifaces
 ignore-paths = meshping/.[^/]+/migrations
 
 [FORMAT]
-max-line-length=120
+max-line-length=88
 
 [MESSAGES CONTROL]
 disable=E1101,E1102,E1103,C0111,C0103,W0613,W0108,W0212,R0903,W0511

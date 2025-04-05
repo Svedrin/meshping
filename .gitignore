@@ -1,5 +1,6 @@
 python-ping/
 
+__pycache__
 *.pyc
 
 oping.c

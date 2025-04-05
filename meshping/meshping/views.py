@@ -12,7 +12,10 @@ from django.views.decorators.http import require_http_methods
 from django.template import loader
 from markupsafe import Markup
 
-from .models import Statistics, Target
+from .models import Statistics, Target, Meta
+
+
+# TODO remove business logic in this file
 
 
 # route /
@@ -99,17 +102,25 @@ def targets_endpoint(request):
                     / target_stats["sent"]
                     * 100
                 )
+
+            # the browser cannot deserialize JSON with Infinity, but this value is
+            # very comfortable for comparisons, we want to keep it
+            if target_stats["min"] == float("inf"):
+                target_stats["min"] = 0
+
+            target_meta, _created = Meta.objects.get_or_create(target=target)
+
             targets.append(
                 dict(
                     target_stats,
                     addr=target.addr,
                     name=target.name,
-                    #                        state=target.state,
-                    #                        error=target.error,
+                    state=target_meta.state,
+                    error=target_meta.error,
                     succ=succ,
                     loss=loss,
-                    #                        traceroute=target.traceroute,
-                    #                        route_loop=target.route_loop,
+                    traceroute=target_meta.traceroute,
+                    route_loop=target_meta.route_loop,
                 )
             )
 
