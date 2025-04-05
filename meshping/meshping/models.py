@@ -52,3 +52,4 @@ class Meta(models.Model):
     # lkgt = last known good traceroute
     lkgt = models.JSONField(max_length=2048, default=list)
     error = models.CharField(max_length=255, null=True, default=None)
+    is_foreign = models.BooleanField(default=False)

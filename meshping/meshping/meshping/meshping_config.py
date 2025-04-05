@@ -13,6 +13,10 @@ class MeshpingConfig:
         self.traceroute_packets = 1
         self.traceroute_ratelimit_interval = 2
 
+        self.peers = ""
+        self.peering_interval = 30
+        self.peering_timeout = 30
+
         self.whois_cache_validiy_h = 72
 
         self.histogram_period = 3
