@@ -53,7 +53,7 @@ class TargetState(models.TextChoices):
 class Meta(models.Model):
     target = models.OneToOneField(Target, on_delete=models.CASCADE, primary_key=True)
     state = models.CharField(
-        max_length=10, choices=TargetState.choices, default=TargetState.DOWN
+        max_length=10, choices=TargetState.choices, default=TargetState.UNKNOWN
     )
     route_loop = models.BooleanField(default=False)
     traceroute = models.JSONField(max_length=2048, default=list)

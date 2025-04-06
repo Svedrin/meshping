@@ -18,7 +18,14 @@ from django.views.decorators.http import require_http_methods
 from markupsafe import Markup
 
 from .meshping import histodraw
-from .models import Statistics, Target, Meta, target_histograms, target_traceroute
+from .models import (
+    Statistics,
+    Target,
+    TargetState,
+    Meta,
+    target_histograms,
+    target_traceroute,
+)
 
 
 # TODO remove business logic in this file
@@ -283,8 +290,14 @@ def resolve(request, name):
 
 
 # route /api/stats
+#
+# TODO possible race condition: upon deletion, the /api/targets endpoint might have
+#      incorrect assumptions due to the statistics objects disappearing
+@require_http_methods(["DELETE"])
 def stats(request):
-    return HttpResponseServerError("not implemented")
+    Statistics.objects.all().delete()
+    Meta.objects.all().update(state=TargetState.UNKNOWN)
+    return JsonResponse({"success": True})
 
 
 # route /api/targets
