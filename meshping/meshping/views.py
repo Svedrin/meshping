@@ -17,6 +17,7 @@ from django.template import loader
 from django.views.decorators.http import require_http_methods
 from markupsafe import Markup
 
+from .meshping.ifaces import Ifaces4
 from .meshping import histodraw
 from .models import (
     Statistics,
@@ -268,8 +269,67 @@ def network(request):
 
 
 # route /peer
+#
+# Allows peers to POST a json structure such as this:
+# {
+#    "targets": [
+#       { "name": "raspi",  "addr": "192.168.0.123", "local": true  },
+#       { "name": "google", "addr": "8.8.8.8",       "local": false }
+#    ]
+# }
+# The non-local targets will then be added to our target list
+# and stats will be returned for these targets (if known).
+# Local targets will only be added if they are also local to us.
+@require_http_methods(["POST"])
 def peer(request):
-    return HttpResponseServerError("not implemented")
+    request_json = json.loads(request.body)
+
+    if request_json is None:
+        return HttpResponseBadRequest("Please send content-type:application/json")
+
+    if not isinstance(request_json.get("targets"), list):
+        return HttpResponseBadRequest("need targets as a list")
+
+    ret_stats = []
+    if4 = Ifaces4()
+
+    for target in request_json["targets"]:
+        if not isinstance(target, dict):
+            return HttpResponseBadRequest("targets must be dicts")
+        if (
+            not target.get("name", "").strip()
+            or not target.get("addr", "").strip()
+            or not isinstance(target.get("local"), bool)
+        ):
+            return HttpResponseBadRequest("required field missing in target")
+
+        target["name"] = target["name"].strip()
+        target["addr"] = target["addr"].strip()
+
+        if if4.is_interface(target["addr"]):
+            # no need to ping my own interfaces, ignore
+            continue
+
+        if target["local"] and not if4.is_local(target["addr"]):
+            continue
+
+        # See if we know this target already, otherwise create it.
+        tgt, created = Target.objects.get_or_create(
+            addr=target["addr"], name=target["name"]
+        )
+        if created:
+            tgt_meta, _created = Meta.objects.get_or_create(target=tgt)
+            tgt_meta.is_foreign = True
+            tgt_meta.save()
+        target_stats, _created = Statistics.objects.get_or_create(target=tgt)
+        ret_stats.append(model_to_dict(target_stats))
+
+    return JsonResponse(
+        {
+            "success": True,
+            "targets": ret_stats,
+        }
+    )
 
 
 # route /api/resolve/<str:name>
