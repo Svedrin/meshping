@@ -1,20 +1,22 @@
 import json
 import os
 import socket
+from datetime import datetime
 
 from django.forms.models import model_to_dict
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseNotFound,
     HttpResponseServerError,
     JsonResponse,
 )
 from django.template import loader
 from django.views.decorators.http import require_http_methods
-from django_pivot.pivot import pivot
 from markupsafe import Markup
 
-from .models import Statistics, Target, Meta, Histogram
+from .meshping import histodraw
+from .models import Statistics, Target, Meta, target_histograms
 
 
 # TODO remove business logic in this file
@@ -24,6 +26,7 @@ from .models import Statistics, Target, Meta, Histogram
 # TODO do not load icons from disk for every request
 # TODO find a better method for finding the icons to not have an absolute path here
 # TODO make local development possible when node modules are on disk (relative path)
+@require_http_methods(["GET"])
 def index(request):
     def read_svg_file(icons_dir, filename):
         with open(os.path.join(icons_dir, filename), "r", encoding="utf-8") as f:
@@ -45,13 +48,40 @@ def index(request):
 
 
 # route /histogram/<str:node>/<str:target>.png
-def histogram(request, **kwargs):
-    return HttpResponseServerError("not implemented")
+@require_http_methods(["GET"])
+def histogram(request, node, target):
+    targets = []
+    for arg_target in [target] + request.GET.getlist("compare", default=None):
+        try:
+            targets.append(Target.objects.get(addr=arg_target))
+        except Target.DoesNotExist:
+            return HttpResponseNotFound(f"Target {arg_target} not found")
+
+    if len(targets) > 3:
+        # an RGB image only has three channels
+        return HttpResponseBadRequest("Can only compare up to three targets")
+
+    try:
+        # TODO reference the configuration, with the current setup there is no
+        #      obvious clean way (at least to me)
+        img = histodraw.render(targets, 3 * 24 * 3600)
+    except ValueError as err:
+        return HttpResponseNotFound(str(err))
+
+    response = HttpResponse(content_type="image/png")
+    img.save(response, "png")
+    response["refresh"] = "300"
+    response["content-disposition"] = (
+        'inline; filename="meshping_'
+        f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{target}.png"'
+    )
+    return response
 
 
 # route /metrics
 #
 # TODO is the metrics output valid prometheus format when no values are present?
+@require_http_methods(["GET"])
 def metrics(request):
     respdata = [
         "\n".join(
@@ -109,22 +139,8 @@ def metrics(request):
             % target_info
         )
 
-        # TODO add proper explanation
-        # [
-        #   {
-        #     "timestamp": 1743883200,
-        #     "47": 2,
-        #     "50": null,
-        #     ...
-        #   },
-        #   ...
-        # ]
-        #
-        # TODO make sure that result is always ordered by timestamp
         # TODO error handling if there is no line in the result
-        hist = pivot(
-            Histogram.objects.filter(target=target), "timestamp", "bucket", "count"
-        )[-1]
+        hist = target_histograms(target)[-1]
         count = 0
         for bucket in hist.keys():
             if bucket == "timestamp":

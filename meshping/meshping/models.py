@@ -1,4 +1,5 @@
 from django.db import models
+import pandas
 
 
 # TODO decide on max_length, even though ignored by sqlite
@@ -8,6 +9,12 @@ class Target(models.Model):
 
     class Meta:
         unique_together = ("addr", "name")
+
+    @property
+    def label(self):
+        if self.name == self.addr:
+            return self.name
+        return f"{self.name} ({self.addr})"
 
 
 # TODO uniqueness constraint `UNIQUE (target_id, timestamp, bucket)`
@@ -53,3 +60,21 @@ class Meta(models.Model):
     lkgt = models.JSONField(max_length=2048, default=list)
     error = models.CharField(max_length=255, null=True, default=None)
     is_foreign = models.BooleanField(default=False)
+
+
+# TODO consider making this a Target property, but take care that Histogram is defined
+#      before Target
+#
+# pivot method: flip the dataframe: turn each value of the "bucket" DB column into a
+# separate column in the DF, using the timestamp as the index and the count for the
+# values. None-existing positions in the DF are filled with zero.
+def target_histograms(target):
+    df = pandas.DataFrame.from_dict(
+        Histogram.objects.filter(target=target).order_by("timestamp", "bucket").values()
+    )
+    df["timestamp"] = pandas.to_datetime(df["timestamp"], unit="s")
+    return df.pivot(
+        index="timestamp",
+        columns="bucket",
+        values="count",
+    ).fillna(0)
