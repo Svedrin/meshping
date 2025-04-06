@@ -17,6 +17,8 @@ class MeshpingConfig:
         self.peering_interval = 30
         self.peering_timeout = 30
 
+        # TODO make config options in this object consistent, use seconds
         self.whois_cache_validiy_h = 72
 
+        # TODO make config options in this object consistent, use seconds
         self.histogram_period = 3

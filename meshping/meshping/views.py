@@ -9,11 +9,12 @@ from django.http import (
     HttpResponseServerError,
     JsonResponse,
 )
-from django.views.decorators.http import require_http_methods
 from django.template import loader
+from django.views.decorators.http import require_http_methods
+from django_pivot.pivot import pivot
 from markupsafe import Markup
 
-from .models import Statistics, Target, Meta
+from .models import Statistics, Target, Meta, Histogram
 
 
 # TODO remove business logic in this file
@@ -108,29 +109,42 @@ def metrics(request):
             % target_info
         )
 
-        # TODO add the histogram
-    #        histogram = target.histogram.tail(1)
-    #        count = 0
-    #        for bucket in histogram.columns:
-    #            if histogram[bucket][0] == 0:
-    #                continue
-    #            nextping = 2 ** ((bucket + 1) / 10.)
-    #            count += histogram[bucket][0]
-    #            respdata.append(
-    #                'meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="%(le).2f"} %(count)d' % dict(
-    #                    addr  = target.addr,
-    #                    count = count,
-    #                    le    = nextping,
-    #                    name  = target.name,
-    #                )
-    #            )
-    #        respdata.append(
-    #            'meshping_pings_bucket{name="%(name)s",target="%(addr)s",le="+Inf"} %(count)d' % dict(
-    #                addr  = target.addr,
-    #                count = count,
-    #                name  = target.name,
-    #            )
-    #        )
+        # TODO add proper explanation
+        # [
+        #   {
+        #     "timestamp": 1743883200,
+        #     "47": 2,
+        #     "50": null,
+        #     ...
+        #   },
+        #   ...
+        # ]
+        #
+        # TODO make sure that result is always ordered by timestamp
+        # TODO error handling if there is no line in the result
+        hist = pivot(
+            Histogram.objects.filter(target=target), "timestamp", "bucket", "count"
+        )[-1]
+        count = 0
+        for bucket in hist.keys():
+            if bucket == "timestamp":
+                continue
+            if not hist[bucket]:
+                continue
+            nextping = 2 ** ((int(bucket) + 1) / 10.0)
+            count += hist[bucket]
+            respdata.append(
+                (
+                    f'meshping_pings_bucket{{name="{target.name}",'
+                    f'target="{target.addr}",le="{nextping:.2f}"}} {count}'
+                )
+            )
+        respdata.append(
+            (
+                f'meshping_pings_bucket{{name="{target.name}",'
+                f'target="{target.addr}",le="+Inf"}} {count}'
+            )
+        )
 
     return HttpResponse("\n".join(respdata) + "\n", content_type="text/plain")
 

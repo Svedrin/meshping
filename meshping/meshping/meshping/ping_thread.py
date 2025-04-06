@@ -82,7 +82,7 @@ class PingThread(Thread):
             # TODO has nothing to do with pings, find a better place (probably new
             #      housekeeping thread)
             Histogram.objects.filter(
-                timestamp__lt=(now - self.mp_config.histogram_period)
+                timestamp__lt=(now - self.mp_config.histogram_period * 24 * 3600)
             ).delete()
 
             unseen_targets = current_targets.copy()
