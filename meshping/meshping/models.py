@@ -1,3 +1,4 @@
+from itertools import zip_longest
 from django.db import models
 import pandas
 
@@ -78,3 +79,34 @@ def target_histograms(target):
         columns="bucket",
         values="count",
     ).fillna(0)
+
+
+# TODO consider making this a Target property, but take care that Meta is defined
+#      before Target
+def target_traceroute(target):
+    target_meta, _created = Meta.objects.get_or_create(target=target)
+
+    curr = target_meta.traceroute
+    lkgt = target_meta.lkgt  # last known good traceroute
+    if not curr or not lkgt or len(lkgt) < len(curr):
+        # we probably don't know all the nodes, but the ones we do know are up
+        return [dict(hop, state="up") for hop in curr]
+    if curr[-1]["address"] == target.addr:
+        # Trace has reached the target itself, thus all hops are up
+        return [dict(hop, state="up") for hop in curr]
+
+    # Check with lkgt to see which hops are still there
+    result = []
+    for lkgt_hop, curr_hop in zip_longest(lkgt, curr):
+        if lkgt_hop is None:
+            # This should not be able to happen, because we checked
+            # len(lkgt) < len(curr) above.
+            raise ValueError("last known good traceroute: hop is None")
+        if curr_hop is None:
+            # hops missing from current traceroute are down
+            result.append(dict(lkgt_hop, state="down"))
+        elif curr_hop.get("address") != lkgt_hop.get("address"):
+            result.append(dict(curr_hop, state="different"))
+        else:
+            result.append(dict(curr_hop, state="up"))
+    return result

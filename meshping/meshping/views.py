@@ -2,6 +2,8 @@ import json
 import os
 import socket
 from datetime import datetime
+from random import randint
+from subprocess import run as run_command
 
 from django.forms.models import model_to_dict
 from django.http import (
@@ -16,7 +18,7 @@ from django.views.decorators.http import require_http_methods
 from markupsafe import Markup
 
 from .meshping import histodraw
-from .models import Statistics, Target, Meta, target_histograms
+from .models import Statistics, Target, Meta, target_histograms, target_traceroute
 
 
 # TODO remove business logic in this file
@@ -166,8 +168,96 @@ def metrics(request):
 
 
 # route /network.svg
+#
+# note: plantuml in the ubuntu 24.04 apt repo is version 1.2020.02, which gives a
+#       broken output. newer version required, known to work with 1.2024.4
+#
+# TODO split out some logic here, this probably reduces the amount of local vars
+# pylint: disable=too-many-locals
+@require_http_methods(["GET"])
 def network(request):
-    return HttpResponseServerError("not implemented")
+    targets = Target.objects.all()
+    uniq_hops = {}
+    uniq_links = set()
+
+    for target in targets:
+        prev_hop = "SELF"
+        prev_dist = 0
+        for hop in target_traceroute(target):
+            hop_id = hop["address"].replace(":", "_").replace(".", "_")
+
+            # Check if we know this hop already. If we do, just skip ahead.
+            if hop_id not in uniq_hops:
+                # Fill in the blanks for missing hops, if any
+                while hop["distance"] > prev_dist + 1:
+                    dummy_id = str(randint(10000000, 99999999))
+                    dummy = {
+                        "id": dummy_id,
+                        "distance": (prev_dist + 1),
+                        "address": None,
+                        "name": None,
+                        "target": None,
+                        "whois": None,
+                    }
+                    uniq_hops[dummy_id] = dummy
+                    uniq_links.add((prev_hop, dummy_id))
+                    prev_hop = dummy_id
+                    prev_dist += 1
+
+                # Now render the hop itself
+                hop_id = hop["address"].replace(":", "_").replace(".", "_")
+                uniq_hops.setdefault(hop_id, dict(hop, id=hop_id, target=None))
+                uniq_links.add((prev_hop, hop_id))
+
+                # make sure we show the most recent state info
+                if (
+                    uniq_hops[hop_id]["state"] != hop["state"]
+                    and uniq_hops[hop_id]["time"] < hop["time"]
+                ):
+                    uniq_hops[hop_id].update(state=hop["state"], time=hop["time"])
+
+            if hop["address"] == target.addr:
+                uniq_hops[hop_id]["target"] = target
+
+            prev_hop = hop_id
+            prev_dist = hop["distance"]
+
+    now = datetime.now()
+
+    context = {
+        "hostname": socket.gethostname(),
+        "now": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "targets": targets,
+        "uniq_hops": uniq_hops,
+        "uniq_links": sorted(uniq_links),
+        "uniq_hops_sorted": [uniq_hops[hop] for hop in sorted(uniq_hops.keys())],
+    }
+    tpl = loader.get_template("network.puml.j2").render(context)
+
+    plantuml = run_command(
+        ["plantuml", "-tsvg", "-p"],
+        input=tpl.encode("utf-8"),
+        capture_output=True,
+        check=False,
+    )
+
+    if plantuml.stderr:
+        return HttpResponseServerError(
+            plantuml.stderr.decode("utf-8") + "\n\n===\n\n" + tpl,
+            content_type="text/plain",
+        )
+
+    resp = HttpResponse(plantuml.stdout, content_type="image/svg+xml")
+
+    resp["refresh"] = "43200"  # 12h
+    resp["Cache-Control"] = "max-age=36000, public"  # 10h
+
+    resp["content-disposition"] = (
+        'inline; filename="meshping_'
+        f'{now.strftime("%Y-%m-%d_%H-%M-%S")}_network.svg"'
+    )
+
+    return resp
 
 
 # route /peer
@@ -190,10 +280,6 @@ def stats(request):
 # django ensures a valid http request method, so we do not need a return value
 # pylint: disable=inconsistent-return-statements
 #
-# TODO add state to response for each target
-# TODO add error to response for each target
-# TODO add traceroute to response for each target
-# TODO add route_loop to response for each target
 # TODO do not crash when the uniqueness constraint is not met for new targets
 # TODO nasty race condition, retrieving objects can fail when target was just deleted
 @require_http_methods(["GET", "POST"])

@@ -1,0 +1,43 @@
+@startuml
+
+<style>
+.node_up {
+    BackgroundColor MediumSeaGreen
+    FontColor White
+    HyperlinkColor White
+}
+.node_different {
+    BackgroundColor Khaki
+    FontColor Black
+    HyperlinkColor White
+}
+.node_down {
+    BackgroundColor IndianRed
+    FontColor White
+    HyperlinkColor White
+}
+</style>
+
+hide <<node_up>> stereotype
+hide <<node_different>> stereotype
+hide <<node_down>> stereotype
+
+
+title Network Map
+
+node "{[ hostname ]}" <<node_up>> as SELF
+
+{% for hop in uniq_hops_sorted -%}
+{% if hop.address -%}
+node "{% if hop.target %}{[ hop.target.name ]}{% else %}{[ hop.name ]}{% endif %}\n{[ hop.address ]}{% if hop.whois %}\n{[ hop.whois.network.name ]}{% endif %}{% if hop.target %}\n[[{[ url('histogram', kwargs={'node': hostname, 'target': hop.target.addr})]} Histogram]]{% endif %}" <<node_{[ hop.state ]}>> as {[ hop.id ]}
+{% else -%}
+rectangle "?" as {[ hop.id ]}
+{% endif -%}
+{% endfor -%}
+
+{% for (lft, rgt) in uniq_links -%}
+"{[ lft ]}" -- "{[ rgt ]}"
+{% endfor -%}
+
+footer rendered on {[ now ]} by [[http://github.com/Svedrin/meshping Meshping]] using PlantUML
+@enduml
