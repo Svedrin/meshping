@@ -266,8 +266,20 @@ def peer(request):
 
 
 # route /api/resolve/<str:name>
-def resolve(request, **kwargs):
-    return HttpResponseServerError("not implemented")
+@require_http_methods(["GET"])
+def resolve(request, name):
+    try:
+        return JsonResponse(
+            {
+                "success": True,
+                "addrs": [
+                    info[4][0]
+                    for info in socket.getaddrinfo(name, 0, 0, socket.SOCK_STREAM)
+                ],
+            }
+        )
+    except socket.gaierror as err:
+        return JsonResponse({"success": False, "error": str(err)})
 
 
 # route /api/stats
