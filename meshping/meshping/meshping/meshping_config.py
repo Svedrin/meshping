@@ -2,7 +2,7 @@
 # TODO decide about option for config file, and automatic combination with docker
 #      environment variables
 #
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes,too-few-public-methods
 class MeshpingConfig:
     def __init__(self):
         self.ping_timeout = 5

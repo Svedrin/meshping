@@ -8,6 +8,7 @@ class Target(models.Model):
     addr = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
 
+    # pylint: disable=too-few-public-methods
     class Meta:
         unique_together = ("addr", "name")
 

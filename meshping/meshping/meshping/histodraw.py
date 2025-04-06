@@ -13,7 +13,7 @@ from ..models import target_histograms
 
 
 # How big do you want the squares to be?
-sqsz = 8
+SQSZ = 8
 
 
 # [
@@ -67,8 +67,8 @@ def render_target(target):
     graph.putdata(pixels * 0xFF)
 
     # Scale graph so each Pixel becomes a square
-    width *= sqsz
-    height *= sqsz
+    width *= SQSZ
+    height *= SQSZ
 
     graph = graph.resize((width, height), Image.NEAREST)
     graph.hmin = hmin
@@ -90,11 +90,11 @@ def render(targets, histogram_period):
             raise ValueError(f"No data available for target {target}")
         rendered_graphs.append(target_graph)
 
-    width = histogram_period // 3600 * sqsz
+    width = histogram_period // 3600 * SQSZ
     hmin = min(graph.hmin for graph in rendered_graphs)
     hmax = max(graph.hmax for graph in rendered_graphs)
     tmax = max(graph.tmax for graph in rendered_graphs)
-    height = (hmax - hmin) * sqsz
+    height = (hmax - hmin) * SQSZ
 
     if len(rendered_graphs) == 1:
         # Single graph -> use it as-is
@@ -115,7 +115,7 @@ def render(targets, histogram_period):
                 new_graph = Image.new("L", (width, height), "black")
                 new_graph.paste(
                     graph,
-                    (width - graph.width - sqsz * dtmax, (hmax - graph.hmax) * sqsz),
+                    (width - graph.width - SQSZ * dtmax, (hmax - graph.hmax) * SQSZ),
                 )
             else:
                 new_graph = graph
@@ -182,7 +182,7 @@ def render(targets, histogram_period):
     # Y axis ticks and annotations
     for hidx in range(hmin, hmax, 5):
         bottomrow = hidx - hmin
-        offset_y = height + graph_y - bottomrow * sqsz - 1
+        offset_y = height + graph_y - bottomrow * SQSZ - 1
         draw.line((graph_x - 2, offset_y, graph_x + 2, offset_y), fill=0xAAAAAA)
 
         ping = 2 ** (hidx / 10.0)
@@ -205,11 +205,11 @@ def render(targets, histogram_period):
     t_hist_begin = t_hist_end - timedelta(hours=td_hours)
 
     # X axis ticks - one every two hours
-    for col in range(1, width // sqsz):
+    for col in range(1, width // SQSZ):
         # We're now at hour indicated by col
         if (t_hist_begin + timedelta(hours=col)).hour % 2 != 0:
             continue
-        offset_x = graph_x + col * sqsz
+        offset_x = graph_x + col * SQSZ
         draw.line(
             (offset_x, height + graph_y - 2, offset_x, height + graph_y + 2),
             fill=0xAAAAAA,
@@ -223,12 +223,12 @@ def render(targets, histogram_period):
     tmpdraw = ImageDraw.Draw(tmpim)
 
     # Draw one annotation every four hours
-    for col in range(0, width // sqsz + 1):
+    for col in range(0, width // SQSZ + 1):
         # We're now at hour indicated by col
         tstamp = t_hist_begin + timedelta(hours=col)
         if tstamp.hour % 4 != 0:
             continue
-        offset_x = col * sqsz
+        offset_x = col * SQSZ
         if tstamp.hour == 0:
             tmpdraw.text(
                 (0, offset_x + 4), tstamp.strftime("%m-%d"), 0x333333, font=font

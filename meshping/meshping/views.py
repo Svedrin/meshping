@@ -1,3 +1,6 @@
+# We cannot rename view parameters as django spllies them as keyword arguments, so:
+# pylint: disable=unused-argument
+
 import json
 import os
 import socket
@@ -58,6 +61,9 @@ def index(request):
 
 
 # route /histogram/<str:node>/<str:target>.png
+#
+# we cannot rename node to _node as django calls by keyword argument, so ignore this
+# pylint: disable=unused-argument
 @require_http_methods(["GET"])
 def histogram(request, node, target):
     targets = []
@@ -89,8 +95,6 @@ def histogram(request, node, target):
 
 
 # route /metrics
-#
-# TODO is the metrics output valid prometheus format when no values are present?
 @require_http_methods(["GET"])
 def metrics(request):
     respdata = [
