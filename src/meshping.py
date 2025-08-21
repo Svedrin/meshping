@@ -86,7 +86,7 @@ class MeshPing:
                     target.addr
                 )
 
-                hopaddrs = uniq([hop.address for hop in trace])
+                hopaddrs = list(uniq([hop.address for hop in trace]))
                 hopaddrs_set = set(hopaddrs)
                 target.set_route_loop(
                     len(hopaddrs) != len(hopaddrs_set) and len(hopaddrs_set) > 1
