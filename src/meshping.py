@@ -40,6 +40,14 @@ async def sleep_until(when):
     if now < when:
         await trio.sleep(when - now)
 
+def uniq(it):
+    # man uniq: [1,2,3,2,2,2,2,3] => [1,2,3,2,3]
+    last = None
+    for curr in it:
+        if curr != last:
+            yield curr
+        last = curr
+
 class MeshPing:
     def __init__(self, timeout=5, interval=30, histogram_days=3, traceroute_interval=900):
         assert interval > timeout, "Interval must be larger than the timeout"
@@ -78,7 +86,7 @@ class MeshPing:
                     target.addr
                 )
 
-                hopaddrs = [hop.address for hop in trace]
+                hopaddrs = uniq([hop.address for hop in trace])
                 hoaddrs_set = set(hopaddrs)
                 target.set_route_loop(
                     len(hopaddrs) != len(hoaddrs_set) and len(hoaddrs_set) > 1
