@@ -171,9 +171,9 @@
                     <td class="d-none d-lg-table-cell">{{ hop.distance }}</th>
                     <td style="overflow-wrap: anywhere">
                       {{ hop.name }}
-                      <span v-if="hop.state == 'different'" class="text-warning">{[ icons['exclamation-circle.svg'] ]}</span>
-                      <span v-if="hop.state == 'down'"      class="text-danger" >{[ icons['x-circle.svg'] ]}</span>
-                      <span v-if="hop.pmtud.state == 'down'"         class="text-secondary" title="Hop does not respond to ping">{[ icons['x-circle.svg'] ]}</span>
+                      <span v-if="hop.state == 'different'" class="text-warning" title="Route seems to have changed">{[ icons['exclamation-circle.svg'] ]}</span>
+                      <span v-if="hop.state == 'down'"      class="text-danger"  title="Hop is down">{[ icons['x-circle.svg'] ]}</span>
+                      <span v-if="hop.pmtud.state == 'down'"         class="text-secondary" title="Hop does not respond to ping, but seems alive">{[ icons['x-circle.svg'] ]}</span>
                       <span v-if="hop.pmtud.state == 'ttl_exceeded'" class="text-warning"   title="TTL exceeded: Maybe a routing loop somewhere?">{[ icons['arrow-clockwise.svg'] ]}</span>
                       <span v-if="hop.pmtud.state == 'error'"        class="text-danger"    v-bind:title="'Error: ' + hop.pmtud.error">{[ icons['exclamation-circle.svg'] ]}</span>
                       <br />
