@@ -173,6 +173,9 @@
                       {{ hop.name }}
                       <span v-if="hop.state == 'different'" class="text-warning">{[ icons['exclamation-circle.svg'] ]}</span>
                       <span v-if="hop.state == 'down'"      class="text-danger" >{[ icons['x-circle.svg'] ]}</span>
+                      <span v-if="hop.pmtud.state == 'down'"         class="text-secondary" title="Hop does not respond to ping">{[ icons['x-circle.svg'] ]}</span>
+                      <span v-if="hop.pmtud.state == 'ttl_exceeded'" class="text-warning"   title="TTL exceeded: Maybe a routing loop somewhere?">{[ icons['arrow-clockwise.svg'] ]}</span>
+                      <span v-if="hop.pmtud.state == 'error'"        class="text-danger"    v-bind:title="'Error: ' + hop.pmtud.error">{[ icons['exclamation-circle.svg'] ]}</span>
                       <br />
                       <span class="d-inline text-secondary">{{ hop.address }}</span>
                       <span class="d-inline text-secondary" v-if="hop.whois.asn">
@@ -183,16 +186,7 @@
                     </td>
                     <td class="text-right">
                       {{ hop.max_rtt }}&nbsp;ms<br />
-                      <span v-if="hop.pmtud.state == 'up'">{{ hop.pmtud.mtu }}&nbsp;B</span>
-                      <span v-if="hop.pmtud.state == 'down'" title="Hop does not respond to ping">
-                        {{ hop.pmtud.mtu }}&nbsp;B&nbsp;<span class="text-secondary">{[ icons['x-circle.svg'] ]}</span>
-                      </span>
-                      <span v-if="hop.pmtud.state == 'ttl_exceeded'" title="TTL exceeded: Maybe a routing loop somewhere?">
-                        {{ hop.pmtud.mtu }}&nbsp;B&nbsp;<span class="text-warning">{[ icons['arrow-clockwise.svg'] ]}</span>
-                      </span>
-                      <span v-if="hop.pmtud.state == 'error'" v-bind:title="'Error: ' + hop.pmtud.error">
-                        {{ hop.pmtud.mtu }}&nbsp;B&nbsp;<span class="text-danger">{[ icons['exclamation-circle.svg'] ]}</span>
-                      </span>
+                      {{ hop.pmtud.mtu }}&nbsp;B
                     </td>
                     <td class="d-none d-lg-table-cell" style="width: 40px"><button class="form-control" v-on:click="target_from_route_hop(hop)">&plus;</button></td>
                   </tr>
