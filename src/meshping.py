@@ -151,7 +151,9 @@ class MeshPing:
             return {}
         except Exception as err:
             logging.warning("Could not query whois for IP %s: %s", hop_address, err)
-        return self.whois_cache[hop_address]
+            return {}
+
+        return self.whois_cache.get(hop_address, {})
 
     async def run(self):
         pingobj = PingObj()
