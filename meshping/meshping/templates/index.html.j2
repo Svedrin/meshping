@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{[ Hostname ]} &mdash; Meshping</title>
+    <meta name="viewport" content="width=device-width, initial-scale=0.75" />
+    <link rel="icon"              href="{[ static('node_modules/bootstrap-icons/icons/broadcast-pin.svg') ]}">
+    <link rel="stylesheet"        href="{[ static('node_modules/bootstrap/dist/css/bootstrap.min.css') ]}">
+    <script type="text/javascript" src="{[ static('node_modules/jquery/dist/jquery.slim.min.js') ]}"></script>
+    <script type="text/javascript" src="{[ static('node_modules/bootstrap/dist/js/bootstrap.bundle.min.js') ]}"></script>
+    <script type="text/javascript" src="{[ static('node_modules/vue/dist/vue.min.js') ]}"></script>
+    <script type="text/javascript" src="{[ static('node_modules/vue-resource/dist/vue-resource.min.js') ]}"></script>
+    <script type="text/javascript">
+      window.meshping_hostname = "{[ Hostname ]}";
+    </script>
+  </head>
+  <body>
+    <div class="container mx-0 mx-lg-auto mt-md-3">
+      <h1><span class="d-none d-sm-inline">Meshping: </span>{[ Hostname ]}</h1>
+      <div id="app">
+        <div class="btn-toolbar justify-content-between py-sm-3 d-print-none" role="toolbar" aria-label="Toolbar with button groups">
+          <div class="btn-group" role="group" aria-label="Links">
+            <a type="button" class="btn btn-light" href="/network.svg" target="_blank">{[ icons['map.svg'] ]} <span class="d-none d-md-inline">Map</span></a>
+            <a type="button" class="btn btn-light d-none d-lg-inline" href="/metrics">{[ icons['bar-chart-line.svg'] ]} Metrics</a>
+            <button type="button" class="btn btn-light d-none d-lg-inline" v-on:click="clear_stats">{[ icons['x-square.svg'] ]} Clear statistics</button>
+            <button type="button" class="btn"
+              v-bind:class="{ 'btn-light': !comparing, 'btn-primary': comparing }"
+              v-on:click="on_btn_compare">{[ icons['card-checklist.svg'] ]} <span class="d-none d-md-inline">Compare</span></button>
+            <button type="button" class="btn btn-light" v-if="comparing"
+              v-on:click="comparing=false; success_msg=''">Cancel</button>
+          </div>
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <div class="input-group-text" id="btnGroupSearch">{[ icons['search.svg'] ]} <span class="d-none d-md-inline">Search</span></div>
+            </div>
+            <input type="text" v-model="search" id="inpsearch" class="form-control" placeholder="Name or IP" aria-label="Name or IP" aria-describedby="btnGroupSearch">
+          </div>
+        </div>
+        <div class="alert alert-danger" v-show="error_msg !== ''">
+          <a href="#" class="close" aria-label="close" v-on:click="error_msg = ''">&times;</a>
+          <span v-html="error_msg"></span>
+        </div>
+        <div class="alert alert-success" v-show="error_msg === '' &amp;&amp; success_msg !== ''">
+          <a href="#" class="close" aria-label="close" v-on:click="success_msg = ''">&times;</a>
+          <span v-html="success_msg"></span>
+        </div>
+        <table class="table">
+          <tr>
+            <th>&nbsp;</th>
+            <th>Target</th>
+            <th class="d-none d-sm-table-cell">Address</th>
+            <th class="text-right d-none d-lg-table-cell text-secondary">Sent</th>
+            <th class="text-right d-none d-xl-table-cell text-secondary">Recv</th>
+            <th class="text-right">Succ</th>
+            <th class="text-right d-none d-xl-table-cell text-secondary">Loss</th>
+            <th class="text-right d-none d-lg-table-cell text-secondary">Min</th>
+            <th class="text-right">Avg15m</th>
+            <th class="text-right d-none d-lg-table-cell text-secondary">Avg6h</th>
+            <th class="text-right d-none d-lg-table-cell text-secondary">Avg24h</th>
+            <th class="text-right d-none d-lg-table-cell text-secondary">Max</th>
+            <th class="text-right">Last</th>
+            <th class="d-print-none">&nbsp;</th>
+          </tr>
+          <tr v-if="targets_all.length == 0 &amp;&amp; last_update == 0">
+            <td colspan="14"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading</td>
+          </tr>
+          <tr v-if="targets_all.length == 0 &amp;&amp; last_update != 0">
+            <td colspan="14">No targets configured</td>
+          </tr>
+          <tr v-if="targets_filtered.length == 0 &amp;&amp; targets_all.length > 0">
+            <td colspan="14">No targets match your search</td>
+          </tr>
+          <tr
+            v-show="targets_filtered.length > 0" style="display: none"
+            v-for="target in targets_filtered" v-bind:key="target.addr"
+          >
+            <td>
+              <span v-if="target.state == 'up' &amp;&amp; target.avg15m &lt;= target.avg24h * 1.05" title="Target is up and well" class="text-success">
+                {[ icons['check-circle.svg'] ]}
+              </span>
+              <span v-if="target.state == 'up' &amp;&amp; target.avg15m &gt;  target.avg24h * 1.05" title="Target is up but latency is increasing" class="text-warning">
+                {[ icons['arrow-up-right-circle.svg'] ]}
+              </span>
+              <span v-if="target.state == 'down' &amp;&amp; !target.route_loop" title="Target is down" class="text-danger">
+                {[ icons['x-circle.svg'] ]}
+              </span>
+              <span v-if="target.state == 'down' &amp;&amp;  target.route_loop" title="Target unreachable due to a routing loop" class="text-danger">
+                {[ icons['arrow-clockwise.svg'] ]}
+              </span>
+              <span v-if="target.state == 'unknown'" title="Target state is unknown" class="text-secondary">
+                {[ icons['question-circle.svg'] ]}
+              </span>
+              <span v-if="target.state == 'error'" v-bind:title="'Error: ' + target.error" class="text-danger">
+                {[ icons['exclamation-circle.svg'] ]}
+              </span>
+            </td>
+            <td v-on:click="show_route_for_target(target)">{{ target.name }}<span class="d-inline d-sm-none text-secondary"><br />{{ target.addr }}</span></td>
+            <td class="d-none d-sm-table-cell" v-on:click="show_route_for_target(target)">{{ target.addr }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.sent }}</td>
+            <td class="text-right d-none d-xl-table-cell text-secondary">{{ target.recv }}</td>
+            <td class="text-right">{{ target.succ   | prettyFloat }}</td>
+            <td class="text-right d-none d-xl-table-cell text-secondary">{{ target.loss   | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.min    | prettyFloat }}</td>
+            <td class="text-right">{{ target.avg15m | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.avg6h  | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.avg24h | prettyFloat }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.max    | prettyFloat }}</td>
+            <td class="text-right">{{ target.last   | prettyFloat }}</td>
+            <td style="white-space: nowrap" class="d-print-none">
+              <span v-if="!comparing">
+                <a v-if="target.recv > 0" target="_blank"
+                  v-bind:href="'/histogram/' + hostname + '/' + target.addr + '.png'">
+                  <img class="border" alt="graph" title="Graph"
+                      src="{[ static('node_modules/bootstrap-icons/icons/graph-up.svg') ]}" />
+                </a>
+                <img class="border d-none d-lg-inline" alt="del" title="Delete Target"
+                     src="{[ static('node_modules/bootstrap-icons/icons/trash.svg') ]}"
+                     v-on:click="delete_target(target)" />
+              </span>
+              <span v-if="comparing">
+                <input type="checkbox" name="compare_target"
+                  v-if="target.recv > 0" v-bind:value="target.addr" />
+              </span>
+            </td>
+          </tr>
+          <tr class="d-print-none">
+            <td class="d-none d-sm-table-cell">&nbsp;</td>
+            <td colspan="2">
+              <input type="text" class="form-control" v-model="add_tgt_name" placeholder="example.com"
+                v-bind:disabled="creating" v-on:keyup.enter="create_target()" id="add_tgt_name" />
+            </td>
+            <td colspan="2">
+              <input type="text" class="form-control" v-model="add_tgt_addr" placeholder="1.2.3.4 (optional)"
+                v-bind:disabled="creating" v-on:keyup.enter="create_target()" />
+            </td>
+            <td>
+              <button v-if="!creating" class="form-control" v-on:click="create_target()">&plus;</button>
+              <span   v-if="creating"  class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            </td>
+            <td>&nbsp;</td>
+            <td colspan="6" class="d-none d-lg-table-cell">&nbsp;</td>
+            <td colspan="2" class="d-none d-xl-table-cell">
+              <a href="https://github.com/Svedrin/meshping" target="_blank">
+                <img
+                  title="Meshping on GitHub"
+                  src="{[ static('node_modules/bootstrap-icons/icons/github.svg') ]}"
+                  style="filter: opacity(40%);"
+                  />
+              </a>
+            </td>
+          </tr>
+        </table>
+        <!-- Route Modal -->
+        <div class="modal fade" id="routeModal" tabindex="-1" role="dialog" aria-labelledby="routeModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="routeModalLabel">Route for {{route_target.name}}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <table class="table">
+                  <tr>
+                    <th class="d-none d-lg-table-cell">&nbsp;</th>
+                    <th>Hop</th>
+                    <th class="text-right">Info</th>
+                    <th class="d-none d-lg-table-cell" style="width: 40px">&nbsp;</th>
+                  </tr>
+                  <tr v-for="hop in route_target.traceroute">
+                    <td class="d-none d-lg-table-cell">{{ hop.distance }}</th>
+                    <td style="overflow-wrap: anywhere">
+                      {{ hop.name }}
+                      <span v-if="hop.state == 'different'" class="text-warning">{[ icons['exclamation-circle.svg'] ]}</span>
+                      <span v-if="hop.state == 'down'"      class="text-danger" >{[ icons['x-circle.svg'] ]}</span>
+                      <br />
+                      <span class="d-inline text-secondary">{{ hop.address }}</span>
+                      <span class="d-inline text-secondary" v-if="hop.whois.asn">
+                        <br />
+                        <span v-if="hop.whois.asn != 'NA'">AS {{ hop.whois.asn }}:</span>
+                        {{ hop.whois.network.name }}
+                      </span>
+                    </td>
+                    <td class="text-right">
+                      {{ hop.max_rtt }}&nbsp;ms<br />
+                      <span v-if="hop.pmtud.state == 'up'">{{ hop.pmtud.mtu }}&nbsp;B</span>
+                      <span v-if="hop.pmtud.state == 'down'" title="Hop does not respond to ping">
+                        {{ hop.pmtud.mtu }}&nbsp;B&nbsp;<span class="text-secondary">{[ icons['x-circle.svg'] ]}</span>
+                      </span>
+                      <span v-if="hop.pmtud.state == 'ttl_exceeded'" title="TTL exceeded: Maybe a routing loop somewhere?">
+                        {{ hop.pmtud.mtu }}&nbsp;B&nbsp;<span class="text-warning">{[ icons['arrow-clockwise.svg'] ]}</span>
+                      </span>
+                      <span v-if="hop.pmtud.state == 'error'" v-bind:title="'Error: ' + hop.pmtud.error">
+                        {{ hop.pmtud.mtu }}&nbsp;B&nbsp;<span class="text-danger">{[ icons['exclamation-circle.svg'] ]}</span>
+                      </span>
+                    </td>
+                    <td class="d-none d-lg-table-cell" style="width: 40px"><button class="form-control" v-on:click="target_from_route_hop(hop)">&plus;</button></td>
+                  </tr>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- / Route Modal -->
+      </div>
+    </div>
+    <script type="text/javascript" src="{[ static('src/main.js') ]}"></script>
+    <div class="d-none d-print-block text-secondary" style="position: fixed; bottom: 0">
+      <span style="position: fixed; right: 0">github.com/Svedrin/meshping</span>
+      Meshping by Michael Ziegler
+    </div>
+  </body>
+</html>
