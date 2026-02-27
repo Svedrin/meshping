@@ -177,10 +177,10 @@
                       <span v-if="hop.pmtud.state == 'ttl_exceeded'" class="text-warning"   title="TTL exceeded: Maybe a routing loop somewhere?">{[ icons['arrow-clockwise.svg'] ]}</span>
                       <span v-if="hop.pmtud.state == 'error'"        class="text-danger"    v-bind:title="'Error: ' + hop.pmtud.error">{[ icons['exclamation-circle.svg'] ]}</span>
                       <br />
-                      <span class="d-inline text-secondary">{{ hop.address }}</span>
+                      <span class="d-inline text-secondary">{{ hop.address }} <a target="_blank" v-bind:href="'https://ipinfo.io/' + hop.address">{[ icons['info-circle.svg'] ]}</a></span>
                       <span class="d-inline text-secondary" v-if="hop.whois.asn">
                         <br />
-                        <span v-if="hop.whois.asn != 'NA'">AS {{ hop.whois.asn }}:</span>
+                        <span v-if="hop.whois.asn != 'NA'">AS <a target="_blank" v-bind:href="'https://bgp.tools/as/' + hop.whois.asn">{{ hop.whois.asn }}</a>:</span>
                         {{ hop.whois.network.name }}
                       </span>
                     </td>

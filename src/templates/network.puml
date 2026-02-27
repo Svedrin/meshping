@@ -29,7 +29,7 @@ node "{[ hostname ]}" <<node_up>> as SELF
 
 {% for hop in uniq_hops_sorted -%}
 {% if hop.address -%}
-node "{% if hop.target %}{[ hop.target.name ]}{% else %}{[ hop.name ]}{% endif %}\n{[ hop.address ]}{% if hop.whois %}\n{[ hop.whois.network.name ]}{% endif %}{% if hop.target %}\n[[{[ url_for('histogram', node=hostname, target=hop.target.addr, _external=True)]} Histogram]]{% endif %}" <<node_{[ hop.state ]}>> as {[ hop.id ]}
+node "{% if hop.target %}{[ hop.target.name ]}{% else %}{[ hop.name ]}{% endif %}{% if hop.whois %}\n[[https://ipinfo.io/{[ hop.address ]} {[ hop.address ]}]]\n[[https://bgp.tools/as/{[hop.whois.asn]} {[ hop.whois.network.name ]}]]{% else %}\n{[ hop.address ]}{% endif %}{% if hop.target %}\n[[{[ url_for('histogram', node=hostname, target=hop.target.addr, _external=True)]} Histogram]]{% endif %}" <<node_{[ hop.state ]}>> as {[ hop.id ]}
 {% else -%}
 rectangle "?" as {[ hop.id ]}
 {% endif -%}
