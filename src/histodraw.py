@@ -9,7 +9,7 @@ import numpy as np
 import pandas
 
 from datetime import datetime, timedelta
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageOps
 
 # How big do you want the squares to be?
 sqsz = 8
@@ -82,6 +82,18 @@ def render(targets, histogram_period):
     tmax   = max(graph.tmax for graph in rendered_graphs)
     height = (hmax - hmin) * sqsz
 
+    # Calculate the times at which the histogram begins and ends.
+    t_hist_end = (
+        # Latest hour for which we have data...
+        tmax.tz_localize("Etc/UTC")
+            .tz_convert(os.environ.get("TZ", "Etc/UTC"))
+            .to_pydatetime()
+        # Plus the current hour which we're also drawing on screen
+        + timedelta(hours=1)
+    )
+
+    t_hist_begin = t_hist_end - timedelta(hours=(histogram_period // 3600))
+
     if len(rendered_graphs) == 1:
         # Single graph -> use it as-is
         graph = Image.new("L", (width, height), "white")
@@ -124,6 +136,25 @@ def render(targets, histogram_period):
         # Set V to 1
         hsv[:, :, 2] = np.ones((height, width)) * 0xFF
         graph = Image.fromarray(hsv, "HSV").convert("RGB")
+
+    # Grid lines via multiply blend: darkens white background to light gray,
+    # but barely affects data pixels that are already dark/colored.
+    graph = graph.convert("RGB")
+    grid_layer = Image.new("RGB", (width, height), (0xFF, 0xFF, 0xFF))
+    gdraw = ImageDraw.Draw(grid_layer)
+
+    # Horizontal: one per octave (every 10 buckets)
+    for hidx in range(hmin, hmax, 10):
+        y = (hmax - hidx) * sqsz - 1
+        gdraw.line((0, y, width - 1, y), fill=(0xCC, 0xCC, 0xCC))
+
+    # Vertical: at midnight
+    for col in range(0, width // sqsz + 1):
+        if (t_hist_begin + timedelta(hours=col)).hour != 0:
+            continue
+        gdraw.line((col * sqsz, 0, col * sqsz, height - 1), fill=(0xCC, 0xCC, 0xCC))
+
+    graph = ImageChops.multiply(graph, grid_layer)
 
     # position of the graph
     graph_x = 70
@@ -170,18 +201,6 @@ def render(targets, histogram_period):
         ping = 2 ** (hidx / 10.)
         label = f"{ping:.2f}"
         draw.text((graph_x - len(label) * 6 - 10, offset_y - 5), label, 0x333333, font=font)
-
-    # Calculate the times at which the histogram begins and ends.
-    t_hist_end = (
-        # Latest hour for which we have data...
-        tmax.tz_localize("Etc/UTC")
-            .tz_convert(os.environ.get("TZ", "Etc/UTC"))
-            .to_pydatetime()
-        # Plus the current hour which we're also drawing on screen
-        + timedelta(hours=1)
-    )
-
-    t_hist_begin = t_hist_end - timedelta(hours=(histogram_period // 3600))
 
     # X axis ticks - one every two hours
     for col in range(1, width // sqsz):
