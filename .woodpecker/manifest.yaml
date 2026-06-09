@@ -17,7 +17,7 @@ steps:
       DOCKER_PASSWORD:
         from_secret: docker-registry-pw
     commands:
-      - manifest-tool --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD" --ignore-missing push from-spec docker-manifest-latest.tmpl
+      - manifest-tool --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD" push --ignore-missing from-spec docker-manifest-latest.tmpl
     when:
       - event: push
         branch: master
@@ -29,7 +29,7 @@ steps:
       DOCKER_PASSWORD:
         from_secret: docker-registry-pw
     commands:
-      - manifest-tool --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD" --ignore-missing push from-spec docker-manifest-staging.tmpl
+      - manifest-tool --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD" push --ignore-missing from-spec docker-manifest-staging.tmpl
     when:
       - event: push
         branch: staging
@@ -42,6 +42,6 @@ steps:
         from_secret: docker-registry-pw
     commands:
       - sed "s|{{build.tag}}|$CI_COMMIT_TAG|g" docker-manifest-tagged.tmpl > /tmp/manifest-tagged.yaml
-      - manifest-tool --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD" --ignore-missing push from-spec /tmp/manifest-tagged.yaml
+      - manifest-tool --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD" push --ignore-missing from-spec /tmp/manifest-tagged.yaml
     when:
       - event: tag
