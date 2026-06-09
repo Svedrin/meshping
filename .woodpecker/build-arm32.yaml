@@ -11,45 +11,42 @@ depends_on: [tests]
 
 steps:
   - name: build latest
-    image: woodpeckerci/plugin-kaniko
+    image: woodpeckerci/plugin-docker-buildx
+    privileged: true
     settings:
       username: svedrin
       password:
         from_secret: docker-registry-pw
       repo: svedrin/meshping
       tags: latest-armv7l
-      cache: true
-      registry: index.docker.io
-      cache_repo: svedrin/meshping
+      platforms: linux/arm/v7
     when:
       - event: push
         branch: master
 
   - name: build staging
-    image: woodpeckerci/plugin-kaniko
+    image: woodpeckerci/plugin-docker-buildx
+    privileged: true
     settings:
       username: svedrin
       password:
         from_secret: docker-registry-pw
       repo: svedrin/meshping
       tags: staging-armv7l
-      cache: true
-      registry: index.docker.io
-      cache_repo: svedrin/meshping
+      platforms: linux/arm/v7
     when:
       - event: push
         branch: staging
 
   - name: build tagged
-    image: woodpeckerci/plugin-kaniko
+    image: woodpeckerci/plugin-docker-buildx
+    privileged: true
     settings:
       username: svedrin
       password:
         from_secret: docker-registry-pw
       repo: svedrin/meshping
       tags: ${CI_COMMIT_TAG}-armv7l
-      cache: true
-      registry: index.docker.io
-      cache_repo: svedrin/meshping
+      platforms: linux/arm/v7
     when:
       - event: tag
