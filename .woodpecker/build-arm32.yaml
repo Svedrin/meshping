@@ -20,8 +20,6 @@ steps:
       repo: svedrin/meshping
       tags: latest-armv7l
       platforms: linux/arm/v7
-      cache_from: "type=registry,ref=svedrin/meshping:latest-armv7l"
-      cache_to: "type=inline"
     when:
       - event: push
         branch: master
@@ -36,8 +34,6 @@ steps:
       repo: svedrin/meshping
       tags: staging-armv7l
       platforms: linux/arm/v7
-      cache_from: "type=registry,ref=svedrin/meshping:staging-armv7l"
-      cache_to: "type=inline"
     when:
       - event: push
         branch: staging
@@ -52,7 +48,5 @@ steps:
       repo: svedrin/meshping
       tags: ${CI_COMMIT_TAG}-armv7l
       platforms: linux/arm/v7
-      cache_from: "type=registry,ref=svedrin/meshping:latest-armv7l"
-      cache_to: "type=inline"
     when:
       - event: tag

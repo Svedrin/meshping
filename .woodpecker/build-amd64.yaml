@@ -20,8 +20,6 @@ steps:
       repo: svedrin/meshping
       tags: latest-amd64
       platforms: linux/amd64
-      cache_from: "type=registry,ref=svedrin/meshping:latest-amd64"
-      cache_to: "type=inline"
     when:
       - event: push
         branch: master
@@ -36,8 +34,6 @@ steps:
       repo: svedrin/meshping
       tags: staging-amd64
       platforms: linux/amd64
-      cache_from: "type=registry,ref=svedrin/meshping:staging-amd64"
-      cache_to: "type=inline"
     when:
       - event: push
         branch: staging
@@ -52,7 +48,5 @@ steps:
       repo: svedrin/meshping
       tags: ${CI_COMMIT_TAG}-amd64
       platforms: linux/amd64
-      cache_from: "type=registry,ref=svedrin/meshping:latest-amd64"
-      cache_to: "type=inline"
     when:
       - event: tag
