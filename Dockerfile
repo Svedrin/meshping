@@ -37,7 +37,7 @@ COPY src    /opt/meshping/src
 COPY ui/src /opt/meshping/ui/src
 
 # Smoke-test that all the dependencies are installed correctly.
-RUN (cd src && env MESHPING_DATABASE_PATH=/tmp/ python3 -c "from meshping import app")
+RUN (cd src && env MESHPING_DATABASE_PATH=/dev/shm/ python3 -c "from meshping import app")
 
 VOLUME /opt/meshping/db
 
