@@ -36,6 +36,9 @@ COPY --from=0 /usr/lib/python3.12/site-packages/oping.*.so /usr/lib/python3.12/s
 COPY src    /opt/meshping/src
 COPY ui/src /opt/meshping/ui/src
 
+# Smoke-test that all the dependencies are installed correctly.
+RUN (cd src && env MESHPING_DATABASE_PATH=/tmp/ python3 -c "from meshping import app")
+
 VOLUME /opt/meshping/db
 
 ENTRYPOINT ["dumb-init", "--"]
