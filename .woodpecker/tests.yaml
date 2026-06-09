@@ -1,0 +1,35 @@
+when:
+  - event: push
+    branch:
+      include: [master, staging]
+  - event: tag
+
+labels:
+  arch: amd64
+
+services:
+  - name: meshping
+    image: alpine:3.20
+    environment:
+      MESHPING_DATABASE_PATH: /tmp
+      MESHPING_PING_TIMEOUT: "1"
+      MESHPING_PING_INTERVAL: "2"
+      MESHPING_PEERING_INTERVAL: "10"
+      MESHPING_PEERS: "pylint-and-test:31337"
+    commands:
+      - apk add --no-cache python3 python3-dev py3-pip musl-dev liboping-dev make gcc bash dumb-init py3-netifaces py3-pillow ttf-dejavu py3-pandas cython tzdata
+      - pip3 install --break-system-packages -r requirements.txt
+      - (cd oping-py && python3 setup.py build && python3 setup.py install)
+      - dumb-init -- python3 src/meshping.py
+
+steps:
+  - name: pylint-and-test
+    image: alpine:3.20
+    commands:
+      - apk add --no-cache python3 py3-pip py3-netifaces py3-pillow bash py3-pandas
+      - pip3 install --break-system-packages pylint
+      - pip3 install --break-system-packages -r requirements.txt
+      - pip3 install --break-system-packages -r features/requirements.txt
+      - bash -c "while ! nc -z meshping 9922; do sleep 1; done"
+      - pylint --fail-under 9 src/
+      - python3 -m behave
