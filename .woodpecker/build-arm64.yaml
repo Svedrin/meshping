@@ -5,9 +5,9 @@ when:
   - event: tag
 
 labels:
-  arch: arm64
+  arch: amd64
 
-depends_on: [tests]
+depends_on: [build-arm32]
 
 steps:
   - name: build latest
