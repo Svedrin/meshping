@@ -8,3 +8,9 @@ build/
 
 ui/node_modules/
 db/
+
+oping-py/UNKNOWN.egg-info/
+oping-py/dist/
+oping-py/oping.egg-info/
+
+.tests-done
