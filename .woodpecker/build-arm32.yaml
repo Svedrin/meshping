@@ -7,7 +7,7 @@ when:
 labels:
   arch: amd64
 
-depends_on: [test]
+depends_on: [tests]
 
 steps:
   - name: build latest
