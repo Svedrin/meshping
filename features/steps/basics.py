@@ -14,7 +14,7 @@ def step(context, n):
 @when('we add a target of "{address}" named "{name}"')
 def step(context, address, name):
     resp = requests.post(
-        "http://meshping:9922/api/targets",
+        "http://localhost:9922/api/targets",
         data=json.dumps({
             "target": "%s@%s" % (name, address)
         }),
@@ -27,13 +27,13 @@ def step(context, address, name):
 
 @when('we delete a target of "{address}"')
 def step(context, address):
-    resp = requests.delete("http://meshping:9922/api/targets/%s" % address)
+    resp = requests.delete("http://localhost:9922/api/targets/%s" % address)
     resp.raise_for_status()
     assert resp.json()["success"] == True
 
 @then('there exists a target of "{address}" named "{name}"')
 def step(context, address, name):
-    resp = requests.get("http://meshping:9922/api/targets")
+    resp = requests.get("http://localhost:9922/api/targets")
     resp.raise_for_status()
     assert resp.json()["success"] == True
     for target in resp.json()["targets"]:
@@ -44,7 +44,7 @@ def step(context, address, name):
 
 @then('there exists no target of "{address}"')
 def step(context, address):
-    resp = requests.get("http://meshping:9922/api/targets")
+    resp = requests.get("http://localhost:9922/api/targets")
     resp.raise_for_status()
     assert resp.json()["success"] == True
     for target in resp.json()["targets"]:
@@ -53,7 +53,7 @@ def step(context, address):
 
 @when('we request a histogram for target "{address}"')
 def step(context, address):
-    context.resp = requests.get("http://meshping:9922/histogram/obsolete/%s.png" % address)
+    context.resp = requests.get("http://localhost:9922/histogram/obsolete/%s.png" % address)
 
 @then('we get a response with status code {status:d}')
 def step(context, status):
@@ -62,7 +62,7 @@ def step(context, status):
 @when('a peer sends us a target of "{address}" named "{name}"')
 def step(context, address, name):
     resp = requests.post(
-        "http://meshping:9922/peer",
+        "http://localhost:9922/peer",
         data=json.dumps({
             "targets": [{
                 "addr":  address,

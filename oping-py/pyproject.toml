@@ -1,0 +1,7 @@
+[build-system]
+requires = ["setuptools", "cython"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oping"
+version = "1.0.0"
