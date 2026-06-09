@@ -1,0 +1,47 @@
+when:
+  - event: push
+    branch:
+      include: [master, staging]
+  - event: tag
+
+labels:
+  arch: amd64
+
+depends_on: [build-amd64, build-arm64, build-arm32]
+
+steps:
+  - name: publish manifest latest
+    image: mplatform/manifest-tool:alpine
+    environment:
+      DOCKER_USERNAME: svedrin
+      DOCKER_PASSWORD:
+        from_secret: docker-registry-pw
+    commands:
+      - manifest-tool --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD" --ignore-missing push from-spec docker-manifest-latest.tmpl
+    when:
+      - event: push
+        branch: master
+
+  - name: publish manifest staging
+    image: mplatform/manifest-tool:alpine
+    environment:
+      DOCKER_USERNAME: svedrin
+      DOCKER_PASSWORD:
+        from_secret: docker-registry-pw
+    commands:
+      - manifest-tool --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD" --ignore-missing push from-spec docker-manifest-staging.tmpl
+    when:
+      - event: push
+        branch: staging
+
+  - name: publish manifest tagged
+    image: mplatform/manifest-tool:alpine
+    environment:
+      DOCKER_USERNAME: svedrin
+      DOCKER_PASSWORD:
+        from_secret: docker-registry-pw
+    commands:
+      - sed "s|{{build.tag}}|$CI_COMMIT_TAG|g" docker-manifest-tagged.tmpl > /tmp/manifest-tagged.yaml
+      - manifest-tool --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD" --ignore-missing push from-spec /tmp/manifest-tagged.yaml
+    when:
+      - event: tag
