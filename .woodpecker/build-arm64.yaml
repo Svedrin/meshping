@@ -19,6 +19,7 @@ steps:
       repo: svedrin/meshping
       tags: latest-arm64
       cache: true
+      registry: index.docker.io
       cache_repo: svedrin/meshping
     when:
       - event: push
@@ -33,6 +34,7 @@ steps:
       repo: svedrin/meshping
       tags: staging-arm64
       cache: true
+      registry: index.docker.io
       cache_repo: svedrin/meshping
     when:
       - event: push
@@ -47,6 +49,7 @@ steps:
       repo: svedrin/meshping
       tags: ${CI_COMMIT_TAG}-arm64
       cache: true
+      registry: index.docker.io
       cache_repo: svedrin/meshping
     when:
       - event: tag
