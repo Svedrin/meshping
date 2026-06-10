@@ -526,3 +526,8 @@ genuinely useful, low-complexity piece.
   exchange. Given meshping is realistically only ever deployed on trusted
   networks, this is defense-in-depth, not a blocker - it could land
   independently of the phases above.
+* **Viewing targets**: The UI should not only allow to see a list of peers
+  and view the world from their (last known) perspective, but it should
+  also amend our own view of all our targets to point out that some of our
+  peers are monitoring the same target as well, so that we can offer to
+  compare both measurements in a single graph.
