@@ -12,7 +12,7 @@ from quart  import Response, render_template, request, jsonify, send_from_direct
 
 import histodraw
 
-from ifaces import Ifaces4
+from ifaces import Ifaces
 
 def add_api_views(app, mp):
     @app.route("/")
@@ -108,8 +108,8 @@ def add_api_views(app, mp):
         if not isinstance(request_json.get("targets"), list):
             return "need targets as a list", 400
 
-        stats = []
-        if4   = Ifaces4()
+        stats  = []
+        ifaces = Ifaces()
 
         for target in request_json["targets"]:
             if not isinstance(target, dict):
@@ -124,11 +124,11 @@ def add_api_views(app, mp):
             target["name"] = target["name"].strip()
             target["addr"] = target["addr"].strip()
 
-            if if4.is_interface(target["addr"]):
+            if ifaces.is_interface(target["addr"]):
                 # no need to ping my own interfaces, ignore
                 continue
 
-            if target["local"] and not if4.is_local(target["addr"]):
+            if target["local"] and not ifaces.is_local(target["addr"]):
                 continue
 
             # See if we know this target already, otherwise create it.
