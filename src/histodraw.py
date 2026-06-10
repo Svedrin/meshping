@@ -39,7 +39,7 @@ def render_target(target):
     #      -27 // 10 * 10   # = -30
     # hmax needs to be nearest power of 10 + 1 for the top tick to be drawn.
     hmin = histograms_df.columns.min() // 10 * 10
-    hmax = histograms_df.columns.max() // 10 * 10 + 11
+    hmax = histograms_df.columns.max() // 10 * 10 + 10
 
     # Draw the graph in a pixels array which we then copy to an image
     height = hmax - hmin + 1
@@ -258,10 +258,11 @@ def render(targets, histogram_period):
         )
 
     # Y axis ticks and annotations
-    for hidx in range(hmin, hmax, 5):
+    for hidx in range(hmin, hmax + 5, 5):
         bottomrow = hidx - hmin
         offset_y = height + graph_y - bottomrow * sqsz - 1
-        draw.line((graph_x - 2, offset_y, graph_x + 2, offset_y), fill=0xAAAAAA)
+        if hidx < hmax:
+            draw.line((graph_x - 2, offset_y, graph_x + 2, offset_y), fill=0xAAAAAA)
 
         ping = 2 ** (hidx / 10.)
         label = f"{ping:.2f}"
