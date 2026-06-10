@@ -137,7 +137,7 @@ def render(targets, histogram_period):
     if len(targets) == 1:                  # just black for a single graph
         targets_with_colors = list(zip(targets, (0x000000, )))
     else:                                  # red, green, blue for multiple graphs
-        targets_with_colors = list(zip(targets, (0x0000FF, 0x00FF00, 0xFF0000)))
+        targets_with_colors = list(zip(targets, (0x0000FF, 0x00A000, 0xFF0000)))
 
     # Build one loss-severity bar per target, aligned to the same hourly
     # columns as the heatmap (oldest on the left, "now" on the right).
@@ -234,8 +234,6 @@ def render(targets, histogram_period):
     for idx, (bar, color) in enumerate(loss_bars):
         bar_y = graph_y + height + idx * sqsz
         im.paste(bar, (graph_x, bar_y))
-        if color == 0x00FF00: # if green, pick a less annoying one
-            color = 0x00A000
 
         draw.text( (graph_x + width + 2, bar_y - 2), "L", color, font=font)
 
@@ -249,8 +247,6 @@ def render(targets, histogram_period):
 
     # Headline
     for idx, (target, color) in enumerate(targets_with_colors):
-        if color == 0x00FF00: # if green, pick a less annoying one
-            color = 0x00A000
         headline_text  = "%s → %s" % (socket.gethostname(), target.label)
         headline_width = lgfont.getlength(headline_text)
         draw.text(
