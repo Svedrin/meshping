@@ -29,9 +29,7 @@ COPY --from=0 /opt/meshping/ui/node_modules/bootstrap/dist/js/bootstrap.bundle.m
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/LICENSE                         /opt/meshping/ui/node_modules/bootstrap-icons/
 COPY --from=0 /opt/meshping/ui/node_modules/bootstrap-icons/icons/                          /opt/meshping/ui/node_modules/bootstrap-icons/icons/
 COPY --from=0 /opt/meshping/ui/node_modules/vue/LICENSE                                     /opt/meshping/ui/node_modules/vue/
-COPY --from=0 /opt/meshping/ui/node_modules/vue/dist/vue.min.js                             /opt/meshping/ui/node_modules/vue/dist/
-COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/LICENSE                            /opt/meshping/ui/node_modules/vue-resource/
-COPY --from=0 /opt/meshping/ui/node_modules/vue-resource/dist/vue-resource.min.js           /opt/meshping/ui/node_modules/vue-resource/dist/
+COPY --from=0 /opt/meshping/ui/node_modules/vue/dist/vue.global.prod.js                     /opt/meshping/ui/node_modules/vue/dist/
 COPY --from=0 /usr/lib/python3.12/site-packages/oping.*.so /usr/lib/python3.12/site-packages
 COPY src    /opt/meshping/src
 COPY ui/src /opt/meshping/ui/src

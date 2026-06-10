@@ -12,7 +12,6 @@
     "bootstrap": "^4.4.1",
     "bootstrap-icons": "^1.11.3",
     "jquery": "^3.5.0",
-    "vue": "^2.6.11",
-    "vue-resource": "^1.5.3"
+    "vue": "^3.4.0"
   }
 }

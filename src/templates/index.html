@@ -7,8 +7,7 @@
     <link rel="stylesheet"        href="/ui/node_modules/bootstrap/dist/css/bootstrap.min.css">
     <script type="text/javascript" src="/ui/node_modules/jquery/dist/jquery.slim.min.js"></script>
     <script type="text/javascript" src="/ui/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="text/javascript" src="/ui/node_modules/vue/dist/vue.min.js"></script>
-    <script type="text/javascript" src="/ui/node_modules/vue-resource/dist/vue-resource.min.js"></script>
+    <script type="text/javascript" src="/ui/node_modules/vue/dist/vue.global.prod.js"></script>
     <script type="text/javascript">
       window.meshping_hostname = "{[ Hostname ]}";
     </script>
@@ -97,14 +96,14 @@
             <td class="d-none d-sm-table-cell" v-on:click="show_route_for_target(target)">{{ target.addr }}</td>
             <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.sent }}</td>
             <td class="text-right d-none d-xl-table-cell text-secondary">{{ target.recv }}</td>
-            <td class="text-right">{{ target.succ   | prettyFloat }}</td>
-            <td class="text-right d-none d-xl-table-cell text-secondary">{{ target.loss   | prettyFloat }}</td>
-            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.min    | prettyFloat }}</td>
-            <td class="text-right">{{ target.avg15m | prettyFloat }}</td>
-            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.avg6h  | prettyFloat }}</td>
-            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.avg24h | prettyFloat }}</td>
-            <td class="text-right d-none d-lg-table-cell text-secondary">{{ target.max    | prettyFloat }}</td>
-            <td class="text-right">{{ target.last   | prettyFloat }}</td>
+            <td class="text-right">{{ prettyFloat(target.succ) }}</td>
+            <td class="text-right d-none d-xl-table-cell text-secondary">{{ prettyFloat(target.loss) }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ prettyFloat(target.min) }}</td>
+            <td class="text-right">{{ prettyFloat(target.avg15m) }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ prettyFloat(target.avg6h) }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ prettyFloat(target.avg24h) }}</td>
+            <td class="text-right d-none d-lg-table-cell text-secondary">{{ prettyFloat(target.max) }}</td>
+            <td class="text-right">{{ prettyFloat(target.last) }}</td>
             <td style="white-space: nowrap" class="d-print-none">
               <span v-if="!comparing">
                 <a v-if="target.recv > 0" target="_blank"

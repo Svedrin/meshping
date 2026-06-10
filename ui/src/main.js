@@ -1,23 +1,42 @@
-window.app = new Vue({
-    el: '#app',
-    data: {
-        hostname: window.meshping_hostname,
-        error_msg: "",
-        success_msg: "",
-        last_update: 0,
-        search: localStorage.getItem("meshping_search") || "",
-        targets_all: [],
-        targets_filtered: [],
-        add_tgt_name: "",
-        add_tgt_addr: "",
-        comparing: false,
-        creating:  false,
-        route_target: {name: "", "traceroute": []},
+var api = {
+    get: async function(url) {
+        var response = await fetch(url);
+        return await response.json();
+    },
+    post: async function(url, data) {
+        var response = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        return await response.json();
+    },
+    delete: async function(url) {
+        var response = await fetch(url, {method: 'DELETE'});
+        return await response.json();
+    }
+};
+
+window.app = Vue.createApp({
+    data: function() {
+        return {
+            hostname: window.meshping_hostname,
+            error_msg: "",
+            success_msg: "",
+            last_update: 0,
+            search: localStorage.getItem("meshping_search") || "",
+            targets_all: [],
+            targets_filtered: [],
+            add_tgt_name: "",
+            add_tgt_addr: "",
+            comparing: false,
+            creating:  false,
+            route_target: {name: "", "traceroute": []},
+        };
     },
     methods: {
         update_targets: async function () {
-            var response = await this.$http.get('/api/targets');
-            var json = await response.json();
+            var json = await api.get('/api/targets');
             this.targets_all = json.targets;
             this.last_update = new Date();
         },
@@ -58,8 +77,7 @@ window.app = new Vue({
         delete_target: async function(target) {
             var message = `Delete target ${target.name} (${target.addr})?`;
             if (confirm(message)) {
-                var response = await this.$http.delete(`/api/targets/${target.addr}`);
-                var json = await response.json();
+                var json = await api.delete(`/api/targets/${target.addr}`);
                 if (json.success) {
                     this.show_success(`<strong>Success!</strong> Deleted target ${target.name} (${target.addr}).`);
                     this.update_targets();
@@ -72,10 +90,7 @@ window.app = new Vue({
             if (this.add_tgt_addr !== "") {
                 target_str += "@" + this.add_tgt_addr;
             }
-            var response = await this.$http.post('/api/targets', {
-                "target": target_str
-            });
-            var json = await response.json();
+            var json = await api.post('/api/targets', {"target": target_str});
             this.creating = false;
             if (json.success) {
                 this.add_tgt_name = "";
@@ -95,8 +110,7 @@ window.app = new Vue({
             }
         },
         clear_stats: async function() {
-            var response = await this.$http.delete('/api/stats');
-            var json = await response.json();
+            var json = await api.delete('/api/stats');
             if (json.success) {
                 this.show_success(
                     "<strong>Success!</strong>Stats are cleared."
@@ -144,6 +158,12 @@ window.app = new Vue({
             this.add_tgt_name = hop.name;
             this.add_tgt_addr = hop.address;
             $('#routeModal').modal("hide");
+        },
+        prettyFloat: function(value) {
+            if (value === undefined || typeof value.toFixed !== 'function') {
+                return '—';
+            }
+            return value.toFixed(2);
         }
     },
     created: function() {
@@ -172,13 +192,5 @@ window.app = new Vue({
         targets_all: function() {
             this.reapply_filters();
         }
-    },
-    filters: {
-        prettyFloat: function(value) {
-            if (value === undefined || typeof value.toFixed !== 'function') {
-                return '—';
-            }
-            return value.toFixed(2);
-        }
     }
-});
+}).mount('#app');
