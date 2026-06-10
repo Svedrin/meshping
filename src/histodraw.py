@@ -64,7 +64,39 @@ def render_target(target):
     graph.hmax = hmax
     graph.tmin = histograms_df.index.min()
     graph.tmax = histograms_df.index.max()
+
+    # Per-hour packet loss fraction (0..1), NaN where we have no data at all.
+    loss_df = target.loss_histogram
+    if loss_df.empty:
+        graph.loss = pandas.Series(dtype=float, index=pandas.DatetimeIndex([]))
+    else:
+        graph.loss = (loss_df["lost"] / loss_df["sent"]).asfreq("1h")
+
     return graph
+
+
+# Color stops for the packet-loss severity gradient: 0% -> green, 50% -> yellow, 100% -> red.
+LOSS_COLOR_STOPS = (
+    (0.0, (0x00, 0xA0, 0x00)),
+    (0.5, (0xFF, 0xCC, 0x00)),
+    (1.0, (0xE0, 0x00, 0x00)),
+)
+
+# Color used for hours with no data at all (as opposed to 0% loss).
+LOSS_COLOR_NO_DATA = (0xE8, 0xE8, 0xE8)
+
+
+def loss_color(frac):
+    if pandas.isna(frac):
+        return LOSS_COLOR_NO_DATA
+
+    frac = min(max(frac, 0.0), 1.0)
+    for (f0, c0), (f1, c1) in zip(LOSS_COLOR_STOPS, LOSS_COLOR_STOPS[1:]):
+        if frac <= f1:
+            t = (frac - f0) / (f1 - f0)
+            return tuple(int(c0[i] + t * (c1[i] - c0[i])) for i in range(3))
+
+    return LOSS_COLOR_STOPS[-1][1]
 
 
 def render(targets, histogram_period):
@@ -75,6 +107,13 @@ def render(targets, histogram_period):
         if target_graph is None:
             raise ValueError(f"No data available for target {target}")
         rendered_graphs.append(target_graph)
+
+    try:
+        font   = ImageFont.truetype("DejaVuSansMono.ttf", 10)
+        lgfont = ImageFont.truetype("DejaVuSansMono.ttf", 16)
+    except IOError:
+        font   = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 10)
+        lgfont = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 16)
 
     width  = histogram_period // 3600 * sqsz
     hmin   = min(graph.hmin for graph in rendered_graphs)
@@ -93,6 +132,28 @@ def render(targets, histogram_period):
     )
 
     t_hist_begin = t_hist_end - timedelta(hours=(histogram_period // 3600))
+
+    # Assign each target a color, used both for its headline and its loss bar.
+    if len(targets) == 1:                  # just black for a single graph
+        targets_with_colors = list(zip(targets, (0x000000, )))
+    else:                                  # red, green, blue for multiple graphs
+        targets_with_colors = list(zip(targets, (0x0000FF, 0x00FF00, 0xFF0000)))
+
+    # Build one loss-severity bar per target, aligned to the same hourly
+    # columns as the heatmap (oldest on the left, "now" on the right).
+    ncols = width // sqsz
+    hourly_index = pandas.date_range(start=t_hist_begin, periods=ncols, freq="1h")
+    loss_bars = []
+    for rendered_graph, (_target, color) in zip(rendered_graphs, targets_with_colors):
+        loss = rendered_graph.loss
+        loss = loss.tz_localize("Etc/UTC").tz_convert(os.environ.get("TZ", "Etc/UTC"))
+        loss = loss.reindex(hourly_index)
+
+        row = np.array([[loss_color(frac) for frac in loss]], dtype=np.uint8)
+        bar = Image.fromarray(row, "RGB").resize((width, sqsz), Image.NEAREST)
+        loss_bars.append((bar, color))
+
+    loss_bar_height = sqsz * len(targets)
 
     if len(rendered_graphs) == 1:
         # Single graph -> use it as-is
@@ -161,27 +222,35 @@ def render(targets, histogram_period):
     graph_y = 30 * len(targets) + 10
 
     # im will hold the output image
-    im = Image.new("RGB", (graph_x + width + 20, graph_y + height + 100), "white")
+    im = Image.new("RGB", (graph_x + width + 20, graph_y + height + loss_bar_height + 100), "white")
     im.paste(graph, (graph_x, graph_y))
 
     # draw a rect around the graph
     draw = ImageDraw.Draw(im)
     draw.rectangle((graph_x, graph_y, graph_x + width - 1, graph_y + height - 1), outline=0x333333)
 
-    try:
-        font   = ImageFont.truetype("DejaVuSansMono.ttf", 10)
-        lgfont = ImageFont.truetype("DejaVuSansMono.ttf", 16)
-    except IOError:
-        font   = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 10)
-        lgfont = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 16)
+    # Paste the per-target loss bars below the heatmap, with a small color
+    # L (matching that target's headline color) to their right.
+    for idx, (bar, color) in enumerate(loss_bars):
+        bar_y = graph_y + height + idx * sqsz
+        im.paste(bar, (graph_x, bar_y))
+        if color == 0x00FF00: # if green, pick a less annoying one
+            color = 0x00A000
+
+        draw.text( (graph_x + width + 2, bar_y - 2), "L", color, font=font)
+
+        if idx > 0:
+            draw.line((graph_x, bar_y, graph_x + width - 1, bar_y), fill=0xFFFFFF)
+
+    draw.rectangle(
+        (graph_x, graph_y + height, graph_x + width - 1, graph_y + height + loss_bar_height),
+        outline=0x333333
+    )
 
     # Headline
-    if len(targets) == 1:                  # just black for a single graph
-        targets_with_colors = zip(targets, (0x000000, ))
-    else:                                  # red, green, blue for multiple graphs
-        targets_with_colors = zip(targets, (0x0000FF, 0x00FF00, 0xFF0000))
-
     for idx, (target, color) in enumerate(targets_with_colors):
+        if color == 0x00FF00: # if green, pick a less annoying one
+            color = 0x00A000
         headline_text  = "%s → %s" % (socket.gethostname(), target.label)
         headline_width = lgfont.getlength(headline_text)
         draw.text(
@@ -203,12 +272,13 @@ def render(targets, histogram_period):
         draw.text((graph_x - len(label) * 6 - 10, offset_y - 5), label, 0x333333, font=font)
 
     # X axis ticks - one every two hours
+    axis_y = height + graph_y + loss_bar_height + 1
     for col in range(1, width // sqsz):
         # We're now at hour indicated by col
         if (t_hist_begin + timedelta(hours=col)).hour % 2 != 0:
             continue
         offset_x = graph_x + col * sqsz
-        draw.line((offset_x, height + graph_y - 2, offset_x, height + graph_y + 2), fill=0xAAAAAA)
+        draw.line((offset_x, axis_y - 2, offset_x, axis_y + 2), fill=0xAAAAAA)
 
     # X axis annotations
     # Create a temp image for the bottom label that we then rotate by 90° and attach to the other one
@@ -227,7 +297,16 @@ def render(targets, histogram_period):
             tmpdraw.text(( 0, offset_x + 4), tstamp.strftime("%m-%d"), 0x333333, font=font)
         tmpdraw.text(    (36, offset_x + 4), tstamp.strftime("%H:%M"), 0x333333, font=font)
 
-    im.paste( tmpim.rotate(90, expand=1), (graph_x - 10, height + graph_y + 1) )
+    im.paste( tmpim.rotate(90, expand=1), (graph_x - 10, axis_y + 1) )
+
+    # Loss bar legend, in the bottom-left corner left of the rotated x axis labels.
+    legend_x, legend_y = 16, axis_y + 16
+    draw.text((legend_x, legend_y), "Loss:", 0x333333, font=font)
+    legend_y += 12
+    for label, frac in (("  0%", 0.0), (" 50%", 0.5), ("100%", 1.0), ("n/a", None)):
+        draw.rectangle((legend_x, legend_y, legend_x + 10, legend_y + 8), fill=loss_color(frac))
+        draw.text((legend_x + 14, legend_y - 1), label, 0x333333, font=font)
+        legend_y += 11
 
     # This worked pretty well for Tobi Oetiker...
     tmpim = Image.new("RGB", (170, 13), "white")

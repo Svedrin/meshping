@@ -169,6 +169,7 @@ class MeshPing:
 
             # Run DB housekeeping
             Target.db.prune_histograms(before_timestamp=(now - self.histogram_period))
+            Target.db.prune_loss_stats(before_timestamp=(now - self.histogram_period))
 
             unseen_targets = current_targets.copy()
             for target in Target.db.all():
@@ -217,6 +218,8 @@ class MeshPing:
         target_stats = target.statistics
         target_stats["sent"] += 1
 
+        hour_timestamp = timestamp // 3600 * 3600
+
         if hostinfo["latency"] != -1:
             target.set_state("up")
             target_stats["recv"] += 1
@@ -229,13 +232,15 @@ class MeshPing:
             target_stats["avg24h"] = exp_avg(target_stats.get("avg24h"), target_stats["last"], FAC_24h)
 
             target.add_measurement(
-                timestamp = timestamp // 3600 * 3600,
+                timestamp = hour_timestamp,
                 bucket    = int(math.log(hostinfo["latency"], 2) * 10)
             )
+            target.add_loss_measurement(timestamp=hour_timestamp, lost=0)
 
         else:
             target.set_state("down")
             target_stats["lost"] += 1
+            target.add_loss_measurement(timestamp=hour_timestamp, lost=1)
 
         target.update_statistics(target_stats)
 

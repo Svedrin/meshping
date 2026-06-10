@@ -36,6 +36,17 @@ CREATE TABLE IF NOT EXISTS histograms (
 )
 """
 
+QRY_CREATE_TABLE_LOSS_STATS = """
+CREATE TABLE IF NOT EXISTS loss_stats (
+    target_id INTEGER,
+    timestamp INTEGER,
+    sent      INTEGER DEFAULT 0,
+    lost      INTEGER DEFAULT 0,
+    FOREIGN KEY (target_id) REFERENCES targets(id),
+    UNIQUE (target_id, timestamp)
+)
+"""
+
 QRY_CREATE_TABLE_STATISTICS = """
 CREATE TABLE IF NOT EXISTS statistics (
     target_id INTEGER,
@@ -81,6 +92,20 @@ WHERE t.addr = ?
 ORDER BY h.timestamp, h.bucket
 """
 
+QRY_UPSERT_LOSS_STATS = """
+INSERT INTO loss_stats (target_id, timestamp, sent, lost) VALUES (?, ?, 1, ?)
+ON CONFLICT (target_id, timestamp) DO UPDATE
+SET sent = sent + 1, lost = lost + excluded.lost;
+"""
+
+QRY_SELECT_LOSS_STATS = """
+SELECT l.timestamp, l.sent, l.lost
+FROM   loss_stats l
+INNER JOIN targets t ON t.id = l.target_id
+WHERE t.addr = ?
+ORDER BY l.timestamp
+"""
+
 QRY_INSERT_STATS = """
 INSERT INTO statistics (target_id, field, value) VALUES(?, ?, ?)
 ON CONFLICT (target_id, field) DO UPDATE
@@ -118,6 +143,7 @@ class Database:
         with self.conn:
             self.conn.execute(QRY_CREATE_TABLE_TARGETS)
             self.conn.execute(QRY_CREATE_TABLE_HISTOGRAMS)
+            self.conn.execute(QRY_CREATE_TABLE_LOSS_STATS)
             self.conn.execute(QRY_CREATE_TABLE_STATISTICS)
             self.conn.execute(QRY_CREATE_TABLE_META)
 
@@ -147,6 +173,7 @@ class Database:
     def delete(self, target_id):
         with self.conn:
             self.conn.execute("DELETE FROM histograms WHERE target_id = ?", (target_id, ))
+            self.conn.execute("DELETE FROM loss_stats WHERE target_id = ?", (target_id, ))
             self.conn.execute("DELETE FROM statistics WHERE target_id = ?", (target_id, ))
             self.conn.execute("DELETE FROM meta       WHERE target_id = ?", (target_id, ))
             self.conn.execute("DELETE FROM targets    WHERE id        = ?", (target_id, ))
@@ -155,6 +182,13 @@ class Database:
         with self.conn:
             self.conn.execute(
                 "DELETE FROM histograms WHERE timestamp < ?",
+                (before_timestamp, )
+            )
+
+    def prune_loss_stats(self, before_timestamp):
+        with self.conn:
+            self.conn.execute(
+                "DELETE FROM loss_stats WHERE timestamp < ?",
                 (before_timestamp, )
             )
 
@@ -203,6 +237,19 @@ class Target:
 
     def add_measurement(self, timestamp, bucket):
         self.db.exec_write(QRY_INSERT_MEASUREMENT, (self.id, timestamp, bucket))
+
+    @property
+    def loss_histogram(self):
+        return pandas.read_sql_query(
+            sql     = QRY_SELECT_LOSS_STATS,
+            con     = self.db.conn,
+            params  = (self.addr, ),
+            parse_dates = {'timestamp': 's'},
+            index_col   = 'timestamp'
+        )
+
+    def add_loss_measurement(self, timestamp, lost):
+        self.db.exec_write(QRY_UPSERT_LOSS_STATS, (self.id, timestamp, lost))
 
     @property
     def statistics(self):
