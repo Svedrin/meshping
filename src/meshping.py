@@ -12,7 +12,6 @@ from uuid       import uuid4
 from time       import time
 from markupsafe import Markup
 from quart_trio import QuartTrio
-from icmplib    import traceroute
 from ipwhois    import IPWhois, IPDefinedError
 from netaddr    import IPAddress, IPNetwork
 
@@ -22,7 +21,7 @@ from oping import PingObj, PingError
 from api   import add_api_views
 from peers import run_peers
 from db    import Target
-from socklib import reverse_lookup, ip_pmtud
+from socklib import reverse_lookup, ip_pmtud, traceroute
 
 INTERVAL = 30
 
