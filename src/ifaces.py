@@ -94,8 +94,36 @@ class Ifaces6:
         return self.find_iface_for_network(target) is not None
 
     def is_interface(self, target):
-        target = ipaddress.IPv4Address(target)
+        target = ipaddress.IPv6Address(target)
         return target in self.addrs
+
+
+class Ifaces:
+    def __init__(self):
+        self.if4 = Ifaces4()
+        self.if6 = Ifaces6()
+
+    def is_local(self, addr):
+        try:
+            return self.if4.is_local(addr)
+        except ValueError:
+            pass
+        try:
+            return self.if6.is_local(addr)
+        except ValueError:
+            pass
+        return False
+
+    def is_interface(self, addr):
+        try:
+            return self.if4.is_interface(addr)
+        except ValueError:
+            pass
+        try:
+            return self.if6.is_interface(addr)
+        except ValueError:
+            pass
+        return False
 
 
 def test():
