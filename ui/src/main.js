@@ -151,6 +151,9 @@ window.app = Vue.createApp({
             }
         },
         show_route_for_target: function(target) {
+            if (window.getSelection().toString().length > 0) {
+                return;
+            }
             this.route_target = target;
             $('#routeModal').modal("show");
         },
