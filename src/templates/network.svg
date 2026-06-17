@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="{[ canvas_w ]}" height="{[ canvas_h ]}"
+     viewBox="0 0 {[ canvas_w ]} {[ canvas_h ]}">
+
+<defs>
+  <style>
+    a text { cursor: pointer; }
+  </style>
+
+  <!-- Background gradient: deep navy top-left to near-black bottom-right -->
+  <linearGradient id="bg-grad" x1="0" y1="0" x2="0.4" y2="1">
+    <stop offset="0%"   stop-color="#182644"/>
+    <stop offset="100%" stop-color="#090d1a"/>
+  </linearGradient>
+
+  <!-- Subtle dot-grid overlay -->
+  <pattern id="dots" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+    <circle cx="1.5" cy="1.5" r="0.9" fill="#1e3a5f" opacity="0.3"/>
+  </pattern>
+
+  <!-- Per-state glow filters -->
+  <filter id="glow-up" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b"/>
+    <feFlood flood-color="#22c55e" flood-opacity="0.45" result="c"/>
+    <feComposite in="c" in2="b" operator="in" result="g"/>
+    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="glow-different" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b"/>
+    <feFlood flood-color="#f59e0b" flood-opacity="0.45" result="c"/>
+    <feComposite in="c" in2="b" operator="in" result="g"/>
+    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="glow-down" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b"/>
+    <feFlood flood-color="#ef4444" flood-opacity="0.45" result="c"/>
+    <feComposite in="c" in2="b" operator="in" result="g"/>
+    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="glow-self" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="7" result="b"/>
+    <feFlood flood-color="#60a5fa" flood-opacity="0.55" result="c"/>
+    <feComposite in="c" in2="b" operator="in" result="g"/>
+    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="glow-dummy" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="b"/>
+    <feFlood flood-color="#475569" flood-opacity="0.3" result="c"/>
+    <feComposite in="c" in2="b" operator="in" result="g"/>
+    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="glow-unknown" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="b"/>
+    <feFlood flood-color="#475569" flood-opacity="0.3" result="c"/>
+    <feComposite in="c" in2="b" operator="in" result="g"/>
+    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- Drop-shadow for UI panels -->
+  <filter id="panel-shadow" x="-8%" y="-8%" width="116%" height="120%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b"/>
+    <feOffset dx="0" dy="4" in="b" result="o"/>
+    <feFlood flood-color="#000000" flood-opacity="0.5" result="c"/>
+    <feComposite in="c" in2="o" operator="in" result="s"/>
+    <feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+
+<!-- ── Background ─────────────────────────────────────────────────────── -->
+<rect width="{[ canvas_w ]}" height="{[ canvas_h ]}" fill="url(#bg-grad)"/>
+<rect width="{[ canvas_w ]}" height="{[ canvas_h ]}" fill="url(#dots)"/>
+
+<!-- ── Title bar ──────────────────────────────────────────────────────── -->
+<rect x="0" y="0" width="{[ canvas_w ]}" height="58" fill="#060c1a" fill-opacity="0.88"/>
+<line x1="0" y1="58" x2="{[ canvas_w ]}" y2="58" stroke="#1d4ed8" stroke-width="1.5" opacity="0.5"/>
+<!-- macOS-style traffic-light dots for visual flair -->
+<circle cx="22" cy="21" r="5" fill="#ef4444" opacity="0.7"/>
+<circle cx="38" cy="21" r="5" fill="#f59e0b" opacity="0.7"/>
+<circle cx="54" cy="21" r="5" fill="#22c55e" opacity="0.7"/>
+<text x="{[ canvas_w // 2 ]}" y="30"
+      text-anchor="middle"
+      font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      font-size="18" font-weight="700" letter-spacing="0.5" fill="#e2e8f0">
+  Network Map &#8212; {[ hostname | e ]}
+</text>
+<text x="{[ canvas_w // 2 ]}" y="49"
+      text-anchor="middle"
+      font-family="ui-sans-serif, system-ui, sans-serif"
+      font-size="10" fill="#334155" letter-spacing="0.8">
+  {[ now ]}
+</text>
+
+<!-- ── Edges ──────────────────────────────────────────────────────────── -->
+{% for e in edges %}
+<path d="M {[ '%.2f' % e.x1 ]} {[ '%.2f' % e.y1 ]} C {[ '%.2f' % e.cx1 ]} {[ '%.2f' % e.cy1 ]}, {[ '%.2f' % e.cx2 ]} {[ '%.2f' % e.cy2 ]}, {[ '%.2f' % e.x2 ]} {[ '%.2f' % e.y2 ]}"
+      fill="none" stroke="#2d4a6b" stroke-width="1.5" stroke-linecap="round"
+      opacity="0.65"/>
+{% endfor %}
+
+<!-- ── Nodes ──────────────────────────────────────────────────────────── -->
+{% for node in nodes %}
+{% set x0 = node.cx - node.w / 2 %}
+{% set y0 = node.cy - node.h / 2 %}
+<g filter="url(#glow-{[ node.state ]})">
+  <!-- Card background -->
+  <rect x="{[ '%.2f' % x0 ]}" y="{[ '%.2f' % y0 ]}"
+        width="{[ node.w ]}" height="{[ '%.2f' % node.h ]}"
+        rx="10" ry="10"
+        fill="#07101f"
+        stroke="{[ node.stroke ]}" stroke-width="1.5" stroke-opacity="0.85"/>
+  <!-- Coloured accent stripe along the top edge -->
+  <line x1="{[ '%.2f' % (x0 + 12) ]}" y1="{[ '%.2f' % y0 ]}"
+        x2="{[ '%.2f' % (x0 + node.w - 12) ]}" y2="{[ '%.2f' % y0 ]}"
+        stroke="{[ node.stroke ]}" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+  <!-- Text lines -->
+  {% for line in node.lines %}
+  {% if line.href %}
+  <a xlink:href="{[ line.href | e ]}" href="{[ line.href | e ]}" target="_blank">
+  {% endif %}
+  <text x="{[ '%.2f' % line.x ]}" y="{[ '%.2f' % line.y ]}"
+        font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="{[ line.size ]}" font-weight="{[ line.weight ]}"
+        text-anchor="{[ line.anchor ]}" fill="{[ line.fill ]}"
+        {% if line.href %}text-decoration="underline"{% endif %}>{[ line.text | e ]}</text>
+  {% if line.href %}
+  </a>
+  {% endif %}
+  {% endfor %}
+</g>
+{% endfor %}
+
+<!-- ── Legend ─────────────────────────────────────────────────────────── -->
+{% set lx = 20 %}
+{% set ly = canvas_h - 116 %}
+<rect x="{[ lx - 12 ]}" y="{[ ly - 14 ]}" width="164" height="116" rx="10"
+      fill="#07101f" stroke="#1e3a5f" stroke-width="1" filter="url(#panel-shadow)"/>
+<text x="{[ lx ]}" y="{[ ly + 4 ]}"
+      font-family="ui-sans-serif, system-ui, sans-serif"
+      font-size="9" font-weight="700" letter-spacing="1.8" fill="#334155">LEGEND</text>
+{% for label, color in [("Up",       "#22c55e"),
+                         ("Degraded", "#f59e0b"),
+                         ("Down",     "#ef4444"),
+                         ("Unknown",  "#475569")] %}
+{% set row = loop.index0 %}
+<rect x="{[ lx ]}"      y="{[ ly + 14 + row * 23 ]}" width="13" height="13" rx="3"
+      fill="{[ color ]}" fill-opacity="0.18" stroke="{[ color ]}" stroke-width="1.5"/>
+<text x="{[ lx + 20 ]}" y="{[ ly + 25 + row * 23 ]}"
+      font-family="ui-sans-serif, system-ui, sans-serif"
+      font-size="12" fill="#cbd5e1">{[ label ]}</text>
+{% endfor %}
+
+<!-- ── Footer ─────────────────────────────────────────────────────────── -->
+<text x="{[ canvas_w - 12 ]}" y="{[ canvas_h - 8 ]}"
+      text-anchor="end"
+      font-family="ui-sans-serif, system-ui, sans-serif"
+      font-size="10" fill="#1e3357">
+  Meshping &#8212; github.com/Svedrin/meshping
+</text>
+
+</svg>

@@ -15,7 +15,7 @@ RUN cd /opt/meshping/oping-py && pip install --break-system-packages --no-build-
 
 FROM alpine:3.20
 
-RUN apk add --no-cache python3 py3-pip liboping bash py3-netifaces py3-pillow dumb-init ttf-dejavu py3-pandas tzdata plantuml openjdk8-jre
+RUN apk add --no-cache python3 py3-pip liboping bash py3-netifaces py3-pillow dumb-init ttf-dejavu py3-pandas tzdata
 
 COPY requirements.txt /opt/meshping/requirements.txt
 RUN pip3 install --break-system-packages --no-cache-dir -r /opt/meshping/requirements.txt

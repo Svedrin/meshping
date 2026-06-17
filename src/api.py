@@ -4,11 +4,11 @@
 
 import socket
 
-from subprocess import run as run_command
+from collections import defaultdict
 from datetime import datetime
 from random import randint
 from io     import BytesIO
-from quart  import Response, render_template, request, jsonify, send_from_directory, send_file, abort
+from quart  import Response, render_template, request, jsonify, send_from_directory, send_file, abort, url_for
 
 import histodraw
 
@@ -268,6 +268,7 @@ def add_api_views(app, mp):
 
     @app.route("/network.svg")
     async def network_diagram():
+        hostname   = socket.gethostname()
         targets    = mp.all_targets()
         uniq_hops  = {}
         uniq_links = set()
@@ -307,36 +308,203 @@ def add_api_views(app, mp):
                 prev_hop  = hop_id
                 prev_dist = hop["distance"]
 
+        # ── Layout constants ────────────────────────────────────────────────
+        NODE_W      = 260
+        H_GAP       = 70
+        V_GAP       = 60
+        PAD_X       = 80
+        PAD_Y       = 86   # leaves room for 58px title bar + breathing space
+        INNER_PAD   = 14
+        TITLE_FONT  = 14
+        BODY_FONT   = 11
+        BODY_LINE_H = 17
+        BODY_GAP    =  5
+
+        STATE_COLORS = {
+            "up":        "#22c55e",
+            "different": "#f59e0b",
+            "down":      "#ef4444",
+            "self":      "#60a5fa",
+            "dummy":     "#475569",
+            "unknown":   "#475569",
+        }
+
+        def hop_height(hop):
+            if not hop.get("address"):
+                return 48
+            body = 1  # address line always present
+            if (hop.get("whois") or {}).get("asn"):
+                body += 1
+            if hop.get("target"):
+                body += 1
+            return INNER_PAD * 2 + TITLE_FONT + BODY_GAP + body * BODY_LINE_H
+
+        SELF_H = INNER_PAD * 2 + TITLE_FONT + BODY_GAP + BODY_LINE_H
+
+        # ── Build adjacency maps ────────────────────────────────────────────
+        parents_of = defaultdict(list)
+        for (lft, rgt) in uniq_links:
+            parents_of[rgt].append(lft)
+
+        # ── Group nodes by distance ─────────────────────────────────────────
+        levels = defaultdict(list)
+        levels[0] = ["SELF"]
+        for hop_id, hop in uniq_hops.items():
+            levels[hop["distance"]].append(hop_id)
+
+        # ── Canvas width ────────────────────────────────────────────────────
+        max_per_level = max(len(v) for v in levels.values())
+        canvas_w = max(1000, max_per_level * (NODE_W + H_GAP) - H_GAP + 2 * PAD_X)
+
+        # ── Per-level max height and Y offsets ──────────────────────────────
+        level_max_h = {0: SELF_H}
+        for dist, hop_ids in levels.items():
+            if dist == 0:
+                continue
+            level_max_h[dist] = max(hop_height(uniq_hops[hid]) for hid in hop_ids)
+
+        level_y = {}
+        y_cursor = PAD_Y
+        for dist in sorted(levels.keys()):
+            level_y[dist] = y_cursor
+            y_cursor += level_max_h[dist] + V_GAP
+
+        canvas_h = y_cursor - V_GAP + PAD_Y
+
+        # ── Compute node center positions (top-down) ────────────────────────
+        positions = {"SELF": (canvas_w / 2, level_y[0] + SELF_H / 2)}
+
+        for dist in sorted(k for k in levels.keys() if k > 0):
+            hop_ids = levels[dist]
+
+            def avg_parent_x(hid):
+                xs = [positions[p][0] for p in parents_of[hid] if p in positions]
+                return sum(xs) / len(xs) if xs else canvas_w / 2
+
+            hop_ids = sorted(hop_ids, key=avg_parent_x)
+            n       = len(hop_ids)
+            total_w = n * NODE_W + (n - 1) * H_GAP
+            start_x = (canvas_w - total_w) / 2
+            cy      = level_y[dist] + level_max_h[dist] / 2
+
+            for i, hid in enumerate(hop_ids):
+                positions[hid] = (start_x + i * (NODE_W + H_GAP) + NODE_W / 2, cy)
+
+        # ── Build edges with cubic-bezier control points ────────────────────
+        def node_h(hid):
+            if hid == "SELF":
+                return SELF_H
+            return hop_height(uniq_hops.get(hid, {}))
+
+        edge_list = []
+        for (lft, rgt) in sorted(uniq_links):
+            if lft not in positions or rgt not in positions:
+                continue
+            sx, sy = positions[lft]
+            tx, ty = positions[rgt]
+            y1 = sy + node_h(lft) / 2
+            y2 = ty - node_h(rgt) / 2
+            dy = (y2 - y1) * 0.5
+            edge_list.append({
+                "x1": sx,  "y1": y1,
+                "cx1": sx, "cy1": y1 + dy,
+                "cx2": tx, "cy2": y2 - dy,
+                "x2": tx,  "y2": y2,
+            })
+
+        # ── Build node render list with pre-computed text lines ─────────────
+        def make_lines(hop_id, hop, cx, cy, h, stroke):
+            top    = cy - h / 2
+            lx     = cx - NODE_W / 2 + 16   # left text margin
+            title_y = top + INNER_PAD + TITLE_FONT
+            body_y0 = title_y + BODY_GAP + BODY_LINE_H
+
+            if hop_id == "SELF":
+                return [
+                    dict(text=hostname[:30],  href=None, x=lx,  y=title_y,
+                         size=TITLE_FONT, weight="600",    fill="#f1f5f9", anchor="start"),
+                    dict(text="This node",    href=None, x=lx,  y=body_y0,
+                         size=BODY_FONT,  weight="normal", fill="#64748b", anchor="start"),
+                ]
+
+            if not hop.get("address"):
+                return [
+                    dict(text="?", href=None, x=cx, y=cy + TITLE_FONT * 0.35,
+                         size=TITLE_FONT + 4, weight="600", fill="#64748b", anchor="middle"),
+                ]
+
+            name = (hop.get("target") and hop["target"].name) or hop.get("name") or hop["address"]
+            lines = [
+                dict(text=name[:30], href=None, x=lx, y=title_y,
+                     size=TITLE_FONT, weight="600", fill="#f1f5f9", anchor="start"),
+            ]
+
+            addr = hop["address"]
+            body_y = body_y0
+            lines.append(dict(
+                text=addr, href="https://ipinfo.io/" + addr,
+                x=lx, y=body_y, size=BODY_FONT, weight="normal", fill="#94a3b8", anchor="start",
+            ))
+            body_y += BODY_LINE_H
+
+            whois = hop.get("whois") or {}
+            if whois.get("asn"):
+                net_name = (whois.get("network") or {}).get("name", "")
+                text     = ("AS" + str(whois["asn"]) + ": " + net_name)[:34]
+                lines.append(dict(
+                    text=text, href="https://bgp.tools/as/" + str(whois["asn"]),
+                    x=lx, y=body_y, size=BODY_FONT, weight="normal", fill="#64748b", anchor="start",
+                ))
+                body_y += BODY_LINE_H
+
+            if hop.get("target"):
+                tgt_url = url_for("histogram", node=hostname, target=hop["target"].addr, _external=True)
+                lines.append(dict(
+                    text="View Histogram →", href=tgt_url,
+                    x=lx, y=body_y, size=BODY_FONT, weight="normal", fill=stroke, anchor="start",
+                ))
+
+            return lines
+
+        node_list = []
+
+        cx0, cy0 = positions["SELF"]
+        stroke0   = STATE_COLORS["self"]
+        node_list.append({
+            "cx": cx0, "cy": cy0, "w": NODE_W, "h": SELF_H,
+            "state": "self", "stroke": stroke0,
+            "lines": make_lines("SELF", {}, cx0, cy0, SELF_H, stroke0),
+        })
+
+        for hid, hop in uniq_hops.items():
+            if hid not in positions:
+                continue
+            cx, cy  = positions[hid]
+            h       = hop_height(hop)
+            state   = "dummy" if not hop.get("address") else hop.get("state", "unknown")
+            stroke  = STATE_COLORS.get(state, "#475569")
+            node_list.append({
+                "cx": cx, "cy": cy, "w": NODE_W, "h": h,
+                "state": state, "stroke": stroke,
+                "lines": make_lines(hid, hop, cx, cy, h, stroke),
+            })
 
         now = datetime.now()
 
         tpl = await render_template(
-            "network.puml",
-            hostname   = socket.gethostname(),
-            now        = now.strftime("%Y-%m-%d %H:%M:%S"),
-            targets    = targets,
-            uniq_hops  = uniq_hops,
-            uniq_links = sorted(uniq_links),
-            uniq_hops_sorted = [uniq_hops[hop] for hop in sorted(uniq_hops.keys())],
-        );
-
-        plantuml = run_command(["plantuml", "-tsvg", "-p"], input=tpl.encode("utf-8"), capture_output=True)
-
-        if plantuml.stderr:
-            return Response(plantuml.stderr.decode("utf-8") + "\n\n===\n\n" + tpl, mimetype="text/plain"), 500
-
-        resp = Response(
-            plantuml.stdout,
-            mimetype="image/svg+xml"
+            "network.svg",
+            hostname = hostname,
+            now      = now.strftime("%Y-%m-%d %H:%M:%S"),
+            canvas_w = int(canvas_w),
+            canvas_h = int(canvas_h),
+            nodes    = node_list,
+            edges    = edge_list,
         )
 
-        resp.headers["refresh"]       = "43200"                 # 12h
-        resp.headers["Cache-Control"] = "max-age=36000, public" # 10h
-
+        resp = Response(tpl, mimetype="image/svg+xml")
+        resp.headers["refresh"]             = "43200"
+        resp.headers["Cache-Control"]       = "max-age=36000, public"
         resp.headers["content-disposition"] = (
-            'inline; filename="meshping_%s_network.svg"' % (
-                now.strftime("%Y-%m-%d_%H-%M-%S")
-            )
+            'inline; filename="meshping_%s_network.svg"' % now.strftime("%Y-%m-%d_%H-%M-%S")
         )
-
         return resp
