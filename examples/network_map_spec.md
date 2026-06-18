@@ -87,18 +87,19 @@ The layout is entirely hierarchical: every real hop already carries a
 
 **Key constants** (all in pixels):
 
-| Constant      | Default | Purpose                                     |
-|---------------|---------|---------------------------------------------|
-| `NODE_W`      | 260     | Fixed node width                            |
-| `H_GAP`       | 70      | Horizontal gap between sibling nodes        |
-| `V_GAP`       | 60      | Vertical gap between levels                 |
-| `PAD_X`       | 80      | Canvas left/right margin                    |
-| `PAD_Y`       | 86      | Canvas top margin (accounts for title bar)  |
-| `INNER_PAD`   | 14      | Text padding inside each node card          |
-| `TITLE_FONT`  | 14      | Font size for the node's primary label      |
-| `BODY_FONT`   | 11      | Font size for secondary lines               |
-| `BODY_LINE_H` | 17      | Line height for body text                   |
-| `BODY_GAP`    | 5       | Extra vertical gap between title and body   |
+| Constant      | Default | Purpose                                          |
+|---------------|---------|--------------------------------------------------|
+| `NODE_W`      | 260     | Fixed node width                                 |
+| `H_GAP`       | 70      | Horizontal gap between sibling nodes             |
+| `COL_W`       | 330     | Column slot width (`NODE_W + H_GAP`)             |
+| `V_GAP`       | 60      | Vertical gap between levels                      |
+| `PAD_X`       | 80      | Canvas left/right margin                         |
+| `PAD_Y`       | 86      | Canvas top margin (accounts for title bar)       |
+| `INNER_PAD`   | 14      | Text padding inside each node card               |
+| `TITLE_FONT`  | 14      | Font size for the node's primary label           |
+| `BODY_FONT`   | 11      | Font size for secondary lines                    |
+| `BODY_LINE_H` | 17      | Line height for body text                        |
+| `BODY_GAP`    | 5       | Extra vertical gap between title and body        |
 
 #### Level grouping
 
@@ -114,7 +115,8 @@ level 2 → [all hops with distance == 2]
 The canvas height is the sum of each level's tallest node plus `V_GAP`
 separators plus top and bottom padding.
 
-The canvas width is `max(1000, max_nodes_per_level × (NODE_W + H_GAP) − H_GAP + 2 × PAD_X)`.
+The canvas width is derived from the spanning-tree leaf count (see below):
+`max(1000, total_leaves × COL_W − H_GAP + 2 × PAD_X)`.
 
 #### Node height
 
@@ -135,13 +137,50 @@ where `body_lines` is:
 All nodes in the same level are vertically centred on that level's midpoint
 (the tallest node in the level determines the midpoint).
 
-#### Sibling ordering
+#### Column layout via spanning tree
 
-Within each level, siblings are sorted by the **average X coordinate of their
-parents** already computed in the level above.  This is a single top-down
-pass and keeps related branches visually clustered — hops that share a parent
-stay close to each other — without the complexity of a full Reingold-Tilford
-layout.
+Horizontal positions are determined by a spanning-tree layout, not by
+distributing nodes evenly per level.  This keeps straight paths in straight
+columns: a chain `SELF → R1 → R2 → target` occupies a single vertical column;
+branches widen only where paths genuinely diverge.
+
+**Step 1 — build the spanning tree.**  The full graph is a DAG (many traceroute
+paths can converge on the same router).  Each non-SELF node picks its
+**alphabetically-first parent** as its primary parent.  The remaining
+parent→child links stay in `uniq_links` and are still drawn as edges, but they
+don't influence horizontal position.  Within each node's primary-children list,
+children are also sorted alphabetically by `hop_id` (IP-address order), giving
+a deterministic left-to-right arrangement.
+
+**Step 2 — assign fractional column indices.**  A recursive post-order
+traversal of the spanning tree assigns column positions:
+
+```
+assign_col(node):
+    children = tree_children[node]
+    if no children:
+        x_col[node] = leaf_counter + 0.5   # centre of its leaf slot
+        leaf_counter += 1
+    else:
+        for child in children:
+            assign_col(child)
+        x_col[node] = (x_col[first_child] + x_col[last_child]) / 2
+```
+
+Leaf nodes each occupy one integer-width slot.  Internal nodes sit at the
+midpoint of their children's range, so a node with two children at columns 0.5
+and 1.5 lands at column 1.0, directly between them.
+
+**Step 3 — convert to pixels.**  `canvas_w` is computed from `total_leaves`
+(the final value of `leaf_counter`).  The pixel centre of a node is:
+
+```
+col_offset = PAD_X + (canvas_w − 2×PAD_X − tree_span) / 2
+cx = col_offset + x_col[node] × COL_W
+```
+
+This centres the whole layout within the canvas regardless of how many leaves
+there are.
 
 #### Edge geometry
 
@@ -360,9 +399,9 @@ When adding new content to the SVG:
    in `network_diagram()` in `api.py`.  The template receives flat,
    pre-computed values.
 
-2. **Respect the layering order** (background → edges → nodes → panels →
-   footer).  SVG has no z-index; later elements paint over earlier ones.
-   Edges must be drawn before nodes so they disappear behind the cards.
+2. **Respect the layering order** (background → title bar → edges → nodes →
+   legend → footer).  SVG has no z-index; later elements paint over earlier
+   ones.  Edges must be drawn before nodes so they disappear behind the cards.
 
 3. **Use `| e` on all user-supplied strings** in the template.  Hostnames,
    network names, and addresses can contain characters that break XML.
