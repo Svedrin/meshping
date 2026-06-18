@@ -352,10 +352,6 @@ def add_api_views(app, mp):
         for hop_id, hop in uniq_hops.items():
             levels[hop["distance"]].append(hop_id)
 
-        # ── Canvas width ────────────────────────────────────────────────────
-        max_per_level = max(len(v) for v in levels.values())
-        canvas_w = max(1000, max_per_level * (NODE_W + H_GAP) - H_GAP + 2 * PAD_X)
-
         # ── Per-level max height and Y offsets ──────────────────────────────
         level_max_h = {0: SELF_H}
         for dist, hop_ids in levels.items():
@@ -371,24 +367,55 @@ def add_api_views(app, mp):
 
         canvas_h = y_cursor - V_GAP + PAD_Y
 
-        # ── Compute node center positions (top-down) ────────────────────────
-        positions = {"SELF": (canvas_w / 2, level_y[0] + SELF_H / 2)}
+        # ── Build spanning tree for column layout ────────────────────────────
+        # Each node gets one primary parent (alphabetically first) that anchors
+        # its column; all other parent→child links become extra DAG edges.
+        # Sorting children alphabetically by hop_id gives a deterministic,
+        # IP-address-ordered left-to-right arrangement.
+        tree_children = defaultdict(list)
+        for hid in uniq_hops:
+            pars = sorted(parents_of.get(hid, []))
+            if pars:
+                tree_children[pars[0]].append(hid)
+        for parent in list(tree_children):
+            tree_children[parent].sort()
 
-        for dist in sorted(k for k in levels.keys() if k > 0):
-            hop_ids = levels[dist]
+        # Assign each node a fractional leaf-index: leaves get integer slots,
+        # internal nodes sit at the midpoint of their children's range.
+        COL_W        = NODE_W + H_GAP
+        leaf_counter = [0]
+        x_col        = {}  # node_id -> fractional column index
 
-            def avg_parent_x(hid):
-                xs = [positions[p][0] for p in parents_of[hid] if p in positions]
-                return sum(xs) / len(xs) if xs else canvas_w / 2
+        def assign_col(node):
+            children = tree_children.get(node, [])
+            if not children:
+                x_col[node] = leaf_counter[0] + 0.5
+                leaf_counter[0] += 1
+            else:
+                for child in children:
+                    assign_col(child)
+                x_col[node] = (x_col[children[0]] + x_col[children[-1]]) / 2
 
-            hop_ids = sorted(hop_ids, key=avg_parent_x)
-            n       = len(hop_ids)
-            total_w = n * NODE_W + (n - 1) * H_GAP
-            start_x = (canvas_w - total_w) / 2
-            cy      = level_y[dist] + level_max_h[dist] / 2
+        assign_col("SELF")
 
-            for i, hid in enumerate(hop_ids):
-                positions[hid] = (start_x + i * (NODE_W + H_GAP) + NODE_W / 2, cy)
+        total_leaves = max(leaf_counter[0], 1)
+        canvas_w     = max(1000, int(total_leaves * COL_W - H_GAP + 2 * PAD_X))
+        tree_span    = total_leaves * COL_W - H_GAP
+        col_offset   = PAD_X + (canvas_w - 2 * PAD_X - tree_span) / 2
+
+        def col_to_px(col):
+            return col_offset + col * COL_W
+
+        # ── Assign pixel positions ───────────────────────────────────────────
+        positions = {"SELF": (col_to_px(x_col["SELF"]), level_y[0] + SELF_H / 2)}
+        for hid, hop in uniq_hops.items():
+            if hid not in x_col:
+                continue
+            dist = hop["distance"]
+            positions[hid] = (
+                col_to_px(x_col[hid]),
+                level_y[dist] + level_max_h[dist] / 2,
+            )
 
         # ── Build edges with cubic-bezier control points ────────────────────
         def node_h(hid):
@@ -410,6 +437,48 @@ def add_api_views(app, mp):
                 "cx1": sx, "cy1": y1 + dy,
                 "cx2": tx, "cy2": y2 - dy,
                 "x2": tx,  "y2": y2,
+            })
+
+        # ── Compute AS group bounding boxes ─────────────────────────────────
+        # Only groups with 2+ members get a border; single-hop ASes are noise.
+        AS_PALETTE = [
+            "#7c3aed", "#0891b2", "#d946ef", "#0d9488",
+            "#9333ea", "#0284c7", "#c026d3", "#059669",
+            "#6d28d9", "#0e7490",
+        ]
+        AS_PAD = 20  # padding around each AS group bounding box
+
+        def as_color(asn):
+            return AS_PALETTE[sum(ord(c) for c in str(asn)) % len(AS_PALETTE)]
+
+        as_raw = defaultdict(lambda: {"name": "", "nodes": []})
+        for hid, hop in uniq_hops.items():
+            if hid not in positions:
+                continue
+            whois = hop.get("whois") or {}
+            asn   = whois.get("asn")
+            if not asn or asn == "NA":
+                continue
+            cx, cy = positions[hid]
+            as_raw[asn]["name"] = (whois.get("network") or {}).get("name", "")
+            as_raw[asn]["nodes"].append({"cx": cx, "cy": cy, "h": hop_height(hop)})
+
+        as_group_list = []
+        for asn, grp in sorted(as_raw.items()):
+            if len(grp["nodes"]) < 2:
+                continue
+            color = as_color(asn)
+            ns    = grp["nodes"]
+            x0 = min(n["cx"] - NODE_W / 2 for n in ns) - AS_PAD
+            y0 = min(n["cy"] - n["h"] / 2 for n in ns) - AS_PAD
+            x1 = max(n["cx"] + NODE_W / 2 for n in ns) + AS_PAD
+            y1 = max(n["cy"] + n["h"] / 2 for n in ns) + AS_PAD
+            as_group_list.append({
+                "asn":   str(asn),
+                "name":  str(grp["name"])[:40],
+                "color": color,
+                "x0": x0, "y0": y0, "x1": x1, "y1": y1,
+                "w":  x1 - x0, "h":  y1 - y0,
             })
 
         # ── Build node render list with pre-computed text lines ─────────────
@@ -493,12 +562,13 @@ def add_api_views(app, mp):
 
         tpl = await render_template(
             "network.svg",
-            hostname = hostname,
-            now      = now.strftime("%Y-%m-%d %H:%M:%S"),
-            canvas_w = int(canvas_w),
-            canvas_h = int(canvas_h),
-            nodes    = node_list,
-            edges    = edge_list,
+            hostname  = hostname,
+            now       = now.strftime("%Y-%m-%d %H:%M:%S"),
+            canvas_w  = int(canvas_w),
+            canvas_h  = int(canvas_h),
+            nodes     = node_list,
+            edges     = edge_list,
+            as_groups = as_group_list,
         )
 
         resp = Response(tpl, mimetype="image/svg+xml")
