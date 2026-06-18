@@ -439,48 +439,6 @@ def add_api_views(app, mp):
                 "x2": tx,  "y2": y2,
             })
 
-        # ── Compute AS group bounding boxes ─────────────────────────────────
-        # Only groups with 2+ members get a border; single-hop ASes are noise.
-        AS_PALETTE = [
-            "#7c3aed", "#0891b2", "#d946ef", "#0d9488",
-            "#9333ea", "#0284c7", "#c026d3", "#059669",
-            "#6d28d9", "#0e7490",
-        ]
-        AS_PAD = 20  # padding around each AS group bounding box
-
-        def as_color(asn):
-            return AS_PALETTE[sum(ord(c) for c in str(asn)) % len(AS_PALETTE)]
-
-        as_raw = defaultdict(lambda: {"name": "", "nodes": []})
-        for hid, hop in uniq_hops.items():
-            if hid not in positions:
-                continue
-            whois = hop.get("whois") or {}
-            asn   = whois.get("asn")
-            if not asn or asn == "NA":
-                continue
-            cx, cy = positions[hid]
-            as_raw[asn]["name"] = (whois.get("network") or {}).get("name", "")
-            as_raw[asn]["nodes"].append({"cx": cx, "cy": cy, "h": hop_height(hop)})
-
-        as_group_list = []
-        for asn, grp in sorted(as_raw.items()):
-            if len(grp["nodes"]) < 2:
-                continue
-            color = as_color(asn)
-            ns    = grp["nodes"]
-            x0 = min(n["cx"] - NODE_W / 2 for n in ns) - AS_PAD
-            y0 = min(n["cy"] - n["h"] / 2 for n in ns) - AS_PAD
-            x1 = max(n["cx"] + NODE_W / 2 for n in ns) + AS_PAD
-            y1 = max(n["cy"] + n["h"] / 2 for n in ns) + AS_PAD
-            as_group_list.append({
-                "asn":   str(asn),
-                "name":  str(grp["name"])[:40],
-                "color": color,
-                "x0": x0, "y0": y0, "x1": x1, "y1": y1,
-                "w":  x1 - x0, "h":  y1 - y0,
-            })
-
         # ── Build node render list with pre-computed text lines ─────────────
         def make_lines(hop_id, hop, cx, cy, h, stroke):
             top    = cy - h / 2
@@ -562,13 +520,12 @@ def add_api_views(app, mp):
 
         tpl = await render_template(
             "network.svg",
-            hostname  = hostname,
-            now       = now.strftime("%Y-%m-%d %H:%M:%S"),
-            canvas_w  = int(canvas_w),
-            canvas_h  = int(canvas_h),
-            nodes     = node_list,
-            edges     = edge_list,
-            as_groups = as_group_list,
+            hostname = hostname,
+            now      = now.strftime("%Y-%m-%d %H:%M:%S"),
+            canvas_w = int(canvas_w),
+            canvas_h = int(canvas_h),
+            nodes    = node_list,
+            edges    = edge_list,
         )
 
         resp = Response(tpl, mimetype="image/svg+xml")

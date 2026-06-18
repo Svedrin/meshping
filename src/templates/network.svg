@@ -92,20 +92,6 @@
   {[ now ]}
 </text>
 
-<!-- ── AS group borders ────────────────────────────────────────────────── -->
-{% for grp in as_groups %}
-<rect x="{[ '%.2f' % grp.x0 ]}" y="{[ '%.2f' % grp.y0 ]}"
-      width="{[ '%.2f' % grp.w ]}" height="{[ '%.2f' % grp.h ]}"
-      rx="16"
-      fill="{[ grp.color ]}" fill-opacity="0.07"
-      stroke="{[ grp.color ]}" stroke-width="1.5"
-      stroke-dasharray="6 4" stroke-opacity="0.45"/>
-<text x="{[ '%.2f' % (grp.x0 + 10) ]}" y="{[ '%.2f' % (grp.y0 + 14) ]}"
-      font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-      font-size="10" font-weight="600" letter-spacing="0.5"
-      fill="{[ grp.color ]}" opacity="0.65">AS{[ grp.asn | e ]} &#183; {[ grp.name | e ]}</text>
-{% endfor %}
-
 <!-- ── Edges ──────────────────────────────────────────────────────────── -->
 {% for e in edges %}
 <path d="M {[ '%.2f' % e.x1 ]} {[ '%.2f' % e.y1 ]} C {[ '%.2f' % e.cx1 ]} {[ '%.2f' % e.cy1 ]}, {[ '%.2f' % e.cx2 ]} {[ '%.2f' % e.cy2 ]}, {[ '%.2f' % e.x2 ]} {[ '%.2f' % e.y2 ]}"
