@@ -310,6 +310,7 @@ def add_api_views(app, mp):
 
         # ── Layout constants ────────────────────────────────────────────────
         NODE_W      = 260
+        DUMMY_W     = 68   # dummy nodes are nearly-square (height = 48)
         H_GAP       = 70
         V_GAP       = 60
         PAD_X       = 80
@@ -511,7 +512,7 @@ def add_api_views(app, mp):
             state   = "dummy" if not hop.get("address") else hop.get("state", "unknown")
             stroke  = STATE_COLORS.get(state, "#475569")
             node_list.append({
-                "cx": cx, "cy": cy, "w": NODE_W, "h": h,
+                "cx": cx, "cy": cy, "w": DUMMY_W if state == "dummy" else NODE_W, "h": h,
                 "state": state, "stroke": stroke,
                 "lines": make_lines(hid, hop, cx, cy, h, stroke),
             })
