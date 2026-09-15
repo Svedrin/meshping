@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg"
+<svg id="network-svg" xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink"
      width="{[ canvas_w ]}" height="{[ canvas_h ]}"
      viewBox="0 0 {[ canvas_w ]} {[ canvas_h ]}">
@@ -7,6 +7,7 @@
 <defs>
   <style>
     a text { cursor: pointer; }
+    .collapse-icon { cursor: pointer; }
   </style>
 
   <!-- Background gradient: deep navy top-left to near-black bottom-right -->
@@ -69,23 +70,23 @@
 </defs>
 
 <!-- ── Background ─────────────────────────────────────────────────────── -->
-<rect width="{[ canvas_w ]}" height="{[ canvas_h ]}" fill="url(#bg-grad)"/>
-<rect width="{[ canvas_w ]}" height="{[ canvas_h ]}" fill="url(#dots)"/>
+<rect id="bg-grad-rect" width="{[ canvas_w ]}" height="{[ canvas_h ]}" fill="url(#bg-grad)"/>
+<rect id="bg-dots-rect" width="{[ canvas_w ]}" height="{[ canvas_h ]}" fill="url(#dots)"/>
 
 <!-- ── Title bar ──────────────────────────────────────────────────────── -->
-<rect x="0" y="0" width="{[ canvas_w ]}" height="58" fill="#060c1a" fill-opacity="0.88"/>
-<line x1="0" y1="58" x2="{[ canvas_w ]}" y2="58" stroke="#1d4ed8" stroke-width="1.5" opacity="0.5"/>
+<rect id="titlebar-rect" x="0" y="0" width="{[ canvas_w ]}" height="58" fill="#060c1a" fill-opacity="0.88"/>
+<line id="titlebar-rule" x1="0" y1="58" x2="{[ canvas_w ]}" y2="58" stroke="#1d4ed8" stroke-width="1.5" opacity="0.5"/>
 <!-- macOS-style traffic-light dots for visual flair -->
 <circle cx="22" cy="21" r="5" fill="#ef4444" opacity="0.7"/>
 <circle cx="38" cy="21" r="5" fill="#f59e0b" opacity="0.7"/>
 <circle cx="54" cy="21" r="5" fill="#22c55e" opacity="0.7"/>
-<text x="{[ canvas_w // 2 ]}" y="30"
+<text id="title-text" x="{[ canvas_w // 2 ]}" y="30"
       text-anchor="middle"
       font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
       font-size="18" font-weight="700" letter-spacing="0.5" fill="#e2e8f0">
   Network Map &#8212; {[ hostname | e ]}
 </text>
-<text x="{[ canvas_w // 2 ]}" y="49"
+<text id="subtitle-text" x="{[ canvas_w // 2 ]}" y="49"
       text-anchor="middle"
       font-family="ui-sans-serif, system-ui, sans-serif"
       font-size="10" fill="#334155" letter-spacing="0.8">
@@ -94,7 +95,10 @@
 
 <!-- ── Edges ──────────────────────────────────────────────────────────── -->
 {% for e in edges %}
-<path d="M {[ '%.2f' % e.x1 ]} {[ '%.2f' % e.y1 ]} C {[ '%.2f' % e.cx1 ]} {[ '%.2f' % e.cy1 ]}, {[ '%.2f' % e.cx2 ]} {[ '%.2f' % e.cy2 ]}, {[ '%.2f' % e.x2 ]} {[ '%.2f' % e.y2 ]}"
+<path class="edge" data-src="{[ e.src ]}" data-tgt="{[ e.tgt ]}"
+      data-y1="{[ '%.2f' % e.y1 ]}" data-cy1="{[ '%.2f' % e.cy1 ]}"
+      data-cy2="{[ '%.2f' % e.cy2 ]}" data-y2="{[ '%.2f' % e.y2 ]}"
+      d="M {[ '%.2f' % e.x1 ]} {[ '%.2f' % e.y1 ]} C {[ '%.2f' % e.cx1 ]} {[ '%.2f' % e.cy1 ]}, {[ '%.2f' % e.cx2 ]} {[ '%.2f' % e.cy2 ]}, {[ '%.2f' % e.x2 ]} {[ '%.2f' % e.y2 ]}"
       fill="none" stroke="#2d4a6b" stroke-width="1.5" stroke-linecap="round"
       opacity="0.65"/>
 {% endfor %}
@@ -103,7 +107,9 @@
 {% for node in nodes %}
 {% set x0 = node.cx - node.w / 2 %}
 {% set y0 = node.cy - node.h / 2 %}
-<g filter="url(#glow-{[ node.state ]})">
+<g class="node" id="node-{[ node.id ]}" data-id="{[ node.id ]}" data-cx="{[ '%.2f' % node.cx ]}"
+   data-descendants="{[ node.descendants ]}"
+   transform="translate(0,0)" filter="url(#glow-{[ node.state ]})">
   <!-- Card background -->
   <rect x="{[ '%.2f' % x0 ]}" y="{[ '%.2f' % y0 ]}"
         width="{[ node.w ]}" height="{[ '%.2f' % node.h ]}"
@@ -128,6 +134,16 @@
   </a>
   {% endif %}
   {% endfor %}
+  {% if node.has_children %}
+  <!-- Collapse/expand toggle: shows "−" when expanded, hidden-descendant count when collapsed -->
+  <g class="collapse-icon">
+    <circle cx="{[ '%.2f' % (x0 + node.w - 16) ]}" cy="{[ '%.2f' % (y0 + 16) ]}" r="10"
+            fill="#0f1b2e" stroke="{[ node.stroke ]}" stroke-width="1.5"/>
+    <text class="collapse-icon-label" x="{[ '%.2f' % (x0 + node.w - 16) ]}" y="{[ '%.2f' % (y0 + 20) ]}"
+          text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif"
+          font-size="11" font-weight="700" fill="#e2e8f0">&#8722;</text>
+  </g>
+  {% endif %}
 </g>
 {% endfor %}
 
@@ -152,11 +168,138 @@
 {% endfor %}
 
 <!-- ── Footer ─────────────────────────────────────────────────────────── -->
-<text x="{[ canvas_w - 12 ]}" y="{[ canvas_h - 8 ]}"
+<text id="footer-text" x="{[ canvas_w - 12 ]}" y="{[ canvas_h - 8 ]}"
       text-anchor="end"
       font-family="ui-sans-serif, system-ui, sans-serif"
       font-size="10" fill="#1e3357">
   Meshping &#8212; github.com/Svedrin/meshping
 </text>
+
+<!-- ── Collapse/expand support ────────────────────────────────────────── -->
+<!-- Layout data needed to recompute node columns client-side, so this file
+     keeps working when saved to disk or e-mailed around, without calling
+     back to the server that generated it. -->
+<script id="layout-data" type="application/json">{[ layout_json | safe ]}</script>
+<script><![CDATA[
+(function () {
+  "use strict";
+
+  var svg = document.getElementById("network-svg");
+  var dataEl = document.getElementById("layout-data");
+  var LAYOUT = JSON.parse(dataEl.textContent);
+  var TREE       = LAYOUT.tree;        // node id -> [child id, ...]
+  var COL_W      = LAYOUT.colW;
+  var H_GAP      = LAYOUT.hGap;
+  var PAD_X      = LAYOUT.padX;
+  var CANVAS_W_MIN = LAYOUT.canvasWMin;
+
+  var collapsed = {};   // node id -> true, for nodes the user collapsed
+
+  // Assign each visible node a fractional column index, exactly mirroring
+  // the server-side layout algorithm, but treating collapsed nodes as leaves.
+  function assignColumns(root) {
+    var leafCounter = 0;
+    var xcol = {};
+    function visit(node) {
+      var children = collapsed[node] ? [] : (TREE[node] || []);
+      if (!children.length) {
+        xcol[node] = leafCounter + 0.5;
+        leafCounter += 1;
+      } else {
+        for (var i = 0; i < children.length; i++) {
+          visit(children[i]);
+        }
+        xcol[node] = (xcol[children[0]] + xcol[children[children.length - 1]]) / 2;
+      }
+    }
+    visit(root);
+    return { xcol: xcol, leaves: Math.max(leafCounter, 1) };
+  }
+
+  function relayout() {
+    var res   = assignColumns("SELF");
+    var xcol  = res.xcol;
+    var leaves = res.leaves;
+    var treeSpan = leaves * COL_W - H_GAP;
+    var canvasW  = Math.max(CANVAS_W_MIN, Math.round(leaves * COL_W - H_GAP + 2 * PAD_X));
+    var colOffset = PAD_X + (canvasW - 2 * PAD_X - treeSpan) / 2;
+
+    var px = {};
+    for (var id in xcol) {
+      px[id] = colOffset + xcol[id] * COL_W;
+    }
+
+    var nodes = svg.querySelectorAll(".node");
+    for (var i = 0; i < nodes.length; i++) {
+      var g  = nodes[i];
+      var id2 = g.getAttribute("data-id");
+      if (Object.prototype.hasOwnProperty.call(px, id2)) {
+        g.style.display = "";
+        var dx = px[id2] - parseFloat(g.getAttribute("data-cx"));
+        g.setAttribute("transform", "translate(" + dx.toFixed(2) + ",0)");
+        var label = g.querySelector(".collapse-icon-label");
+        if (label) {
+          label.textContent = collapsed[id2] ? g.getAttribute("data-descendants") : "−";
+        }
+      } else {
+        g.style.display = "none";
+      }
+    }
+
+    var edges = svg.querySelectorAll(".edge");
+    for (var j = 0; j < edges.length; j++) {
+      var p   = edges[j];
+      var src = p.getAttribute("data-src");
+      var tgt = p.getAttribute("data-tgt");
+      if (Object.prototype.hasOwnProperty.call(px, src) && Object.prototype.hasOwnProperty.call(px, tgt)) {
+        p.style.display = "";
+        var x1 = px[src].toFixed(2);
+        var x2 = px[tgt].toFixed(2);
+        var y1  = p.getAttribute("data-y1");
+        var cy1 = p.getAttribute("data-cy1");
+        var cy2 = p.getAttribute("data-cy2");
+        var y2  = p.getAttribute("data-y2");
+        p.setAttribute("d", "M " + x1 + " " + y1 + " C " + x1 + " " + cy1 + ", " + x2 + " " + cy2 + ", " + x2 + " " + y2);
+      } else {
+        p.style.display = "none";
+      }
+    }
+
+    svg.setAttribute("width", canvasW);
+    var vb = svg.getAttribute("viewBox").split(" ");
+    svg.setAttribute("viewBox", "0 0 " + canvasW + " " + vb[3]);
+
+    ["bg-grad-rect", "bg-dots-rect", "titlebar-rect"].forEach(function (elId) {
+      var el = document.getElementById(elId);
+      if (el) el.setAttribute("width", canvasW);
+    });
+    var rule = document.getElementById("titlebar-rule");
+    if (rule) rule.setAttribute("x2", canvasW);
+    var titleEl = document.getElementById("title-text");
+    if (titleEl) titleEl.setAttribute("x", canvasW / 2);
+    var subEl = document.getElementById("subtitle-text");
+    if (subEl) subEl.setAttribute("x", canvasW / 2);
+    var footEl = document.getElementById("footer-text");
+    if (footEl) footEl.setAttribute("x", canvasW - 12);
+  }
+
+  svg.addEventListener("click", function (ev) {
+    var icon = ev.target.closest && ev.target.closest(".collapse-icon");
+    if (!icon) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    var g = icon.closest(".node");
+    var id = g.getAttribute("data-id");
+    if (collapsed[id]) {
+      delete collapsed[id];
+    } else {
+      collapsed[id] = true;
+    }
+    relayout();
+  });
+
+  relayout();
+})();
+]]></script>
 
 </svg>

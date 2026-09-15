@@ -2,6 +2,7 @@
 
 # pylint: disable=unused-variable
 
+import json
 import socket
 
 from collections import defaultdict
@@ -399,6 +400,18 @@ def add_api_views(app, mp):
 
         assign_col("SELF")
 
+        # Descendant counts (for the "N hidden" badge shown on a collapsed node)
+        descendant_count = {}
+        def count_descendants(node):
+            if node in descendant_count:
+                return descendant_count[node]
+            total = 0
+            for child in tree_children.get(node, []):
+                total += 1 + count_descendants(child)
+            descendant_count[node] = total
+            return total
+        count_descendants("SELF")
+
         total_leaves = max(leaf_counter[0], 1)
         canvas_w     = max(1000, int(total_leaves * COL_W - H_GAP + 2 * PAD_X))
         tree_span    = total_leaves * COL_W - H_GAP
@@ -434,6 +447,7 @@ def add_api_views(app, mp):
             y2 = ty - node_h(rgt) / 2
             dy = (y2 - y1) * 0.5
             edge_list.append({
+                "src": lft,   "tgt": rgt,
                 "x1": sx,  "y1": y1,
                 "cx1": sx, "cy1": y1 + dy,
                 "cx2": tx, "cy2": y2 - dy,
@@ -499,8 +513,10 @@ def add_api_views(app, mp):
         cx0, cy0 = positions["SELF"]
         stroke0   = STATE_COLORS["self"]
         node_list.append({
-            "cx": cx0, "cy": cy0, "w": NODE_W, "h": SELF_H,
+            "id": "SELF", "cx": cx0, "cy": cy0, "w": NODE_W, "h": SELF_H,
             "state": "self", "stroke": stroke0,
+            "has_children": bool(tree_children.get("SELF")),
+            "descendants": descendant_count.get("SELF", 0),
             "lines": make_lines("SELF", {}, cx0, cy0, SELF_H, stroke0),
         })
 
@@ -512,21 +528,35 @@ def add_api_views(app, mp):
             state   = "dummy" if not hop.get("address") else hop.get("state", "unknown")
             stroke  = STATE_COLORS.get(state, "#475569")
             node_list.append({
-                "cx": cx, "cy": cy, "w": DUMMY_W if state == "dummy" else NODE_W, "h": h,
+                "id": hid, "cx": cx, "cy": cy, "w": DUMMY_W if state == "dummy" else NODE_W, "h": h,
                 "state": state, "stroke": stroke,
+                "has_children": bool(tree_children.get(hid)),
+                "descendants": descendant_count.get(hid, 0),
                 "lines": make_lines(hid, hop, cx, cy, h, stroke),
             })
+
+        # ── Data for the client-side collapse/expand layout engine ──────────
+        # Kept self-contained (no external assets) so a saved/downloaded copy
+        # of this SVG keeps working offline.
+        layout_data = {
+            "tree": {nid: tree_children.get(nid, []) for nid in x_col},
+            "colW": COL_W,
+            "hGap": H_GAP,
+            "padX": PAD_X,
+            "canvasWMin": 1000,
+        }
 
         now = datetime.now()
 
         tpl = await render_template(
             "network.svg",
-            hostname = hostname,
-            now      = now.strftime("%Y-%m-%d %H:%M:%S"),
-            canvas_w = int(canvas_w),
-            canvas_h = int(canvas_h),
-            nodes    = node_list,
-            edges    = edge_list,
+            hostname    = hostname,
+            now         = now.strftime("%Y-%m-%d %H:%M:%S"),
+            canvas_w    = int(canvas_w),
+            canvas_h    = int(canvas_h),
+            nodes       = node_list,
+            edges       = edge_list,
+            layout_json = json.dumps(layout_data),
         )
 
         resp = Response(tpl, mimetype="image/svg+xml")
