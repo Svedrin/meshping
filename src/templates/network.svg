@@ -21,40 +21,9 @@
     <circle cx="1.5" cy="1.5" r="0.9" fill="#1e3a5f" opacity="0.3"/>
   </pattern>
 
-  <!-- Per-state glow filters -->
-  <filter id="glow-up" x="-30%" y="-30%" width="160%" height="160%">
+  <filter id="glow-self" x="-60%" y="-60%" width="220%" height="220%">
     <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b"/>
-    <feFlood flood-color="#22c55e" flood-opacity="0.45" result="c"/>
-    <feComposite in="c" in2="b" operator="in" result="g"/>
-    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>
-  <filter id="glow-different" x="-30%" y="-30%" width="160%" height="160%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b"/>
-    <feFlood flood-color="#f59e0b" flood-opacity="0.45" result="c"/>
-    <feComposite in="c" in2="b" operator="in" result="g"/>
-    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>
-  <filter id="glow-down" x="-30%" y="-30%" width="160%" height="160%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b"/>
-    <feFlood flood-color="#ef4444" flood-opacity="0.45" result="c"/>
-    <feComposite in="c" in2="b" operator="in" result="g"/>
-    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>
-  <filter id="glow-self" x="-30%" y="-30%" width="160%" height="160%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="7" result="b"/>
     <feFlood flood-color="#60a5fa" flood-opacity="0.55" result="c"/>
-    <feComposite in="c" in2="b" operator="in" result="g"/>
-    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>
-  <filter id="glow-dummy" x="-30%" y="-30%" width="160%" height="160%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="b"/>
-    <feFlood flood-color="#475569" flood-opacity="0.3" result="c"/>
-    <feComposite in="c" in2="b" operator="in" result="g"/>
-    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>
-  <filter id="glow-unknown" x="-30%" y="-30%" width="160%" height="160%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="b"/>
-    <feFlood flood-color="#475569" flood-opacity="0.3" result="c"/>
     <feComposite in="c" in2="b" operator="in" result="g"/>
     <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
   </filter>
@@ -90,82 +59,124 @@
       text-anchor="middle"
       font-family="ui-sans-serif, system-ui, sans-serif"
       font-size="10" fill="#334155" letter-spacing="0.8">
-  {[ now ]}
+  {[ now ]} &#183; {[ legend_lines | length ]} lines &#183; {[ n_stations ]} stations
 </text>
 
 <!-- ── Edges ──────────────────────────────────────────────────────────── -->
+<g id="edges">
 {% for e in edges %}
 <path class="edge" data-src="{[ e.src ]}" data-tgt="{[ e.tgt ]}"
-      data-y1="{[ '%.2f' % e.y1 ]}" data-cy1="{[ '%.2f' % e.cy1 ]}"
-      data-cy2="{[ '%.2f' % e.cy2 ]}" data-y2="{[ '%.2f' % e.y2 ]}"
-      d="M {[ '%.2f' % e.x1 ]} {[ '%.2f' % e.y1 ]} C {[ '%.2f' % e.cx1 ]} {[ '%.2f' % e.cy1 ]}, {[ '%.2f' % e.cx2 ]} {[ '%.2f' % e.cy2 ]}, {[ '%.2f' % e.x2 ]} {[ '%.2f' % e.y2 ]}"
-      fill="none" stroke="#2d4a6b" stroke-width="1.5" stroke-linecap="round"
-      opacity="0.65"/>
+      d="{[ e.d ]}" fill="none" stroke="{[ e.color ]}" stroke-width="{[ e.width ]}"
+      stroke-linecap="round" stroke-linejoin="round"
+      opacity="{[ '0.45' if e.dummy else '0.9' ]}"
+      {% if e.dummy %}stroke-dasharray="1,7"{% endif %}/>
 {% endfor %}
+</g>
 
-<!-- ── Nodes ──────────────────────────────────────────────────────────── -->
+<!-- ── Stations ───────────────────────────────────────────────────────── -->
+<g id="stations">
 {% for node in nodes %}
-{% set x0 = node.cx - node.w / 2 %}
-{% set y0 = node.cy - node.h / 2 %}
-<g class="node" id="node-{[ node.id ]}" data-id="{[ node.id ]}" data-cx="{[ '%.2f' % node.cx ]}"
+<g class="node" id="node-{[ node.id ]}" data-id="{[ node.id ]}"
+   data-cx="{[ '%.2f' % node.cx ]}" data-cy="{[ '%.2f' % node.cy ]}"
    data-descendants="{[ node.descendants ]}"
-   transform="translate(0,0)" filter="url(#glow-{[ node.state ]})">
-  <!-- Card background -->
-  <rect x="{[ '%.2f' % x0 ]}" y="{[ '%.2f' % y0 ]}"
-        width="{[ node.w ]}" height="{[ '%.2f' % node.h ]}"
-        rx="10" ry="10"
-        fill="#07101f"
-        stroke="{[ node.stroke ]}" stroke-width="1.5" stroke-opacity="0.85"/>
-  <!-- Coloured accent stripe along the top edge -->
-  <line x1="{[ '%.2f' % (x0 + 12) ]}" y1="{[ '%.2f' % y0 ]}"
-        x2="{[ '%.2f' % (x0 + node.w - 12) ]}" y2="{[ '%.2f' % y0 ]}"
-        stroke="{[ node.stroke ]}" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
-  <!-- Text lines -->
-  {% for line in node.lines %}
-  {% if line.href %}
-  <a xlink:href="{[ line.href | e ]}" href="{[ line.href | e ]}" target="_blank">
+   transform="translate({[ '%.2f' % node.cx ]},{[ '%.2f' % node.cy ]})"
+   {% if node.kind == 'root' %}filter="url(#glow-self)"{% endif %}>
+
+  {% if node.kind == 'root' %}
+  <rect x="-9" y="-9" width="18" height="18" rx="4" transform="rotate(45)"
+        fill="#0a0f1c" stroke="{[ node.color ]}" stroke-width="2.5"/>
+  <circle r="3.2" fill="{[ node.color ]}"/>
+  <!-- Labelled above, never to the side, so an arbitrarily long hostname
+       can't run off the left edge of the canvas. -->
+  <text x="0" y="-30" text-anchor="middle" class="lbl-name">{[ node.name | e ]}</text>
+  <text x="0" y="-17" text-anchor="middle" class="lbl-sub">{[ node.extra_text | e ]}</text>
+
+  {% elif node.kind == 'interchange' %}
+  <circle r="7.5" fill="#0a0f1c" stroke="{[ node.color ]}" stroke-width="3"/>
+  <circle r="2.6" fill="{[ node.color ]}"/>
+  {% if node.state_color %}<circle r="11" fill="none" stroke="{[ node.state_color ]}" stroke-width="1.6"/>{% endif %}
+  <text x="-14" y="-12" text-anchor="end" class="lbl-name">{[ node.name | e ]}</text>
+  {% if node.addr_href %}<a xlink:href="{[ node.addr_href | e ]}" href="{[ node.addr_href | e ]}" target="_blank">{% endif %}
+  <text x="-14" y="2" text-anchor="end" class="lbl-sub"{% if node.addr_href %} text-decoration="underline"{% endif %}>{[ node.addr | e ]}</text>
+  {% if node.addr_href %}</a>{% endif %}
+  <text x="-14" y="15" text-anchor="end" class="lbl-as">{[ node.extra_text | e ]}</text>
+
+  {% elif node.kind == 'leaf' %}
+  <circle r="5.5" fill="{[ node.color ]}" stroke="#0a0f1c" stroke-width="1.5"/>
+  {% if node.state_color %}<circle r="9.5" fill="none" stroke="{[ node.state_color ]}" stroke-width="1.6"/>{% endif %}
+  <text x="13" y="-9" text-anchor="start" class="lbl-name">{[ node.name | e ]}</text>
+  {% if node.addr_href %}<a xlink:href="{[ node.addr_href | e ]}" href="{[ node.addr_href | e ]}" target="_blank">{% endif %}
+  <text x="13" y="5" text-anchor="start" class="lbl-sub"{% if node.addr_href %} text-decoration="underline"{% endif %}>{[ node.addr | e ]}</text>
+  {% if node.addr_href %}</a>{% endif %}
+  {% if node.asn_text %}
+  {% if node.asn_href %}<a xlink:href="{[ node.asn_href | e ]}" href="{[ node.asn_href | e ]}" target="_blank">{% endif %}
+  <text x="13" y="18" text-anchor="start" class="lbl-as"{% if node.asn_href %} text-decoration="underline"{% endif %}>{[ node.asn_text | e ]}</text>
+  {% if node.asn_href %}</a>{% endif %}
   {% endif %}
-  <text x="{[ '%.2f' % line.x ]}" y="{[ '%.2f' % line.y ]}"
-        font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-        font-size="{[ line.size ]}" font-weight="{[ line.weight ]}"
-        text-anchor="{[ line.anchor ]}" fill="{[ line.fill ]}"
-        {% if line.href %}text-decoration="underline"{% endif %}>{[ line.text | e ]}</text>
-  {% if line.href %}
+  {% if node.hist_href %}
+  <a xlink:href="{[ node.hist_href | e ]}" href="{[ node.hist_href | e ]}" target="_blank">
+  <text x="13" y="{[ 33 if node.asn_text else 18 ]}" text-anchor="start" class="lbl-hist" text-decoration="underline">View Histogram &#8594;</text>
   </a>
   {% endif %}
-  {% endfor %}
-  {% if node.has_children %}
-  <!-- Collapse/expand toggle: shows "−" when expanded, hidden-descendant count when collapsed -->
+
+  {% elif node.kind == 'landmark' %}
+  <circle r="3.2" fill="{[ node.state_color if node.state_color else '#0a0f1c' ]}" stroke="{[ node.color ]}" stroke-width="1.6"/>
+  {% if node.asn_href %}<a xlink:href="{[ node.asn_href | e ]}" href="{[ node.asn_href | e ]}" target="_blank">{% endif %}
+  <text x="0" y="{[ -9 if node.label_above else 15 ]}" text-anchor="middle" class="lbl-land"{% if node.asn_href %} text-decoration="underline"{% endif %}>{[ node.extra_text | e ]}</text>
+  {% if node.asn_href %}</a>{% endif %}
+
+  {% else %}
+  {% if node.dummy %}
+  <circle r="2" fill="none" stroke="{[ node.color ]}" stroke-width="1.2" stroke-dasharray="1,1.6"/>
+  {% else %}
+  <circle r="2" fill="{[ node.color ]}" stroke="{[ node.color ]}" stroke-width="1.2" opacity="0.55"/>
+  {% endif %}
+  {% endif %}
+
+  <title>{[ node.title | e ]}</title>
+
+  {% if node.has_collapse %}
+  {% set badge_y = 15 if node.kind == 'root' else -15 %}
+  <!-- Collapse/expand toggle: shows "−" when expanded, hidden-descendant count when collapsed.
+       Root's label sits above the marker, interchange's sits to the left, so the badge
+       goes lower-right for root and upper-right for interchange either way, clear of both. -->
   <g class="collapse-icon">
-    <circle cx="{[ '%.2f' % (x0 + node.w - 16) ]}" cy="{[ '%.2f' % (y0 + 16) ]}" r="10"
-            fill="#0f1b2e" stroke="{[ node.stroke ]}" stroke-width="1.5"/>
-    <text class="collapse-icon-label" x="{[ '%.2f' % (x0 + node.w - 16) ]}" y="{[ '%.2f' % (y0 + 20) ]}"
+    <circle cx="15" cy="{[ badge_y ]}" r="9"
+            fill="#0f1b2e" stroke="{[ node.color ]}" stroke-width="1.5"/>
+    <text class="collapse-icon-label" x="15" y="{[ badge_y + 4 ]}"
           text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif"
-          font-size="11" font-weight="700" fill="#e2e8f0">&#8722;</text>
+          font-size="10" font-weight="700" fill="#e2e8f0">&#8722;</text>
   </g>
   {% endif %}
 </g>
 {% endfor %}
+</g>
 
 <!-- ── Legend ─────────────────────────────────────────────────────────── -->
+<g id="legend-group" transform="translate(0,{[ canvas_h - legend_h - 20 ]})">
 {% set lx = 20 %}
-{% set ly = canvas_h - 116 %}
-<rect x="{[ lx - 12 ]}" y="{[ ly - 14 ]}" width="164" height="116" rx="10"
+<rect x="{[ lx - 12 ]}" y="0" width="250" height="{[ legend_h ]}" rx="10"
       fill="#07101f" stroke="#1e3a5f" stroke-width="1" filter="url(#panel-shadow)"/>
-<text x="{[ lx ]}" y="{[ ly + 4 ]}"
+<text x="{[ lx ]}" y="18"
       font-family="ui-sans-serif, system-ui, sans-serif"
-      font-size="9" font-weight="700" letter-spacing="1.8" fill="#334155">LEGEND</text>
-{% for label, color in [("Up",       "#22c55e"),
-                         ("Degraded", "#f59e0b"),
-                         ("Down",     "#ef4444"),
-                         ("Unknown",  "#475569")] %}
-{% set row = loop.index0 %}
-<rect x="{[ lx ]}"      y="{[ ly + 14 + row * 23 ]}" width="13" height="13" rx="3"
-      fill="{[ color ]}" fill-opacity="0.18" stroke="{[ color ]}" stroke-width="1.5"/>
-<text x="{[ lx + 20 ]}" y="{[ ly + 25 + row * 23 ]}"
+      font-size="9" font-weight="700" letter-spacing="1.8" fill="#334155">LINES</text>
+{% for line in legend_lines %}
+<rect x="{[ lx ]}" y="{[ 28 + loop.index0 * 20 ]}" width="13" height="13" rx="3"
+      fill="{[ line.color ]}" fill-opacity="0.85"/>
+<text x="{[ lx + 20 ]}" y="{[ 39 + loop.index0 * 20 ]}"
       font-family="ui-sans-serif, system-ui, sans-serif"
-      font-size="12" fill="#cbd5e1">{[ label ]}</text>
+      font-size="11.5" fill="#cbd5e1">{[ line.name | e ]}<tspan fill="#475569"> &#183; {[ line.count ]}</tspan></text>
 {% endfor %}
+{% set status_y = 28 + (legend_lines | length) * 20 + 14 %}
+<line x1="{[ lx ]}" y1="{[ status_y - 6 ]}" x2="{[ lx + 216 ]}" y2="{[ status_y - 6 ]}" stroke="#1e3a5f"/>
+{% for label, color, dash in [("Route changed", "#f59e0b", "0"), ("Down", "#ef4444", "0"), ("No response", "#475569", "1,1.6")] %}
+<circle cx="{[ lx + 6 ]}" cy="{[ status_y + loop.index0 * 17 ]}" r="5" fill="none"
+        stroke="{[ color ]}" stroke-width="1.6" {% if dash != "0" %}stroke-dasharray="{[ dash ]}"{% endif %}/>
+<text x="{[ lx + 20 ]}" y="{[ status_y + 4 + loop.index0 * 17 ]}"
+      font-family="ui-sans-serif, system-ui, sans-serif"
+      font-size="11" fill="#94a3b8">{[ label ]}</text>
+{% endfor %}
+</g>
 
 <!-- ── Footer ─────────────────────────────────────────────────────────── -->
 <text id="footer-text" x="{[ canvas_w - 12 ]}" y="{[ canvas_h - 8 ]}"
@@ -175,68 +186,114 @@
   Meshping &#8212; github.com/Svedrin/meshping
 </text>
 
+<style>
+  .lbl-name { font: 700 12.5px ui-sans-serif, system-ui, sans-serif; fill: #f1f5f9; }
+  .lbl-sub  { font: 11px ui-monospace, "SFMono-Regular", Menlo, monospace; fill: #94a3b8; }
+  .lbl-as   { font: 9.5px ui-monospace, "SFMono-Regular", Menlo, monospace; fill: #64748b; }
+  .lbl-hist { font: 10.5px ui-sans-serif, system-ui, sans-serif; fill: #60a5fa; }
+  .lbl-land { font: 8.5px ui-monospace, "SFMono-Regular", Menlo, monospace; fill: #64748b; }
+</style>
+
 <!-- ── Collapse/expand support ────────────────────────────────────────── -->
-<!-- Layout data needed to recompute node columns client-side, so this file
-     keeps working when saved to disk or e-mailed around, without calling
-     back to the server that generated it. -->
+<!-- Layout data needed to recompute lanes, junctions and canvas size
+     client-side, so this file keeps working when saved to disk or
+     e-mailed around, without calling back to the server that generated
+     it. Mirrors render_network_svg() in src/api.py - see that function
+     for what each of these numbers means. -->
 <script id="layout-data" type="application/json">{[ layout_json | safe ]}</script>
 <script><![CDATA[
 (function () {
   "use strict";
 
-  var svg = document.getElementById("network-svg");
-  var dataEl = document.getElementById("layout-data");
-  var LAYOUT = JSON.parse(dataEl.textContent);
-  var TREE       = LAYOUT.tree;        // node id -> [child id, ...]
-  var COL_W      = LAYOUT.colW;
-  var H_GAP      = LAYOUT.hGap;
-  var PAD_X      = LAYOUT.padX;
-  var CANVAS_W_MIN = LAYOUT.canvasWMin;
+  var svg    = document.getElementById("network-svg");
+  var LAYOUT = JSON.parse(document.getElementById("layout-data").textContent);
+  var TREE   = LAYOUT.tree;    // node id -> [child id, ...] (primary spanning tree)
+  var DEPTH  = LAYOUT.depth;   // node id -> hop count from SELF
+  var LINKS  = LAYOUT.links;   // [ [src, tgt], ... ] - every edge, tree and extra
 
   var collapsed = {};   // node id -> true, for nodes the user collapsed
 
-  // Assign each visible node a fractional column index, exactly mirroring
-  // the server-side layout algorithm, but treating collapsed nodes as leaves.
-  function assignColumns(root) {
+  // Every node reachable from SELF without descending through a collapsed
+  // node. A collapsed node itself stays visible (so its badge can be
+  // clicked again); its descendants do not.
+  function visibleSet() {
+    var visible = {};
+    (function walk(node) {
+      visible[node] = true;
+      if (collapsed[node]) return;
+      (TREE[node] || []).forEach(walk);
+    })("SELF");
+    return visible;
+  }
+
+  // Mirrors assign_lane() in src/api.py: one vertical slot per visible
+  // terminus, internal nodes sit at the midpoint of their children's range.
+  function assignLanes(visible) {
+    var lane = {};
     var leafCounter = 0;
-    var xcol = {};
-    function visit(node) {
-      var children = collapsed[node] ? [] : (TREE[node] || []);
-      if (!children.length) {
-        xcol[node] = leafCounter + 0.5;
+    (function visit(node) {
+      var kids = (collapsed[node] ? [] : (TREE[node] || [])).filter(function (k) { return visible[k]; });
+      if (!kids.length) {
+        lane[node] = leafCounter;
         leafCounter += 1;
       } else {
-        for (var i = 0; i < children.length; i++) {
-          visit(children[i]);
-        }
-        xcol[node] = (xcol[children[0]] + xcol[children[children.length - 1]]) / 2;
+        kids.forEach(visit);
+        lane[node] = (lane[kids[0]] + lane[kids[kids.length - 1]]) / 2;
       }
-    }
-    visit(root);
-    return { xcol: xcol, leaves: Math.max(leafCounter, 1) };
+    })("SELF");
+    return { lane: lane, leaves: Math.max(leafCounter, 1) };
+  }
+
+  function elbowPath(x1, y1, x2, y2) {
+    var dy = y2 - y1;
+    if (Math.abs(dy) < 0.01) return "M" + x1 + "," + y1 + " L" + x2 + "," + y2;
+    var run = Math.min(Math.abs(dy), x2 - x1);
+    var xa  = x2 - run;
+    return "M" + x1 + "," + y1 + " L" + xa + "," + y1 + " L" + x2 + "," + y2;
   }
 
   function relayout() {
-    var res   = assignColumns("SELF");
-    var xcol  = res.xcol;
-    var leaves = res.leaves;
-    var treeSpan = leaves * COL_W - H_GAP;
-    var canvasW  = Math.max(CANVAS_W_MIN, Math.round(leaves * COL_W - H_GAP + 2 * PAD_X));
-    var colOffset = PAD_X + (canvasW - 2 * PAD_X - treeSpan) / 2;
+    var visible  = visibleSet();
+    var res      = assignLanes(visible);
+    var lane     = res.lane;
+    var leaves   = res.leaves;
 
-    var px = {};
-    for (var id in xcol) {
-      px[id] = colOffset + xcol[id] * COL_W;
+    var maxDepth = 0;
+    for (var id in visible) maxDepth = Math.max(maxDepth, DEPTH[id] || 0);
+
+    var levelMinW = {};
+    LINKS.forEach(function (link) {
+      var src = link[0], tgt = link[1];
+      if (!visible[src] || !visible[tgt] || !(src in lane) || !(tgt in lane)) return;
+      var d  = DEPTH[src] || 0;
+      var dy = Math.abs(lane[tgt] - lane[src]) * LAYOUT.laneH;
+      var w  = Math.max(LAYOUT.hopStep, dy + LAYOUT.junctionPad);
+      levelMinW[d] = Math.max(levelMinW[d] || LAYOUT.hopStep, w);
+    });
+
+    var xAtDepth = [LAYOUT.padX];
+    for (var d2 = 0; d2 <= maxDepth; d2++) {
+      xAtDepth[d2 + 1] = xAtDepth[d2] + (levelMinW[d2] || LAYOUT.hopStep);
     }
+
+    var pos = {};
+    for (var nid in lane) {
+      pos[nid] = [xAtDepth[DEPTH[nid] || 0], LAYOUT.padY + lane[nid] * LAYOUT.laneH];
+    }
+
+    var canvasW = Math.max(LAYOUT.canvasWMin, Math.round(xAtDepth[maxDepth + 1] + LAYOUT.labelRoom));
+    // Mirrors the last_row_clearance/legend_h/BOTTOM_PAD sum in render_network_svg()
+    // - the legend panel is anchored to the bottom, so it has to be part of this.
+    var contentH = LAYOUT.padY + (leaves - 1) * LAYOUT.laneH + 24 + LAYOUT.legendH + LAYOUT.bottomPad;
+    var canvasH  = Math.max(LAYOUT.canvasHMin, Math.round(contentH));
 
     var nodes = svg.querySelectorAll(".node");
     for (var i = 0; i < nodes.length; i++) {
       var g  = nodes[i];
       var id2 = g.getAttribute("data-id");
-      if (Object.prototype.hasOwnProperty.call(px, id2)) {
+      if (Object.prototype.hasOwnProperty.call(pos, id2)) {
         g.style.display = "";
-        var dx = px[id2] - parseFloat(g.getAttribute("data-cx"));
-        g.setAttribute("transform", "translate(" + dx.toFixed(2) + ",0)");
+        g.setAttribute("transform", "translate(" + pos[id2][0].toFixed(2) + "," + pos[id2][1].toFixed(2) + ")");
         var label = g.querySelector(".collapse-icon-label");
         if (label) {
           label.textContent = collapsed[id2] ? g.getAttribute("data-descendants") : "−";
@@ -249,30 +306,26 @@
     var edges = svg.querySelectorAll(".edge");
     for (var j = 0; j < edges.length; j++) {
       var p   = edges[j];
-      var src = p.getAttribute("data-src");
-      var tgt = p.getAttribute("data-tgt");
-      if (Object.prototype.hasOwnProperty.call(px, src) && Object.prototype.hasOwnProperty.call(px, tgt)) {
+      var src2 = p.getAttribute("data-src");
+      var tgt2 = p.getAttribute("data-tgt");
+      if (Object.prototype.hasOwnProperty.call(pos, src2) && Object.prototype.hasOwnProperty.call(pos, tgt2)) {
         p.style.display = "";
-        var x1 = px[src].toFixed(2);
-        var x2 = px[tgt].toFixed(2);
-        var y1  = p.getAttribute("data-y1");
-        var cy1 = p.getAttribute("data-cy1");
-        var cy2 = p.getAttribute("data-cy2");
-        var y2  = p.getAttribute("data-y2");
-        p.setAttribute("d", "M " + x1 + " " + y1 + " C " + x1 + " " + cy1 + ", " + x2 + " " + cy2 + ", " + x2 + " " + y2);
+        p.setAttribute("d", elbowPath(pos[src2][0], pos[src2][1], pos[tgt2][0], pos[tgt2][1]));
       } else {
         p.style.display = "none";
       }
     }
 
     svg.setAttribute("width", canvasW);
-    var vb = svg.getAttribute("viewBox").split(" ");
-    svg.setAttribute("viewBox", "0 0 " + canvasW + " " + vb[3]);
+    svg.setAttribute("height", canvasH);
+    svg.setAttribute("viewBox", "0 0 " + canvasW + " " + canvasH);
 
     ["bg-grad-rect", "bg-dots-rect", "titlebar-rect"].forEach(function (elId) {
       var el = document.getElementById(elId);
-      if (el) el.setAttribute("width", canvasW);
+      if (el) { el.setAttribute("width", canvasW); el.setAttribute("height", canvasH >= 58 ? el.getAttribute("height") : canvasH); }
     });
+    document.getElementById("bg-grad-rect").setAttribute("height", canvasH);
+    document.getElementById("bg-dots-rect").setAttribute("height", canvasH);
     var rule = document.getElementById("titlebar-rule");
     if (rule) rule.setAttribute("x2", canvasW);
     var titleEl = document.getElementById("title-text");
@@ -280,7 +333,9 @@
     var subEl = document.getElementById("subtitle-text");
     if (subEl) subEl.setAttribute("x", canvasW / 2);
     var footEl = document.getElementById("footer-text");
-    if (footEl) footEl.setAttribute("x", canvasW - 12);
+    if (footEl) { footEl.setAttribute("x", canvasW - 12); footEl.setAttribute("y", canvasH - 8); }
+    var legendEl = document.getElementById("legend-group");
+    if (legendEl) legendEl.setAttribute("transform", "translate(0," + (canvasH - LAYOUT.legendH - 20) + ")");
   }
 
   svg.addEventListener("click", function (ev) {
@@ -288,7 +343,7 @@
     if (!icon) return;
     ev.preventDefault();
     ev.stopPropagation();
-    var g = icon.closest(".node");
+    var g  = icon.closest(".node");
     var id = g.getAttribute("data-id");
     if (collapsed[id]) {
       delete collapsed[id];
