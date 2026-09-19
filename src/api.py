@@ -37,8 +37,8 @@ from ifaces import Ifaces
 LANE_H        = 60    # vertical px between adjacent lines/stations
 HOP_STEP      = 58    # minimum horizontal px per traceroute hop
 JUNCTION_PAD  = 30    # extra slack added to a fanning-out column's width
-PAD_X         = 130   # clears the widest SELF label (a full-length IPv6 address)
-PAD_Y         = 124   # clears the 58px title bar and SELF's 3-line label
+PAD_X         = 110   # minimum; grows to fit SELF's label, which sits to its left
+PAD_Y         = 86    # clears the 58px title bar
 BOTTOM_PAD    = 40
 LABEL_ROOM    = 300   # right-hand room for the widest terminus label
 CANVAS_W_MIN  = 760
@@ -81,6 +81,9 @@ def _display_name(hop):
 def _asn_text(asn, whois):
     net_name = (whois.get("network") or {}).get("name", "")
     return ("AS%s: %s" % (asn, net_name))[:34], net_name
+
+def _splits_text(asn, ways):
+    return "AS%s · splits %d ways" % (asn, ways) if asn else "splits %d ways" % ways
 
 def _asn_of(hop):
     if not hop:
@@ -212,8 +215,39 @@ async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
         if dy > level_min_w[d] - JUNCTION_PAD:
             level_min_w[d] = dy + JUNCTION_PAD
 
+    # Interchanges label to the left of their marker, so one right after SELF
+    # would run over SELF's marker and its own label. Keep the first column
+    # wide enough that it can't. Character widths are rough per-font estimates.
+    first_label_w = 0
+    for hid in tree_children.get("SELF", []):
+        hop  = uniq_hops.get(hid, {})
+        kids = len(tree_children.get(hid, []))
+        if kids >= 2 and hop.get("address"):
+            first_label_w = max(
+                first_label_w,
+                len(_display_name(hop)[:30]) * 8,
+                len(hop["address"]) * 7,
+                len(_splits_text(_asn_of(hop), kids)) * 6,
+            )
+    level0_min_w = first_label_w + 40 if first_label_w else 0
+    level_min_w[0] = max(level_min_w[0], level0_min_w)
+
+    # SELF's name, public IP and AS are labelled to the left of its marker
+    # (like an interchange's), so the left margin has to be wide enough for
+    # the longest of them.
+    self_addr  = (self_info or {}).get("address")
+    self_whois = (self_info or {}).get("whois") or {}
+    self_asn   = self_whois.get("asn") if self_addr else None
+    self_asn_text = _asn_text(self_asn, self_whois)[0] if self_asn else None
+    label_w = max(
+        len(hostname[:30]) * 8,
+        len(self_addr or "") * 7,
+        len(self_asn_text or "") * 6,
+    )
+    pad_x = max(PAD_X, label_w + 40)
+
     x_at_depth = [0.0] * (max_depth + 2)
-    x_at_depth[0] = PAD_X
+    x_at_depth[0] = pad_x
     for d in range(max_depth + 1):
         x_at_depth[d + 1] = x_at_depth[d] + level_min_w[d]
 
@@ -292,19 +326,15 @@ async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
         "extra_text": "this node", "title": hostname,
     })
     # Our public IP and the AS it belongs to, if we could find out
-    self_addr = (self_info or {}).get("address")
     if self_addr:
         root = node_list[0]
         root.update(
             addr=self_addr, addr_href=href_ipinfo(self_addr),
             title="%s — %s" % (hostname, self_addr),
         )
-        self_whois = self_info.get("whois") or {}
-        self_asn   = self_whois.get("asn")
         if self_asn:
-            asn_text, net_name = _asn_text(self_asn, self_whois)
-            root.update(asn_text=asn_text, asn_href=href_bgp(self_asn))
-            root["title"] += " (AS%s %s)" % (self_asn, net_name)
+            root.update(asn_text=self_asn_text, asn_href=href_bgp(self_asn))
+            root["title"] += " (AS%s %s)" % (self_asn, _asn_text(self_asn, self_whois)[1])
 
     # landmark labels alternate above/below within their own lane, so two
     # landmarks a couple of hops apart on the same line don't collide
@@ -356,8 +386,7 @@ async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
                 node["hist_href"] = url_for("histogram", node=hostname, target=hop["target"].addr, _external=True)
 
             if k == "interchange":
-                node["extra_text"] = "AS%s · splits %d ways" % (asn, len(tree_children[hid])) if asn \
-                    else "splits %d ways" % len(tree_children[hid])
+                node["extra_text"] = _splits_text(asn, len(tree_children[hid]))
 
             if state in ("down", "different"):
                 title += " - " + state
@@ -370,7 +399,7 @@ async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
         "depth": depth_of,
         "links": [[lft, rgt] for (lft, rgt) in uniq_links if lft in lane and rgt in lane],
         "laneH": LANE_H, "hopStep": HOP_STEP, "junctionPad": JUNCTION_PAD,
-        "padX": PAD_X, "padY": PAD_Y, "bottomPad": BOTTOM_PAD, "labelRoom": LABEL_ROOM,
+        "padX": pad_x, "level0MinW": level0_min_w, "padY": PAD_Y, "bottomPad": BOTTOM_PAD, "labelRoom": LABEL_ROOM,
         "canvasWMin": CANVAS_W_MIN, "canvasHMin": CANVAS_H_MIN,
         "legendH": legend_h,
     }

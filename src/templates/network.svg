@@ -85,24 +85,22 @@
   <rect x="-9" y="-9" width="18" height="18" rx="4" transform="rotate(45)"
         fill="#0a0f1c" stroke="{[ node.color ]}" stroke-width="2.5"/>
   <circle r="3.2" fill="{[ node.color ]}"/>
-  <!-- Labelled above, never to the side, so an arbitrarily long hostname
-       can't run off the left edge of the canvas. Same three lines as a
-       terminus (name, public IP, AS), stacked upwards from the marker and
-       starting above the first hop's label, which sits left of that hop and
-       can reach back over SELF. -->
+  <!-- Labelled to the left, like an interchange, in the margin render_network_svg()
+       widens to fit. Above would collide with the first hop's label, which
+       reaches back over SELF. -->
+  {% set sub_y = 2 if node.asn_text else 8 %}
+  <text x="-20" y="{[ -12 if node.asn_text else -6 ]}" text-anchor="end" class="lbl-name">{[ node.name | e ]}</text>
   {% if node.addr %}
-  <text x="0" y="{[ -53 if node.asn_text else -40 ]}" text-anchor="middle" class="lbl-name">{[ node.name | e ]}</text>
   <a xlink:href="{[ node.addr_href | e ]}" href="{[ node.addr_href | e ]}" target="_blank">
-  <text x="0" y="{[ -40 if node.asn_text else -27 ]}" text-anchor="middle" class="lbl-sub" text-decoration="underline">{[ node.addr | e ]}</text>
+  <text x="-20" y="{[ sub_y ]}" text-anchor="end" class="lbl-sub" text-decoration="underline">{[ node.addr | e ]}</text>
   </a>
+  {% else %}
+  <text x="-20" y="{[ sub_y ]}" text-anchor="end" class="lbl-sub">{[ node.extra_text | e ]}</text>
+  {% endif %}
   {% if node.asn_text %}
   <a xlink:href="{[ node.asn_href | e ]}" href="{[ node.asn_href | e ]}" target="_blank">
-  <text x="0" y="-27" text-anchor="middle" class="lbl-as" text-decoration="underline">{[ node.asn_text | e ]}</text>
+  <text x="-20" y="15" text-anchor="end" class="lbl-as" text-decoration="underline">{[ node.asn_text | e ]}</text>
   </a>
-  {% endif %}
-  {% else %}
-  <text x="0" y="-30" text-anchor="middle" class="lbl-name">{[ node.name | e ]}</text>
-  <text x="0" y="-17" text-anchor="middle" class="lbl-sub">{[ node.extra_text | e ]}</text>
   {% endif %}
 
   {% elif node.kind == 'interchange' %}
@@ -150,17 +148,17 @@
   <title>{[ node.title | e ]}</title>
 
   {% if node.has_collapse %}
-  {# Root's labels fill the space above it and its edges leave to the right,
-     but those edges are hidden while it's collapsed, so the badge can sit there. #}
+  {# Root's edges leave to the right, but they're hidden while it's collapsed,
+     so the badge can sit there. #}
   {% set badge_x = 26 if node.kind == 'root' else 15 %}
   {% set badge_y = 0 if node.kind == 'root' else -15 %}
   <!-- Clicking the station itself collapses/expands it. The hit circle is
        invisible but wide enough to grab the tiny pass-through ticks. -->
   <circle class="collapse-hit" r="8" fill="transparent"/>
   <!-- Shown only while collapsed: the number of hidden descendants. Root's label
-       sits above the marker and interchange's to the left, so the badge goes
-       to the right of root and upper-right otherwise, clear of both. Clicking
-       it expands the node again. -->
+       sits to the left of the marker, so the badge goes to the right of root
+       and upper-right otherwise, clear of the labels. Clicking it expands
+       the node again. -->
   <g class="collapse-badge" style="display:none">
     <circle cx="{[ badge_x ]}" cy="{[ badge_y ]}" r="9"
             fill="#0f1b2e" stroke="{[ node.color ]}" stroke-width="1.5"/>
@@ -291,6 +289,8 @@
       var w  = Math.max(LAYOUT.hopStep, dy + LAYOUT.junctionPad);
       levelMinW[d] = Math.max(levelMinW[d] || LAYOUT.hopStep, w);
     });
+
+    levelMinW[0] = Math.max(levelMinW[0] || LAYOUT.hopStep, LAYOUT.level0MinW);
 
     var xAtDepth = [LAYOUT.padX];
     for (var d2 = 0; d2 <= maxDepth; d2++) {
