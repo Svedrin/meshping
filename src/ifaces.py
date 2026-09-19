@@ -125,6 +125,15 @@ class Ifaces:
             pass
         return False
 
+    def public_addr(self):
+        """Return a globally routable address configured on one of our
+        interfaces as a string, preferring IPv4, or None if there is none
+        (private, CGNAT, ULA and link-local addresses don't count)."""
+        for addr in self.if4.addrs + self.if6.addrs:
+            if addr.is_global:
+                return str(addr)
+        return None
+
 
 def test():
     if4 = Ifaces4()

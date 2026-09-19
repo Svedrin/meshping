@@ -21,7 +21,11 @@ from oping import PingObj, PingError
 from api   import add_api_views
 from peers import run_peers
 from db    import Target
+from ifaces import Ifaces
 from socklib import reverse_lookup, ip_pmtud, traceroute
+from stun  import query_public_ip
+
+import settings
 
 INTERVAL = 30
 
@@ -56,6 +60,7 @@ class MeshPing:
         self.traceroute_interval = traceroute_interval
 
         self.whois_cache = {}
+        self.self_info_cache = (0, {})
 
     def all_targets(self):
         return Target.db.all()
@@ -153,6 +158,28 @@ class MeshPing:
             return {}
 
         return self.whois_cache.get(hop_address, {})
+
+    def self_info(self):
+        """Our own public IP and its whois info, as {"address": ..., "whois": ...}
+        (empty if we couldn't find out). Blocking, run it in a thread from async code.
+
+        We use an address on one of our interfaces if there's a public one,
+        and ask the STUN server from settings.py otherwise. The result is
+        cached, so the network map doesn't cause a lookup on every render."""
+        now = time()
+        cached_at, cached = self.self_info_cache
+        # Retry sooner if we didn't get the full picture
+        ttl = 3600 if cached.get("whois") else 300
+        if cached_at + ttl > now:
+            return cached
+
+        address = Ifaces().public_addr() or query_public_ip(
+            *settings.STUN_SERVER, timeout=settings.STUN_TIMEOUT
+        )
+        info = {"address": address, "whois": self.whois(address)} if address else {}
+
+        self.self_info_cache = (now, info)
+        return info
 
     async def run(self):
         pingobj = PingObj()

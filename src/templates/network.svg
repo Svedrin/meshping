@@ -86,9 +86,24 @@
         fill="#0a0f1c" stroke="{[ node.color ]}" stroke-width="2.5"/>
   <circle r="3.2" fill="{[ node.color ]}"/>
   <!-- Labelled above, never to the side, so an arbitrarily long hostname
-       can't run off the left edge of the canvas. -->
+       can't run off the left edge of the canvas. Same three lines as a
+       terminus (name, public IP, AS), stacked upwards from the marker and
+       starting above the first hop's label, which sits left of that hop and
+       can reach back over SELF. -->
+  {% if node.addr %}
+  <text x="0" y="{[ -53 if node.asn_text else -40 ]}" text-anchor="middle" class="lbl-name">{[ node.name | e ]}</text>
+  <a xlink:href="{[ node.addr_href | e ]}" href="{[ node.addr_href | e ]}" target="_blank">
+  <text x="0" y="{[ -40 if node.asn_text else -27 ]}" text-anchor="middle" class="lbl-sub" text-decoration="underline">{[ node.addr | e ]}</text>
+  </a>
+  {% if node.asn_text %}
+  <a xlink:href="{[ node.asn_href | e ]}" href="{[ node.asn_href | e ]}" target="_blank">
+  <text x="0" y="-27" text-anchor="middle" class="lbl-as" text-decoration="underline">{[ node.asn_text | e ]}</text>
+  </a>
+  {% endif %}
+  {% else %}
   <text x="0" y="-30" text-anchor="middle" class="lbl-name">{[ node.name | e ]}</text>
   <text x="0" y="-17" text-anchor="middle" class="lbl-sub">{[ node.extra_text | e ]}</text>
+  {% endif %}
 
   {% elif node.kind == 'interchange' %}
   <circle r="7.5" fill="#0a0f1c" stroke="{[ node.color ]}" stroke-width="3"/>
@@ -135,18 +150,21 @@
   <title>{[ node.title | e ]}</title>
 
   {% if node.has_collapse %}
-  {% set badge_y = 15 if node.kind == 'root' else -15 %}
+  {# Root's labels fill the space above it and its edges leave to the right,
+     but those edges are hidden while it's collapsed, so the badge can sit there. #}
+  {% set badge_x = 26 if node.kind == 'root' else 15 %}
+  {% set badge_y = 0 if node.kind == 'root' else -15 %}
   <!-- Clicking the station itself collapses/expands it. The hit circle is
        invisible but wide enough to grab the tiny pass-through ticks. -->
   <circle class="collapse-hit" r="8" fill="transparent"/>
   <!-- Shown only while collapsed: the number of hidden descendants. Root's label
-       sits above the marker, interchange's to the left, so the badge goes
-       lower-right for root and upper-right otherwise, clear of both. Clicking
+       sits above the marker and interchange's to the left, so the badge goes
+       to the right of root and upper-right otherwise, clear of both. Clicking
        it expands the node again. -->
   <g class="collapse-badge" style="display:none">
-    <circle cx="15" cy="{[ badge_y ]}" r="9"
+    <circle cx="{[ badge_x ]}" cy="{[ badge_y ]}" r="9"
             fill="#0f1b2e" stroke="{[ node.color ]}" stroke-width="1.5"/>
-    <text class="collapse-badge-label" x="15" y="{[ badge_y + 4 ]}"
+    <text class="collapse-badge-label" x="{[ badge_x ]}" y="{[ badge_y + 4 ]}"
           text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif"
           font-size="10" font-weight="700" fill="#e2e8f0">{[ node.descendants ]}</text>
   </g>

@@ -172,6 +172,10 @@ Following variables are deprecated and thus their use is discouraged:
 * `MESHPING_PROMETHEUS_QUERY`: Not configurable at the moment. See [Prometheus](#prometheus)
 * `MESHPING_REDIS_HOST`: Not configurable at the moment
 
+The network map shows your public IP and its AS on the local node. If one of the machine's interfaces has a public address,
+that one is used. Otherwise, Meshping asks a STUN server for it, which is set in `src/settings.py` (default: `stun.nextcloud.com:443`,
+with alternatives listed in the file). This is a UDP request, so it needs outbound UDP to that server.
+
 
 # Dev build
 

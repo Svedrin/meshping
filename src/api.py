@@ -5,6 +5,8 @@
 import json
 import socket
 
+import trio
+
 from collections import defaultdict
 from datetime import datetime
 from random import randint
@@ -35,8 +37,8 @@ from ifaces import Ifaces
 LANE_H        = 60    # vertical px between adjacent lines/stations
 HOP_STEP      = 58    # minimum horizontal px per traceroute hop
 JUNCTION_PAD  = 30    # extra slack added to a fanning-out column's width
-PAD_X         = 110
-PAD_Y         = 86    # clears the 58px title bar
+PAD_X         = 130   # clears the widest SELF label (a full-length IPv6 address)
+PAD_Y         = 124   # clears the 58px title bar and SELF's 3-line label
 BOTTOM_PAD    = 40
 LABEL_ROOM    = 300   # right-hand room for the widest terminus label
 CANVAS_W_MIN  = 760
@@ -76,6 +78,10 @@ def _line_color(index):
 def _display_name(hop):
     return (hop.get("target") and hop["target"].name) or hop.get("name") or hop.get("address") or "?"
 
+def _asn_text(asn, whois):
+    net_name = (whois.get("network") or {}).get("name", "")
+    return ("AS%s: %s" % (asn, net_name))[:34], net_name
+
 def _asn_of(hop):
     if not hop:
         return None
@@ -89,7 +95,7 @@ def _elbow_path(x1, y1, x2, y2):
     xa  = x2 - run
     return "M%.2f,%.2f L%.2f,%.2f L%.2f,%.2f" % (x1, y1, xa, y1, x2, y2)
 
-async def render_network_svg(hostname, uniq_hops, uniq_links):
+async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
     # ── adjacency ──────────────────────────────────────────────────────
     parents_of = defaultdict(list)
     for (lft, rgt) in uniq_links:
@@ -285,6 +291,20 @@ async def render_network_svg(hostname, uniq_hops, uniq_links):
         "asn_text": None, "asn_href": None, "hist_href": None,
         "extra_text": "this node", "title": hostname,
     })
+    # Our public IP and the AS it belongs to, if we could find out
+    self_addr = (self_info or {}).get("address")
+    if self_addr:
+        root = node_list[0]
+        root.update(
+            addr=self_addr, addr_href=href_ipinfo(self_addr),
+            title="%s — %s" % (hostname, self_addr),
+        )
+        self_whois = self_info.get("whois") or {}
+        self_asn   = self_whois.get("asn")
+        if self_asn:
+            asn_text, net_name = _asn_text(self_asn, self_whois)
+            root.update(asn_text=asn_text, asn_href=href_bgp(self_asn))
+            root["title"] += " (AS%s %s)" % (self_asn, net_name)
 
     # landmark labels alternate above/below within their own lane, so two
     # landmarks a couple of hops apart on the same line don't collide
@@ -322,11 +342,8 @@ async def render_network_svg(hostname, uniq_hops, uniq_links):
             node.update(name=name, addr=addr, addr_href=href_ipinfo(addr))
 
             if asn:
-                net_name = (whois.get("network") or {}).get("name", "")
-                node.update(
-                    asn_text=("AS%s: %s" % (asn, net_name))[:34],
-                    asn_href=href_bgp(asn),
-                )
+                asn_text, net_name = _asn_text(asn, whois)
+                node.update(asn_text=asn_text, asn_href=href_bgp(asn))
                 title += " (AS%s %s)" % (asn, net_name)
                 if k == "landmark":
                     short = (net_name.split("-")[0] if net_name else str(asn))[:14]
@@ -669,7 +686,9 @@ def add_api_views(app, mp):
                 prev_hop  = hop_id
                 prev_dist = hop["distance"]
 
-        tpl, now = await render_network_svg(hostname, uniq_hops, uniq_links)
+        self_info = await trio.to_thread.run_sync(mp.self_info)
+
+        tpl, now = await render_network_svg(hostname, uniq_hops, uniq_links, self_info)
 
         resp = Response(tpl, mimetype="image/svg+xml")
         resp.headers["refresh"]             = "43200"
