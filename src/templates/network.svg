@@ -7,7 +7,7 @@
 <defs>
   <style>
     a text { cursor: pointer; }
-    .collapse-icon { cursor: pointer; }
+    .collapse-hit, .collapse-badge { cursor: pointer; }
   </style>
 
   <!-- Background gradient: deep navy top-left to near-black bottom-right -->
@@ -78,7 +78,6 @@
 {% for node in nodes %}
 <g class="node" id="node-{[ node.id ]}" data-id="{[ node.id ]}"
    data-cx="{[ '%.2f' % node.cx ]}" data-cy="{[ '%.2f' % node.cy ]}"
-   data-descendants="{[ node.descendants ]}"
    transform="translate({[ '%.2f' % node.cx ]},{[ '%.2f' % node.cy ]})"
    {% if node.kind == 'root' %}filter="url(#glow-self)"{% endif %}>
 
@@ -137,15 +136,19 @@
 
   {% if node.has_collapse %}
   {% set badge_y = 15 if node.kind == 'root' else -15 %}
-  <!-- Collapse/expand toggle: shows "−" when expanded, hidden-descendant count when collapsed.
-       Root's label sits above the marker, interchange's sits to the left, so the badge
-       goes lower-right for root and upper-right for interchange either way, clear of both. -->
-  <g class="collapse-icon">
+  <!-- Clicking the station itself collapses/expands it. The hit circle is
+       invisible but wide enough to grab the tiny pass-through ticks. -->
+  <circle class="collapse-hit" r="8" fill="transparent"/>
+  <!-- Shown only while collapsed: the number of hidden descendants. Root's label
+       sits above the marker, interchange's to the left, so the badge goes
+       lower-right for root and upper-right otherwise, clear of both. Clicking
+       it expands the node again. -->
+  <g class="collapse-badge" style="display:none">
     <circle cx="15" cy="{[ badge_y ]}" r="9"
             fill="#0f1b2e" stroke="{[ node.color ]}" stroke-width="1.5"/>
-    <text class="collapse-icon-label" x="15" y="{[ badge_y + 4 ]}"
+    <text class="collapse-badge-label" x="15" y="{[ badge_y + 4 ]}"
           text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif"
-          font-size="10" font-weight="700" fill="#e2e8f0">&#8722;</text>
+          font-size="10" font-weight="700" fill="#e2e8f0">{[ node.descendants ]}</text>
   </g>
   {% endif %}
 </g>
@@ -294,9 +297,9 @@
       if (Object.prototype.hasOwnProperty.call(pos, id2)) {
         g.style.display = "";
         g.setAttribute("transform", "translate(" + pos[id2][0].toFixed(2) + "," + pos[id2][1].toFixed(2) + ")");
-        var label = g.querySelector(".collapse-icon-label");
-        if (label) {
-          label.textContent = collapsed[id2] ? g.getAttribute("data-descendants") : "−";
+        var badge = g.querySelector(".collapse-badge");
+        if (badge) {
+          badge.style.display = collapsed[id2] ? "" : "none";
         }
       } else {
         g.style.display = "none";
@@ -339,7 +342,7 @@
   }
 
   svg.addEventListener("click", function (ev) {
-    var icon = ev.target.closest && ev.target.closest(".collapse-icon");
+    var icon = ev.target.closest && ev.target.closest(".collapse-hit, .collapse-badge");
     if (!icon) return;
     ev.preventDefault();
     ev.stopPropagation();
