@@ -286,11 +286,11 @@
       if (!visible[src] || !visible[tgt] || !(src in lane) || !(tgt in lane)) return;
       var d  = DEPTH[src] || 0;
       var dy = Math.abs(lane[tgt] - lane[src]) * LAYOUT.laneH;
-      var w  = Math.max(LAYOUT.hopStep, dy + LAYOUT.junctionPad);
+      var need = dy + LAYOUT.junctionPad;
+      if (dy < LAYOUT.laneH && LAYOUT.labelW[tgt]) need = Math.max(need, LAYOUT.labelW[tgt] + LAYOUT.labelClear);
+      var w  = Math.max(LAYOUT.hopStep, need);
       levelMinW[d] = Math.max(levelMinW[d] || LAYOUT.hopStep, w);
     });
-
-    levelMinW[0] = Math.max(levelMinW[0] || LAYOUT.hopStep, LAYOUT.level0MinW);
 
     var xAtDepth = [LAYOUT.padX];
     for (var d2 = 0; d2 <= maxDepth; d2++) {

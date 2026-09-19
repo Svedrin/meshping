@@ -41,6 +41,7 @@ PAD_X         = 110   # minimum; grows to fit SELF's label, which sits to its le
 PAD_Y         = 86    # clears the 58px title bar
 BOTTOM_PAD    = 40
 LABEL_ROOM    = 300   # right-hand room for the widest terminus label
+LABEL_CLEAR   = 44    # 14px label offset + room for the marker or label of the hop before it
 CANVAS_W_MIN  = 760
 CANVAS_H_MIN  = 360
 
@@ -206,31 +207,31 @@ async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
         depth_of[hid] = hop["distance"]
     max_depth = max(depth_of.values()) if uniq_hops else 0
 
+    # An interchange labels to the left of its marker, over whatever precedes
+    # it on the same row. So the column before it has to be wide enough to fit
+    # the label, or it runs over that hop (and its label, or SELF's marker).
+    # Character widths are rough per-font estimates.
+    interchange_label_w = {}
+    for hid, hop in uniq_hops.items():
+        kids = len(tree_children.get(hid, []))
+        if kids >= 2 and hop.get("address"):
+            interchange_label_w[hid] = max(
+                len(_display_name(hop)[:30]) * 8,
+                len(hop["address"]) * 7,
+                len(_splits_text(_asn_of(hop), kids)) * 6,
+            )
+
     level_min_w = defaultdict(lambda: HOP_STEP)
     for (lft, rgt) in uniq_links:
         if lft not in lane or rgt not in lane:
             continue
         d  = depth_of.get(lft, 0)
         dy = abs(lane[rgt] - lane[lft]) * LANE_H
-        if dy > level_min_w[d] - JUNCTION_PAD:
-            level_min_w[d] = dy + JUNCTION_PAD
-
-    # Interchanges label to the left of their marker, so one right after SELF
-    # would run over SELF's marker and its own label. Keep the first column
-    # wide enough that it can't. Character widths are rough per-font estimates.
-    first_label_w = 0
-    for hid in tree_children.get("SELF", []):
-        hop  = uniq_hops.get(hid, {})
-        kids = len(tree_children.get(hid, []))
-        if kids >= 2 and hop.get("address"):
-            first_label_w = max(
-                first_label_w,
-                len(_display_name(hop)[:30]) * 8,
-                len(hop["address"]) * 7,
-                len(_splits_text(_asn_of(hop), kids)) * 6,
-            )
-    level0_min_w = first_label_w + 40 if first_label_w else 0
-    level_min_w[0] = max(level_min_w[0], level0_min_w)
+        need = dy + JUNCTION_PAD
+        if dy < LANE_H and rgt in interchange_label_w:
+            need = max(need, interchange_label_w[rgt] + LABEL_CLEAR)
+        if need > level_min_w[d]:
+            level_min_w[d] = need
 
     # SELF's name, public IP and AS are labelled to the left of its marker
     # (like an interchange's), so the left margin has to be wide enough for
@@ -399,7 +400,8 @@ async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
         "depth": depth_of,
         "links": [[lft, rgt] for (lft, rgt) in uniq_links if lft in lane and rgt in lane],
         "laneH": LANE_H, "hopStep": HOP_STEP, "junctionPad": JUNCTION_PAD,
-        "padX": pad_x, "level0MinW": level0_min_w, "padY": PAD_Y, "bottomPad": BOTTOM_PAD, "labelRoom": LABEL_ROOM,
+        "padX": pad_x, "labelClear": LABEL_CLEAR,
+        "labelW": interchange_label_w, "padY": PAD_Y, "bottomPad": BOTTOM_PAD, "labelRoom": LABEL_ROOM,
         "canvasWMin": CANVAS_W_MIN, "canvasHMin": CANVAS_H_MIN,
         "legendH": legend_h,
     }
