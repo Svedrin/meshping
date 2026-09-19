@@ -49,22 +49,26 @@ def parse_binding_response(data, txid):
 
     return None
 
-def query_public_ip(host, port, timeout=2.0, attempts=2):
+def query_public_ip(host, port, family=socket.AF_UNSPEC, timeout=2.0, attempts=2):
     """Ask the STUN server at host:port for our public IP. Returns it as a
     string, or None if the server couldn't be reached or didn't answer.
-    Blocking, so run it in a thread from async code."""
+    `family` (socket.AF_INET or AF_INET6) picks which of our addresses is
+    looked up. Blocking, so run it in a thread from async code.
+
+    Failures are only logged at info level: hosts without IPv6 (or without
+    IPv4) are perfectly normal, and this gets retried regularly."""
     try:
-        candidates = socket.getaddrinfo(host, port, type=socket.SOCK_DGRAM)
+        candidates = socket.getaddrinfo(host, port, family=family, type=socket.SOCK_DGRAM)
     except socket.gaierror as err:
-        logging.warning("STUN: could not resolve %s: %s", host, err)
+        logging.info("STUN: could not resolve %s: %s", host, err)
         return None
 
-    for family, socktype, proto, _, sockaddr in candidates:
+    for addr_family, socktype, proto, _, sockaddr in candidates:
         txid    = os.urandom(12)
         request = struct.pack("!HHI12s", BINDING_REQUEST, 0, MAGIC_COOKIE, txid)
 
         try:
-            with socket.socket(family, socktype, proto) as sock:
+            with socket.socket(addr_family, socktype, proto) as sock:
                 for _ in range(attempts):
                     sock.sendto(request, sockaddr)
                     deadline = time.monotonic() + timeout
@@ -78,7 +82,7 @@ def query_public_ip(host, port, timeout=2.0, attempts=2):
                         if addr is not None:
                             return addr
         except OSError as err:
-            logging.warning("STUN: query to %s failed: %s", sockaddr[0], err)
+            logging.info("STUN: query to %s failed: %s", sockaddr[0], err)
 
-    logging.warning("STUN: no usable answer from %s:%s", host, port)
+    logging.info("STUN: no usable answer from %s:%s", host, port)
     return None

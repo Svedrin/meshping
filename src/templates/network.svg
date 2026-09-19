@@ -87,21 +87,12 @@
   <circle r="3.2" fill="{[ node.color ]}"/>
   <!-- Labelled to the left, like an interchange, in the margin render_network_svg()
        widens to fit. Above would collide with the first hop's label, which
-       reaches back over SELF. -->
-  {% set sub_y = 2 if node.asn_text else 8 %}
-  <text x="-20" y="{[ -12 if node.asn_text else -6 ]}" text-anchor="end" class="lbl-name">{[ node.name | e ]}</text>
-  {% if node.addr %}
-  <a xlink:href="{[ node.addr_href | e ]}" href="{[ node.addr_href | e ]}" target="_blank">
-  <text x="-20" y="{[ sub_y ]}" text-anchor="end" class="lbl-sub" text-decoration="underline">{[ node.addr | e ]}</text>
-  </a>
-  {% else %}
-  <text x="-20" y="{[ sub_y ]}" text-anchor="end" class="lbl-sub">{[ node.extra_text | e ]}</text>
-  {% endif %}
-  {% if node.asn_text %}
-  <a xlink:href="{[ node.asn_href | e ]}" href="{[ node.asn_href | e ]}" target="_blank">
-  <text x="-20" y="15" text-anchor="end" class="lbl-as" text-decoration="underline">{[ node.asn_text | e ]}</text>
-  </a>
-  {% endif %}
+       reaches back over SELF. One line each: name, public IPv4/IPv6, AS(es). -->
+  {% for label in node.labels %}
+  {% if label.href %}<a xlink:href="{[ label.href | e ]}" href="{[ label.href | e ]}" target="_blank">{% endif %}
+  <text x="-20" y="{[ label.y ]}" text-anchor="end" class="{[ label.cls ]}"{% if label.href %} text-decoration="underline"{% endif %}>{[ label.text | e ]}</text>
+  {% if label.href %}</a>{% endif %}
+  {% endfor %}
 
   {% elif node.kind == 'interchange' %}
   <circle r="7.5" fill="#0a0f1c" stroke="{[ node.color ]}" stroke-width="3"/>

@@ -5,8 +5,11 @@
 import os
 import os.path
 import math
+import socket
 import sys
 import logging
+
+from concurrent.futures import ThreadPoolExecutor
 
 from uuid       import uuid4
 from time       import time
@@ -60,7 +63,7 @@ class MeshPing:
         self.traceroute_interval = traceroute_interval
 
         self.whois_cache = {}
-        self.self_info_cache = (0, {})
+        self.self_info_cache = (0, [])
 
     def all_targets(self):
         return Target.db.all()
@@ -160,24 +163,41 @@ class MeshPing:
         return self.whois_cache.get(hop_address, {})
 
     def self_info(self):
-        """Our own public IP and its whois info, as {"address": ..., "whois": ...}
-        (empty if we couldn't find out). Blocking, run it in a thread from async code.
+        """Our own public IPv4 and IPv6 addresses with their whois info, as
+        [{"address": ..., "whois": ...}, ...] (a family we don't have is left
+        out, so this is empty if we couldn't find out anything). Blocking, run
+        it in a thread from async code.
 
-        We use an address on one of our interfaces if there's a public one,
-        and ask the STUN server from settings.py otherwise. The result is
-        cached, so the network map doesn't cause a lookup on every render."""
+        Per IP version, we use an address on one of our interfaces if there's
+        a public one, and ask the STUN server from settings.py otherwise. The
+        result is cached, so the network map doesn't cause a lookup on every
+        render."""
         now = time()
         cached_at, cached = self.self_info_cache
-        # Retry sooner if we didn't get the full picture
-        ttl = 3600 if cached.get("whois") else 300
+        # Retry sooner if we didn't get any address, or no whois for one.
+        # A missing family is not a reason to retry quickly: plenty of hosts
+        # simply don't have IPv6, and a failed query can take a few seconds.
+        ttl = 3600 if cached and all(info["whois"] for info in cached) else 300
         if cached_at + ttl > now:
             return cached
 
-        address = Ifaces().public_addr() or query_public_ip(
-            *settings.STUN_SERVER, timeout=settings.STUN_TIMEOUT
-        )
-        info = {"address": address, "whois": self.whois(address)} if address else {}
+        addrs   = Ifaces().public_addrs()
+        missing = [version for version in (4, 6) if version not in addrs]
+        if missing:
+            families = {4: socket.AF_INET, 6: socket.AF_INET6}
+            with ThreadPoolExecutor(len(missing)) as pool:
+                answers = pool.map(
+                    lambda version: query_public_ip(
+                        *settings.STUN_SERVER, family=families[version], timeout=settings.STUN_TIMEOUT
+                    ),
+                    missing
+                )
+                addrs.update({v: a for v, a in zip(missing, answers) if a})
 
+        info = [
+            {"address": addrs[version], "whois": self.whois(addrs[version])}
+            for version in (4, 6) if version in addrs
+        ]
         self.self_info_cache = (now, info)
         return info
 

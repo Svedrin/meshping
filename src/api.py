@@ -41,6 +41,7 @@ PAD_X         = 110   # minimum; grows to fit SELF's label, which sits to its le
 PAD_Y         = 86    # clears the 58px title bar
 BOTTOM_PAD    = 40
 LABEL_ROOM    = 300   # right-hand room for the widest terminus label
+SELF_LINE_H   = 14    # line spacing of SELF's label
 LABEL_CLEAR   = 44    # 14px label offset + room for the marker or label of the hop before it
 CANVAS_W_MIN  = 760
 CANVAS_H_MIN  = 360
@@ -233,19 +234,35 @@ async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
         if need > level_min_w[d]:
             level_min_w[d] = need
 
-    # SELF's name, public IP and AS are labelled to the left of its marker
-    # (like an interchange's), so the left margin has to be wide enough for
-    # the longest of them.
-    self_addr  = (self_info or {}).get("address")
-    self_whois = (self_info or {}).get("whois") or {}
-    self_asn   = self_whois.get("asn") if self_addr else None
-    self_asn_text = _asn_text(self_asn, self_whois)[0] if self_asn else None
-    label_w = max(
-        len(hostname[:30]) * 8,
-        len(self_addr or "") * 7,
-        len(self_asn_text or "") * 6,
-    )
+    # SELF's name, public IPs and ASes are labelled to the left of its marker
+    # (like an interchange's): one line each, centred on the marker. So the
+    # left margin has to be wide enough for the longest of them, and the top
+    # margin for the tallest stack. Character widths are rough per-font
+    # estimates.
+    self_addrs = [info["address"] for info in (self_info or [])]
+    self_asns  = {}   # dedupes: both addresses are usually in the same AS
+    for info in (self_info or []):
+        whois = info.get("whois") or {}
+        if whois.get("asn"):
+            self_asns.setdefault(whois["asn"], whois)
+
+    self_labels = [{"text": hostname[:30], "cls": "lbl-name", "href": None}]
+    self_labels += [
+        {"text": addr, "cls": "lbl-sub", "href": "https://ipinfo.io/" + addr}
+        for addr in self_addrs
+    ] or [{"text": "this node", "cls": "lbl-sub", "href": None}]
+    self_labels += [
+        {"text": _asn_text(asn, whois)[0], "cls": "lbl-as", "href": "https://bgp.tools/as/" + str(asn)}
+        for asn, whois in self_asns.items()
+    ]
+    for i, label in enumerate(self_labels):
+        label["y"] = round((i - (len(self_labels) - 1) / 2) * SELF_LINE_H + 2, 1)
+
+    label_w = max(len(label["text"]) * {"lbl-name": 8, "lbl-sub": 7, "lbl-as": 6}[label["cls"]]
+                  for label in self_labels)
     pad_x = max(PAD_X, label_w + 40)
+    # top line's baseline is at label["y"], its ascenders reach ~9px above that
+    pad_y = max(PAD_Y, 58 + 4 + 9 - self_labels[0]["y"])
 
     x_at_depth = [0.0] * (max_depth + 2)
     x_at_depth[0] = pad_x
@@ -255,7 +272,7 @@ async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
     positions = {}
     for nid in lane:
         d = depth_of.get(nid, 0)
-        positions[nid] = (x_at_depth[d], PAD_Y + lane[nid] * LANE_H)
+        positions[nid] = (x_at_depth[d], pad_y + lane[nid] * LANE_H)
 
     canvas_w = max(CANVAS_W_MIN, int(x_at_depth[max_depth + 1] + LABEL_ROOM))
     # The legend panel is anchored to the bottom of the canvas, so its
@@ -263,7 +280,7 @@ async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
     # handful of termini can end up with the legend overlapping the last
     # row's label (a leaf's 3rd text line runs ~24px below its centre).
     last_row_clearance = 24
-    content_h = PAD_Y + (total_leaves - 1) * LANE_H + last_row_clearance + legend_h + BOTTOM_PAD
+    content_h = pad_y + (total_leaves - 1) * LANE_H + last_row_clearance + legend_h + BOTTOM_PAD
     canvas_h  = max(CANVAS_H_MIN, int(content_h))
 
     # ── station classification ───────────────────────────────────────────
@@ -322,20 +339,11 @@ async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
         "color": "#8aa0c0", "dummy": False, "state": None,
         "has_collapse": bool(tree_children.get("SELF")),
         "descendants": descendant_count.get("SELF", 0),
-        "name": hostname[:30], "addr": None, "addr_href": None,
-        "asn_text": None, "asn_href": None, "hist_href": None,
-        "extra_text": "this node", "title": hostname,
+        "labels": self_labels,
+        "title": " — ".join([hostname] + self_addrs) + "".join(
+            " (AS%s %s)" % (asn, _asn_text(asn, whois)[1]) for asn, whois in self_asns.items()
+        ),
     })
-    # Our public IP and the AS it belongs to, if we could find out
-    if self_addr:
-        root = node_list[0]
-        root.update(
-            addr=self_addr, addr_href=href_ipinfo(self_addr),
-            title="%s — %s" % (hostname, self_addr),
-        )
-        if self_asn:
-            root.update(asn_text=self_asn_text, asn_href=href_bgp(self_asn))
-            root["title"] += " (AS%s %s)" % (self_asn, _asn_text(self_asn, self_whois)[1])
 
     # landmark labels alternate above/below within their own lane, so two
     # landmarks a couple of hops apart on the same line don't collide
@@ -401,7 +409,7 @@ async def render_network_svg(hostname, uniq_hops, uniq_links, self_info=None):
         "links": [[lft, rgt] for (lft, rgt) in uniq_links if lft in lane and rgt in lane],
         "laneH": LANE_H, "hopStep": HOP_STEP, "junctionPad": JUNCTION_PAD,
         "padX": pad_x, "labelClear": LABEL_CLEAR,
-        "labelW": interchange_label_w, "padY": PAD_Y, "bottomPad": BOTTOM_PAD, "labelRoom": LABEL_ROOM,
+        "labelW": interchange_label_w, "padY": pad_y, "bottomPad": BOTTOM_PAD, "labelRoom": LABEL_ROOM,
         "canvasWMin": CANVAS_W_MIN, "canvasHMin": CANVAS_H_MIN,
         "legendH": legend_h,
     }
