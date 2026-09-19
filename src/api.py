@@ -136,6 +136,19 @@ async def render_network_svg(hostname, uniq_hops, uniq_links):
         return total
     count_descendants("SELF")
 
+    # Monitored targets reachable through a node (itself included), used to
+    # size edges. Intermediate hops don't count, only actual targets.
+    target_count = {}
+    def count_targets(node):
+        if node in target_count:
+            return target_count[node]
+        total = 1 if uniq_hops.get(node, {}).get("target") else 0
+        for kid in tree_children.get(node, []):
+            total += count_targets(kid)
+        target_count[node] = total
+        return total
+    count_targets("SELF")
+
     # ── which line (top-level branch out of SELF) owns each node ────────
     top_order = list(tree_children.get("SELF", []))
     line_of = {"SELF": "SELF"}
@@ -245,7 +258,7 @@ async def render_network_svg(hostname, uniq_hops, uniq_links):
         x1, y1 = positions[lft]
         x2, y2 = positions[rgt]
         color  = _line_color(line_index.get(edge_owner(lft, rgt), 0))
-        weight = descendant_count.get(rgt, 0)
+        weight = target_count.get(rgt, 0)
         edge_list.append({
             "src": lft, "tgt": rgt,
             "d": _elbow_path(x1, y1, x2, y2),
