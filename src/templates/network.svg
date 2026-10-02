@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="network-svg" xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink"
-     width="{[ canvas_w ]}" height="{[ canvas_h ]}"
+     width="100%" height="100%" preserveAspectRatio="xMidYMid slice"
      viewBox="0 0 {[ canvas_w ]} {[ canvas_h ]}">
 
 <defs>
   <style>
     a text { cursor: pointer; }
     .collapse-hit, .collapse-badge { cursor: pointer; }
+    /* Keep filling the browser window even though relayout() below still
+       sets width/height attributes in px (for the canvasW/H it computes) -
+       CSS beats presentation attributes, so this wins regardless. */
+    #network-svg { width: 100vw; height: 100vh; display: block; cursor: grab; touch-action: none; }
+    #network-svg.panning { cursor: grabbing; }
   </style>
 
   <!-- Background gradient: deep navy top-left to near-black bottom-right -->
@@ -223,6 +228,17 @@
 
   var collapsed = {};   // node id -> true, for nodes the user collapsed
 
+  // Current viewBox, in SVG user units - this is what wheel-zoom and
+  // drag-pan manipulate. Seeded from the first relayout() (the natural,
+  // fit-to-content box) and then left alone by subsequent relayouts, so
+  // collapsing/expanding a node doesn't reset the user's pan/zoom.
+  var view     = null;   // {x, y, w, h}
+  var homeView = null;   // the natural box, used to clamp zoom
+
+  function applyViewBox() {
+    svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
+  }
+
   // Every node reachable from SELF without descending through a collapsed
   // node. A collapsed node itself stays visible (so its badge can be
   // clicked again); its descendants do not.
@@ -330,7 +346,11 @@
 
     svg.setAttribute("width", canvasW);
     svg.setAttribute("height", canvasH);
-    svg.setAttribute("viewBox", "0 0 " + canvasW + " " + canvasH);
+    if (!view) {
+      view     = { x: 0, y: 0, w: canvasW, h: canvasH };
+      homeView = { x: 0, y: 0, w: canvasW, h: canvasH };
+    }
+    applyViewBox();
 
     ["bg-grad-rect", "bg-dots-rect", "titlebar-rect"].forEach(function (elId) {
       var el = document.getElementById(elId);
@@ -350,7 +370,64 @@
     if (legendEl) legendEl.setAttribute("transform", "translate(0," + (canvasH - LAYOUT.legendH - 20) + ")");
   }
 
+  // ── Wheel-zoom, centered on the cursor (Google-Maps style) ──────────
+  var ZOOM_IN_LIMIT  = 0.08;  // vs. homeView.w: how far you can zoom in
+  var ZOOM_OUT_LIMIT = 6;     // vs. homeView.w: how far you can zoom out
+
+  svg.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    var factor = ev.deltaY > 0 ? 1.1 : 1 / 1.1;
+    var newW = view.w * factor;
+    if (newW < homeView.w * ZOOM_IN_LIMIT || newW > homeView.w * ZOOM_OUT_LIMIT) return;
+
+    var pt = svg.createSVGPoint();
+    pt.x = ev.clientX;
+    pt.y = ev.clientY;
+    var p = pt.matrixTransform(svg.getScreenCTM().inverse());
+
+    view.x = p.x - (p.x - view.x) * factor;
+    view.y = p.y - (p.y - view.y) * factor;
+    view.w *= factor;
+    view.h *= factor;
+    applyViewBox();
+  }, { passive: false });
+
+  // ── Drag-pan ──────────────────────────────────────────────────────
+  var panState = null;  // {startX, startY, viewX, viewY}
+  var dragged  = false; // true once a mousedown has moved far enough to count as a drag
+
+  svg.addEventListener("mousedown", function (ev) {
+    if (ev.button !== 0) return;
+    if (ev.target.closest && ev.target.closest("a")) return;  // let links work
+    panState = { startX: ev.clientX, startY: ev.clientY, viewX: view.x, viewY: view.y };
+    dragged = false;
+    svg.classList.add("panning");
+  });
+
+  window.addEventListener("mousemove", function (ev) {
+    if (!panState) return;
+    var dx = ev.clientX - panState.startX;
+    var dy = ev.clientY - panState.startY;
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragged = true;
+    var rect = svg.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    view.x = panState.viewX - dx * (view.w / rect.width);
+    view.y = panState.viewY - dy * (view.h / rect.height);
+    applyViewBox();
+  });
+
+  window.addEventListener("mouseup", function () {
+    panState = null;
+    svg.classList.remove("panning");
+  });
+
   svg.addEventListener("click", function (ev) {
+    if (dragged) {
+      // That "click" was really the end of a drag - swallow it so it
+      // doesn't also toggle a collapse/expand underneath the cursor.
+      dragged = false;
+      return;
+    }
     var icon = ev.target.closest && ev.target.closest(".collapse-hit, .collapse-badge");
     if (!icon) return;
     ev.preventDefault();
