@@ -75,11 +75,12 @@ def render_target(target):
     return graph
 
 
-# Color stops for the packet-loss severity gradient: 0% -> green, 50% -> yellow, 100% -> red.
+# Color stops for the packet-loss severity gradient: 0% -> green, 3% -> yellow, 10% -> red.
+# Anything above the last stop stays red.
 LOSS_COLOR_STOPS = (
     (0.0, (0x00, 0xA0, 0x00)),
-    (0.5, (0xFF, 0xCC, 0x00)),
-    (1.0, (0xE0, 0x00, 0x00)),
+    (0.03, (0xFF, 0xCC, 0x00)),
+    (0.10, (0xE0, 0x00, 0x00)),
 )
 
 # Color used for hours with no data at all (as opposed to 0% loss).
@@ -328,7 +329,7 @@ def render(targets, histogram_period):
     legend_x, legend_y = 16, axis_y + 16
     draw.text((legend_x, legend_y), "Loss:", 0x333333, font=font)
     legend_y += 12
-    for label, frac in (("  0%", 0.0), (" 50%", 0.5), ("100%", 1.0), ("n/a", None)):
+    for label, frac in (("  0%", 0.0), ("  3%", 0.03), (" 10%", 0.10), ("n/a", None)):
         draw.rectangle((legend_x, legend_y, legend_x + 10, legend_y + 8), fill=loss_color(frac))
         draw.text((legend_x + 14, legend_y - 1), label, 0x333333, font=font)
         legend_y += 11
