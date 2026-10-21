@@ -99,6 +99,27 @@ def loss_color(frac):
     return LOSS_COLOR_STOPS[-1][1]
 
 
+def target_stats_row(target):
+    """ Return the values for the statistics table below the graph, formatted like the overview page. """
+    stats = target.statistics
+
+    def fmt(value):
+        if value is None:
+            return "-"
+        return f"{value:.2f}"
+
+    succ = None
+    if stats["sent"] > 0:
+        succ = stats["recv"] / stats["sent"] * 100
+
+    return [fmt(succ)] + [fmt(stats.get(field)) for field in STATS_FIELDS]
+
+
+# Columns of the statistics table drawn below the graph.
+STATS_HEADERS = ("Succ%", "Min", "Avg15m", "Avg6h", "Avg24h", "Max")
+STATS_FIELDS  = ("min", "avg15m", "avg6h", "avg24h", "max")
+
+
 def render(targets, histogram_period):
     rendered_graphs = []
 
@@ -221,8 +242,15 @@ def render(targets, histogram_period):
     graph_x = 70
     graph_y = 30 * len(targets) + 10
 
+    # Statistics table below the x axis labels: a header row plus one row per target.
+    stats_row_height = 14
+    stats_table_height = stats_row_height * (len(targets) + 1) + 10
+
     # im will hold the output image
-    im = Image.new("RGB", (graph_x + width + 20, graph_y + height + loss_bar_height + 100), "white")
+    im = Image.new("RGB", (
+        graph_x + width + 20,
+        graph_y + height + loss_bar_height + 100 + stats_table_height
+    ), "white")
     im.paste(graph, (graph_x, graph_y))
 
     # draw a rect around the graph
@@ -304,6 +332,30 @@ def render(targets, histogram_period):
         draw.rectangle((legend_x, legend_y, legend_x + 10, legend_y + 8), fill=loss_color(frac))
         draw.text((legend_x + 14, legend_y - 1), label, 0x333333, font=font)
         legend_y += 11
+
+    # Statistics table, aligned to the graph: target name on the left, one
+    # right-aligned column per value, each row in that target's color.
+    stats_col_width = 60
+    stats_right = graph_x + width
+    stats_name_width = width - stats_col_width * len(STATS_HEADERS)
+    stats_y = axis_y + 90
+
+    def draw_stats_row(y, name, values, color):
+        name_chars = max(int(stats_name_width // font.getlength("x")) - 1, 0)
+        if len(name) > name_chars:
+            name = name[:max(name_chars - 1, 0)] + "…"
+        draw.text((graph_x, y), name, color, font=font)
+        for col, value in enumerate(values):
+            col_right = stats_right - (len(values) - 1 - col) * stats_col_width
+            draw.text((col_right - font.getlength(value), y), value, color, font=font)
+
+    draw_stats_row(stats_y, "Target", STATS_HEADERS, 0x333333)
+    draw.line(
+        (graph_x, stats_y + stats_row_height - 2, stats_right - 1, stats_y + stats_row_height - 2),
+        fill=0xAAAAAA
+    )
+    for idx, (target, color) in enumerate(targets_with_colors):
+        draw_stats_row(stats_y + stats_row_height * (idx + 1), target.name, target_stats_row(target), color)
 
     # This worked pretty well for Tobi Oetiker...
     tmpim = Image.new("RGB", (170, 13), "white")
