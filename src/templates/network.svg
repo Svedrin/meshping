@@ -10,9 +10,13 @@
     .collapse-hit, .collapse-badge { cursor: pointer; }
     /* Keep filling the browser window even though relayout() below still
        sets width/height attributes in px (for the canvasW/H it computes) -
-       CSS beats presentation attributes, so this wins regardless. */
-    #network-svg { width: 100vw; height: 100vh; display: block; cursor: grab; touch-action: none; }
-    #network-svg.panning { cursor: grabbing; }
+       CSS beats presentation attributes, so this wins regardless.
+       Only on devices with a mouse: on touch screens the SVG keeps its
+       natural size so the browser's own pinch-zoom and scrolling work. */
+    @media (hover: hover) and (pointer: fine) {
+      #network-svg { width: 100vw; height: 100vh; display: block; cursor: grab; touch-action: none; }
+      #network-svg.panning { cursor: grabbing; }
+    }
   </style>
 
   <!-- Background gradient: deep navy top-left to near-black bottom-right -->
@@ -235,6 +239,11 @@
   var view     = null;   // {x, y, w, h}
   var homeView = null;   // the natural box, used to clamp zoom
 
+  // Wheel-zoom and drag-pan only make sense with a mouse. On touch devices
+  // the browser's native pinch-zoom does a better job, so leave it alone
+  // (must match the media query in the <style> block above).
+  var panZoom = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
   function applyViewBox() {
     svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   }
@@ -346,7 +355,7 @@
 
     svg.setAttribute("width", canvasW);
     svg.setAttribute("height", canvasH);
-    if (!view) {
+    if (!view || !panZoom) {
       view     = { x: 0, y: 0, w: canvasW, h: canvasH };
       homeView = { x: 0, y: 0, w: canvasW, h: canvasH };
     }
@@ -370,56 +379,58 @@
     if (legendEl) legendEl.setAttribute("transform", "translate(0," + (canvasH - LAYOUT.legendH - 20) + ")");
   }
 
-  // ── Wheel-zoom, centered on the cursor (Google-Maps style) ──────────
-  var ZOOM_IN_LIMIT  = 0.08;  // vs. homeView.w: how far you can zoom in
-  var ZOOM_OUT_LIMIT = 6;     // vs. homeView.w: how far you can zoom out
-
-  svg.addEventListener("wheel", function (ev) {
-    ev.preventDefault();
-    var factor = ev.deltaY > 0 ? 1.1 : 1 / 1.1;
-    var newW = view.w * factor;
-    if (newW < homeView.w * ZOOM_IN_LIMIT || newW > homeView.w * ZOOM_OUT_LIMIT) return;
-
-    var pt = svg.createSVGPoint();
-    pt.x = ev.clientX;
-    pt.y = ev.clientY;
-    var p = pt.matrixTransform(svg.getScreenCTM().inverse());
-
-    view.x = p.x - (p.x - view.x) * factor;
-    view.y = p.y - (p.y - view.y) * factor;
-    view.w *= factor;
-    view.h *= factor;
-    applyViewBox();
-  }, { passive: false });
-
-  // ── Drag-pan ──────────────────────────────────────────────────────
   var panState = null;  // {startX, startY, viewX, viewY}
   var dragged  = false; // true once a mousedown has moved far enough to count as a drag
 
-  svg.addEventListener("mousedown", function (ev) {
-    if (ev.button !== 0) return;
-    if (ev.target.closest && ev.target.closest("a")) return;  // let links work
-    panState = { startX: ev.clientX, startY: ev.clientY, viewX: view.x, viewY: view.y };
-    dragged = false;
-    svg.classList.add("panning");
-  });
+  if (panZoom) {
+    // ── Wheel-zoom, centered on the cursor (Google-Maps style) ──────────
+    var ZOOM_IN_LIMIT  = 0.08;  // vs. homeView.w: how far you can zoom in
+    var ZOOM_OUT_LIMIT = 6;     // vs. homeView.w: how far you can zoom out
 
-  window.addEventListener("mousemove", function (ev) {
-    if (!panState) return;
-    var dx = ev.clientX - panState.startX;
-    var dy = ev.clientY - panState.startY;
-    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragged = true;
-    var rect = svg.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    view.x = panState.viewX - dx * (view.w / rect.width);
-    view.y = panState.viewY - dy * (view.h / rect.height);
-    applyViewBox();
-  });
+    svg.addEventListener("wheel", function (ev) {
+      ev.preventDefault();
+      var factor = ev.deltaY > 0 ? 1.1 : 1 / 1.1;
+      var newW = view.w * factor;
+      if (newW < homeView.w * ZOOM_IN_LIMIT || newW > homeView.w * ZOOM_OUT_LIMIT) return;
 
-  window.addEventListener("mouseup", function () {
-    panState = null;
-    svg.classList.remove("panning");
-  });
+      var pt = svg.createSVGPoint();
+      pt.x = ev.clientX;
+      pt.y = ev.clientY;
+      var p = pt.matrixTransform(svg.getScreenCTM().inverse());
+
+      view.x = p.x - (p.x - view.x) * factor;
+      view.y = p.y - (p.y - view.y) * factor;
+      view.w *= factor;
+      view.h *= factor;
+      applyViewBox();
+    }, { passive: false });
+
+    // ── Drag-pan ──────────────────────────────────────────────────────
+    svg.addEventListener("mousedown", function (ev) {
+      if (ev.button !== 0) return;
+      if (ev.target.closest && ev.target.closest("a")) return;  // let links work
+      panState = { startX: ev.clientX, startY: ev.clientY, viewX: view.x, viewY: view.y };
+      dragged = false;
+      svg.classList.add("panning");
+    });
+
+    window.addEventListener("mousemove", function (ev) {
+      if (!panState) return;
+      var dx = ev.clientX - panState.startX;
+      var dy = ev.clientY - panState.startY;
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragged = true;
+      var rect = svg.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      view.x = panState.viewX - dx * (view.w / rect.width);
+      view.y = panState.viewY - dy * (view.h / rect.height);
+      applyViewBox();
+    });
+
+    window.addEventListener("mouseup", function () {
+      panState = null;
+      svg.classList.remove("panning");
+    });
+  }
 
   svg.addEventListener("click", function (ev) {
     if (dragged) {
